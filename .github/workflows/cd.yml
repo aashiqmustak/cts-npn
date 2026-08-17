@@ -1,0 +1,86 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy Application
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Frontend Build Stage (if client directory and package.json exist)
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build Frontend Assets
+        run: |
+          echo "=== Building Frontend Client ==="
+          if [ -f "client/package.json" ]; then
+            cd client
+            npm ci || npm install
+            npm run build --if-present
+            echo "Frontend assets compiled successfully."
+          else
+            echo "No frontend package.json found. Skipping frontend build step."
+          fi
+
+      # Backend Build/Prepare Stage (if server requirements exist)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Backend Tooling
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: "latest"
+
+      - name: Prepare Backend Dependencies
+        run: |
+          echo "=== Preparing Backend Server ==="
+          if [ -f "server/pyproject.toml" ] || [ -f "server/requirements.txt" ] || [ -f "pyproject.toml" ]; then
+            if [ -d "server" ]; then
+              cd server
+            fi
+            # Perform dependency checks or compile bytecode
+            uv pip install -r requirements.txt --system || uv pip install . --system || echo "No dependencies file setup yet"
+          else
+            echo "No backend configuration found. Skipping backend build step."
+          fi
+
+      # Non-Docker Deployment template
+      - name: Trigger Production Deployment
+        run: |
+          echo "=== Triggering Production Deployment ==="
+          # Without Docker, standard options are:
+          # 1. SSH into production server, pull latest changes, and restart the backend processes
+          # 2. Deploy compiled static frontend assets to a CDN/Host (e.g. Netlify, Vercel, AWS S3)
+          # 3. Trigger a webhook / CI-CD pipeline integration
+          
+          if [ -n "${{ secrets.DEPLOY_SSH_HOST }}" ]; then
+            echo "Deploying via SSH..."
+            # Example SSH command flow:
+            # ssh -o StrictHostKeyChecking=no ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }} "
+            #   cd /home/apps/cts-npn &&
+            #   git pull origin main &&
+            #   source venv/bin/activate &&
+            #   pip install -r server/requirements.txt &&
+            #   pm2 restart server-api
+            # "
+          elif [ -n "${{ secrets.DEPLOY_WEBHOOK }}" ]; then
+            echo "Triggering deployment webhook..."
+            curl -X POST ${{ secrets.DEPLOY_WEBHOOK }} \
+              -H "Content-Type: application/json" \
+              -d '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
+          else
+            echo "No DEPLOY_SSH_HOST or DEPLOY_WEBHOOK secrets configured."
+            echo "Configure deployment secrets (SSH keys, webhook URLs) in your GitHub Repository Settings to connect to your environment."
+          fi
