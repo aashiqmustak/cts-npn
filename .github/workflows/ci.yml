@@ -1,0 +1,98 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-ci:
+    name: Server Lint and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install and Configure uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: "latest"
+
+      - name: Run Backend CI Checks
+        run: |
+          echo "=== Running Backend CI Checks ==="
+          
+          # Check if backend directory has configuration files
+          if [ -f "server/pyproject.toml" ] || [ -f "server/requirements.txt" ] || [ -f "pyproject.toml" ]; then
+            # Navigate to server if directory exists
+            if [ -d "server" ]; then
+              cd server
+            fi
+            
+            echo "Installing dependencies..."
+            uv pip install -e . --system || uv pip install -r requirements.txt --system || echo "No dependencies file setup yet"
+            
+            echo "Installing Ruff and Pytest for validation..."
+            uv pip install ruff pytest --system
+            
+            echo "Running code linting and style checks..."
+            ruff check . --format=github
+            ruff format --check .
+            
+            echo "Running backend test suites..."
+            if [ -d "tests" ]; then
+              pytest tests/
+            else
+              echo "No test directory found yet."
+            fi
+          else
+            echo "No python project files found. Skipping backend checks."
+          fi
+
+  frontend-ci:
+    name: Client Lint and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run Frontend CI Checks
+        run: |
+          echo "=== Running Frontend CI Checks ==="
+          
+          # Check if client directory has package.json
+          if [ -f "client/package.json" ]; then
+            cd client
+            
+            echo "Installing client dependencies..."
+            npm ci || npm install
+            
+            echo "Running lint check..."
+            npm run lint --if-present
+            
+            echo "Running format check..."
+            npm run format:check --if-present
+            
+            echo "Running client test suites..."
+            npm run test --if-present
+          else
+            echo "No client/package.json found. Skipping frontend checks."
+          fi
