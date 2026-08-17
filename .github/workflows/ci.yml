@@ -48,7 +48,7 @@ jobs:
             uv pip install ruff pytest --system
             
             echo "Running code linting and style checks..."
-            ruff check . --format=github
+            ruff check --output-format=github .
             ruff format --check .
             
             echo "Running backend test suites..."
