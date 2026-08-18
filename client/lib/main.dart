@@ -20,6 +20,7 @@ import 'screens/formulary_screen.dart';
 import 'screens/friction_screen.dart';
 import 'screens/admin_data_users_screen.dart';
 import 'screens/admin_reports_screen.dart';
+import 'screens/voice_agent_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -74,6 +75,9 @@ class AppShell extends StatelessWidget {
         case 3:
           activeScreen = const DashboardOverviewScreen();
           break;
+        case 4:
+          activeScreen = const VoiceAgentScreen();
+          break;
         default:
           activeScreen = const DoctorPrescriptionScreen();
       }
@@ -97,6 +101,9 @@ class AppShell extends StatelessWidget {
         case 3:
           activeScreen = const FormularyScreen();
           break;
+        case 4:
+          activeScreen = const VoiceAgentScreen();
+          break;
         default:
           activeScreen = const PharmacistDispenseScreen();
       }
@@ -111,6 +118,9 @@ class AppShell extends StatelessWidget {
         case 2:
           activeScreen = const HospitalsScreen();
           break;
+        case 3:
+          activeScreen = const VoiceAgentScreen();
+          break;
         default:
           activeScreen = const PatientInteractiveScreen();
       }
@@ -124,6 +134,9 @@ class AppShell extends StatelessWidget {
           break;
         case 2:
           activeScreen = const FrictionScreen();
+          break;
+        case 3:
+          activeScreen = const VoiceAgentScreen();
           break;
         default:
           activeScreen = const InsurancePortalScreen();
@@ -148,6 +161,9 @@ class AppShell extends StatelessWidget {
           break;
         case 5:
           activeScreen = const AdminReportsScreen();
+          break;
+        case 6:
+          activeScreen = const VoiceAgentScreen();
           break;
         default:
           activeScreen = const DashboardScreen();
