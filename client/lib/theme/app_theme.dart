@@ -48,12 +48,12 @@ class AppTheme {
         brightness: Brightness.light,
       ),
       textTheme: GoogleFonts.interTextTheme(),
-      cardTheme: CardTheme(
+      cardTheme: const CardThemeData(
         color: AppColors.cardBg,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.0),
-          side: const BorderSide(color: AppColors.borderLight, width: 1.0),
+          borderRadius: BorderRadius.all(Radius.circular(16.0)),
+          side: BorderSide(color: AppColors.borderLight, width: 1.0),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(

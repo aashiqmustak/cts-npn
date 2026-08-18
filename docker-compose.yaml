@@ -1,0 +1,30 @@
+services:
+
+  backend:
+    build:
+      context: ./
+      dockerfile: server/app/Dockerfile
+
+    ports:
+      - "8000:8000"
+
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+
+    ports:
+      - "8080:80"
+
+    networks:
+      - app-network
+
+    depends_on:
+      - backend
+
+networks:
+  app-network:
+    driver: bridge
