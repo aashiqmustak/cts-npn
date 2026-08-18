@@ -1,11 +1,21 @@
 import '../data/mock_data.dart';
 import '../models/models.dart';
+import 'supabase_service.dart';
 
 class DataService {
-  // Configurable PDC threshold (default: 80% per CMS Part D benchmark)
+  final SupabaseService supabaseService = SupabaseService();
+
+  // Configurable PDC threshold
   double pdcThreshold = 0.80;
 
-  // Global collections
+  // Domain collections starting completely empty from scratch
+  final List<Hospital> _hospitals = [];
+  final List<Doctor> _doctors = [];
+  final List<PatientRecord> _patientRecords = [];
+  final List<PrescriptionItem> _prescriptionItems = [];
+  final List<PatientMedicineLog> _patientLogs = [];
+
+  // Global collections starting completely empty from scratch
   final List<Plan> _plans = List.from(MockData.plans);
   final List<User> _users = List.from(MockData.users);
   final List<Drug> _drugs = List.from(MockData.drugs);
@@ -23,6 +33,13 @@ class DataService {
       List.from(MockData.defaultTierConfigs);
 
   // Getters
+  List<Hospital> get hospitals => List.unmodifiable(_hospitals);
+  List<Doctor> get doctors => List.unmodifiable(_doctors);
+  List<PatientRecord> get patientRecords => List.unmodifiable(_patientRecords);
+  List<PrescriptionItem> get prescriptionItems =>
+      List.unmodifiable(_prescriptionItems);
+  List<PatientMedicineLog> get patientLogs => List.unmodifiable(_patientLogs);
+
   List<Plan> get plans => List.unmodifiable(_plans);
   List<User> get users => List.unmodifiable(_users);
   List<Drug> get drugs => List.unmodifiable(_drugs);
@@ -37,12 +54,96 @@ class DataService {
       List.unmodifiable(_ingestionRecords);
   List<TierCopayConfig> get tierConfigs => List.unmodifiable(_tierConfigs);
 
-  // PDC Threshold configuration
+  // Action: Add Hospital from scratch
+  void addHospital(Hospital hospital) {
+    _hospitals.add(hospital);
+    if (supabaseService.isInitialized) {
+      supabaseService.addHospital(hospital);
+    }
+  }
+
+  // Action: Add Doctor from scratch
+  void addDoctor(Doctor doctor) {
+    _doctors.add(doctor);
+  }
+
+  // Action: Add Patient from scratch
+  void addPatientRecord(PatientRecord patient) {
+    _patientRecords.add(patient);
+    if (supabaseService.isInitialized) {
+      supabaseService.addPatient(patient);
+    }
+  }
+
+  // Pharmacist Action: Dispense item
+  Future<bool> dispenseItem(String itemId) async {
+    final index = _prescriptionItems.indexWhere((i) => i.id == itemId);
+    if (index != -1) {
+      _prescriptionItems[index].isDispensed = true;
+    }
+    if (supabaseService.isInitialized) {
+      await supabaseService.dispensePrescriptionItem(itemId);
+    }
+    return true;
+  }
+
+  // Doctor Action: Create new prescription from scratch
+  Future<bool> createDoctorPrescription({
+    required String patientId,
+    required String doctorId,
+    required String hospitalId,
+    required String diagnosis,
+    required String notes,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    final newRxId = 'RX-${DateTime.now().millisecondsSinceEpoch}';
+    for (final item in items) {
+      _prescriptionItems.add(
+        PrescriptionItem(
+          id: 'ITEM-${DateTime.now().millisecondsSinceEpoch}-${items.indexOf(item)}',
+          prescriptionId: newRxId,
+          medicineName: item['medicineName'],
+          dosage: item['dosage'],
+          frequency: item['frequency'],
+          durationDays: item['durationDays'] ?? 30,
+          isDispensed: false,
+          instructions: item['instructions'],
+        ),
+      );
+    }
+
+    if (supabaseService.isInitialized) {
+      await supabaseService.createPrescriptionWithItems(
+        patientId: patientId,
+        doctorId: doctorId,
+        hospitalId: hospitalId,
+        diagnosis: diagnosis,
+        notes: notes,
+        items: items,
+      );
+    }
+    return true;
+  }
+
+  // Patient Action: Log medicine from scratch
+  Future<void> togglePatientLog(String logId, bool isTaken) async {
+    final index = _patientLogs.indexWhere((l) => l.id == logId);
+    if (index != -1) {
+      _patientLogs[index].isTaken = isTaken;
+    }
+    if (supabaseService.isInitialized) {
+      await supabaseService.togglePatientMedicineLog(logId, isTaken, null);
+    }
+  }
+
+  void addPatientMedicineLog(PatientMedicineLog log) {
+    _patientLogs.add(log);
+  }
+
   void setPdcThreshold(double threshold) {
     pdcThreshold = threshold;
   }
 
-  // Calculate dynamic adherence flags based on current PDC threshold
   List<AdherenceFlag> getFilteredAdherenceFlags({
     String? searchQuery,
     RiskLevel? selectedRisk,
@@ -51,13 +152,11 @@ class DataService {
     List<String>? assignedPatientIds,
   }) {
     return _adherenceFlags.where((flag) {
-      // Role scoping check
       if (assignedPatientIds != null &&
           !assignedPatientIds.contains(flag.patientId)) {
         return false;
       }
 
-      // Dynamic PDC Threshold check
       final isBelowThreshold = flag.pdcScore < pdcThreshold;
       if (!isBelowThreshold && flag.riskLevel != RiskLevel.high) {
         return false;
@@ -81,24 +180,14 @@ class DataService {
         return false;
       }
 
-      if (prescriberFilter != null && prescriberFilter.isNotEmpty) {
-        final rx = _prescriptions.firstWhere(
-          (p) => p.id == flag.prescriptionId,
-          orElse: () => _prescriptions.first,
-        );
-        if (rx.prescriberName != prescriberFilter) return false;
-      }
-
       return true;
     }).toList();
   }
 
-  // Get Drug Alternatives for a specific drug
   List<FormularyAlternative> getAlternativesForDrug(String drugId) {
     return _alternatives.where((alt) => alt.targetDrugId == drugId).toList();
   }
 
-  // Get Drug by ID
   Drug? getDrugById(String id) {
     try {
       return _drugs.firstWhere((d) => d.id == id);
@@ -107,7 +196,6 @@ class DataService {
     }
   }
 
-  // High-cost opportunity metrics (Admin and Pharmacist)
   double get totalEstimatedAnnualSavingsOpportunity {
     double total = 0.0;
     for (final alt in _alternatives) {
@@ -119,7 +207,6 @@ class DataService {
     return total;
   }
 
-  // Total patients at adherence risk
   int getAtRiskPatientCount({List<String>? assignedPatientIds}) {
     return _adherenceFlags.where((flag) {
       if (assignedPatientIds != null &&
@@ -130,7 +217,6 @@ class DataService {
     }).length;
   }
 
-  // Total active PA / ST friction alerts
   int getActiveFrictionCount({List<String>? assignedPatientIds}) {
     return _paFrictionEvents.where((f) {
       if (assignedPatientIds != null &&
@@ -141,7 +227,6 @@ class DataService {
     }).length;
   }
 
-  // Action: Initiate patient outreach
   void updateOutreachStatus(
       String flagId, OutreachStatus status, String? notes) {
     final index = _adherenceFlags.indexWhere((f) => f.id == flagId);
@@ -153,7 +238,6 @@ class DataService {
     }
   }
 
-  // Action: Resolve PA Friction event
   void updateFrictionStatus(String frictionId, FrictionStatus newStatus) {
     final index = _paFrictionEvents.indexWhere((f) => f.id == frictionId);
     if (index != -1) {
@@ -161,7 +245,6 @@ class DataService {
     }
   }
 
-  // Admin Action: Simulate CMS Formulary File Upload / Ingestion
   FormularyIngestion simulateFormularyFileUpload(
       String filename, String uploadedBy) {
     final newIngestion = FormularyIngestion(
@@ -175,22 +258,13 @@ class DataService {
       uploadedBy: uploadedBy,
     );
     _ingestionRecords.insert(0, newIngestion);
-
-    // Update tier cost-shares in drug catalog as part of ingestion demo
-    for (int i = 0; i < _drugs.length; i++) {
-      if (_drugs[i].tier >= 4) {
-        // Mock adjustments
-      }
-    }
     return newIngestion;
   }
 
-  // Admin Action: Add new user
   void addUser(User newUser) {
     _users.add(newUser);
   }
 
-  // Admin Action: Update tier copay
   void updateTierCopay(int tier, double copay, double coinsurance) {
     final index = _tierConfigs.indexWhere((t) => t.tier == tier);
     if (index != -1) {

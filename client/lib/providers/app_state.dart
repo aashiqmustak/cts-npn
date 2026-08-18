@@ -7,12 +7,12 @@ class AppState extends ChangeNotifier {
   final DataService dataService = DataService();
 
   // Authentication State
-  bool _isLoggedIn = true; // Default true for instant exploration, supports logout/login
+  bool _isLoggedIn = false;
   late User _currentUser;
 
   // Navigation Index
-  int _currentNavIndex = 4; // Default to 'Insurance & Costs / Formulary & Costs' (index 4 in sidebar)
-  int _activeSubTabIndex = 0; // 0: Overview, 1: Formulary Explorer, 2: Adherence Risk, 3: PA Friction, 4: Admin Data, 5: Reports
+  int _currentNavIndex = 0;
+  int _activeSubTabIndex = 0;
   String? _selectedPrescriptionId;
 
   // Search & Filter States
@@ -31,7 +31,15 @@ class AppState extends ChangeNotifier {
   BarrierType? _selectedBarrierFilter;
 
   AppState() {
-    _currentUser = MockData.users[0]; // Sarah Jenkins, PharmD
+    _currentUser = const User(
+      id: 'U_INIT',
+      name: 'New User',
+      email: 'user@alternea.org',
+      role: UserRole.doctor,
+      assignedPatientIds: [],
+      avatarUrl: 'https://i.pravatar.cc/150?img=12',
+      title: 'Attending Physician',
+    );
   }
 
   // Getters
@@ -60,10 +68,53 @@ class AppState extends ChangeNotifier {
   String get frictionSearchQuery => _frictionSearchQuery;
   BarrierType? get selectedBarrierFilter => _selectedBarrierFilter;
 
+  // Domain Getters
+  List<Hospital> get hospitals => dataService.hospitals;
+  List<Doctor> get doctors => dataService.doctors;
+  List<PatientRecord> get patientRecords => dataService.patientRecords;
+  List<PrescriptionItem> get prescriptionItems => dataService.prescriptionItems;
+  List<PatientMedicineLog> get patientLogs => dataService.patientLogs;
+
+  // Actions
+  Future<void> dispenseItem(String itemId) async {
+    await dataService.dispenseItem(itemId);
+    notifyListeners();
+  }
+
+  Future<void> createDoctorPrescription({
+    required String patientId,
+    required String doctorId,
+    required String hospitalId,
+    required String diagnosis,
+    required String notes,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    await dataService.createDoctorPrescription(
+      patientId: patientId,
+      doctorId: doctorId,
+      hospitalId: hospitalId,
+      diagnosis: diagnosis,
+      notes: notes,
+      items: items,
+    );
+    notifyListeners();
+  }
+
+  Future<void> togglePatientLog(String logId, bool isTaken) async {
+    await dataService.togglePatientLog(logId, isTaken);
+    notifyListeners();
+  }
+
+  void addHospital(Hospital hospital) {
+    dataService.addHospital(hospital);
+    notifyListeners();
+  }
+
   // Auth Actions
   void login(User user) {
     _currentUser = user;
     _isLoggedIn = true;
+    _currentNavIndex = 0;
     notifyListeners();
   }
 
@@ -77,14 +128,30 @@ class AppState extends ChangeNotifier {
       name: name,
       email: email,
       role: role,
-      assignedPatientIds: ['PT101', 'PT102', 'PT103'],
+      assignedPatientIds: ['PT-301', 'PT-302'],
       avatarUrl: 'https://i.pravatar.cc/150?img=32',
-      title: role == UserRole.admin ? 'Administrator' : 'Clinical Specialist',
+      title: _getRoleTitle(role),
     );
     dataService.addUser(newUser);
     _currentUser = newUser;
     _isLoggedIn = true;
+    _currentNavIndex = 0;
     notifyListeners();
+  }
+
+  String _getRoleTitle(UserRole role) {
+    switch (role) {
+      case UserRole.admin:
+        return 'Administrator';
+      case UserRole.insuranceAgent:
+        return 'Insurance Specialist';
+      case UserRole.doctor:
+        return 'Attending Physician';
+      case UserRole.pharmacist:
+        return 'Clinical Pharmacist';
+      case UserRole.patient:
+        return 'Patient Account';
+    }
   }
 
   void logout() {
@@ -94,9 +161,7 @@ class AppState extends ChangeNotifier {
 
   void setCurrentUser(User user) {
     _currentUser = user;
-    if (_currentUser.isPharmacist && _activeSubTabIndex >= 4) {
-      _activeSubTabIndex = 0;
-    }
+    _currentNavIndex = 0;
     notifyListeners();
   }
 
