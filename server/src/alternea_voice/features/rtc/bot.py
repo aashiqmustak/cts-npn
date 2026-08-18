@@ -1,10 +1,43 @@
 import os
-# pyrefly: ignore [missing-import]
-import aiohttp
 import pathlib
 import tomllib
-# pyrefly: ignore [missing-import]
+
+import aiohttp
 from dotenv import load_dotenv
+from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import (
+    LocalSmartTurnAnalyzerV3,
+)
+from pipecat.audio.vad.silero import SileroVADAnalyzer
+from pipecat.audio.vad.vad_analyzer import VADParams
+from pipecat.frames.frames import Frame, LLMRunFrame, TranscriptionFrame
+from pipecat.pipeline.pipeline import Pipeline
+from pipecat.pipeline.runner import PipelineRunner
+from pipecat.pipeline.task import PipelineParams, PipelineTask
+from pipecat.processors.aggregators.llm_context import LLMContext
+from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair,
+    LLMUserAggregatorParams,
+)
+from pipecat.processors.frame_processor import (
+    FrameDirection,
+    FrameProcessor,
+)
+from pipecat.runner.types import RunnerArguments
+from pipecat.runner.utils import create_transport
+from pipecat.services.groq.llm import GroqLLMService
+from pipecat.services.sarvam.stt import SarvamSTTService
+from pipecat.services.sarvam.tts import SarvamTTSService
+from pipecat.transports.base_transport import (
+    BaseTransport,
+    TransportParams,
+)
+from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
+from pipecat.turns.user_turn_strategies import UserTurnStrategies
+
+# # Twilio WebSocket
+# from pipecat.transports.websocket.fastapi import (
+#     FastAPIWebsocketParams,
+# )
 
 def load_project_env_and_metadata():
     current_dir = pathlib.Path(__file__).resolve().parent
@@ -31,56 +64,12 @@ def load_project_env_and_metadata():
             with open(pyproject_path, "rb") as f:
                 data = tomllib.load(f)
                 metadata = data.get("project", {})
-        except Exception as e:
+        except (OSError, tomllib.TOMLDecodeError) as e:
             print(f"Warning: Could not read pyproject.toml: {e}")
             
     return metadata
 
 project_metadata = load_project_env_and_metadata()
-
-from pipecat.frames.frames import Frame, TranscriptionFrame, LLMRunFrame
-
-from pipecat.pipeline.pipeline import Pipeline
-from pipecat.pipeline.runner import PipelineRunner
-from pipecat.pipeline.task import PipelineParams, PipelineTask
-
-from pipecat.processors.frame_processor import (
-    FrameDirection,
-    FrameProcessor,
-)
-
-from pipecat.runner.types import RunnerArguments
-from pipecat.runner.utils import create_transport
-
-from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import (
-    LocalSmartTurnAnalyzerV3,
-)
-
-from pipecat.audio.vad.silero import SileroVADAnalyzer
-from pipecat.audio.vad.vad_analyzer import VADParams
-
-from pipecat.processors.aggregators.llm_context import LLMContext
-
-from pipecat.processors.aggregators.llm_response_universal import (
-    LLMContextAggregatorPair,
-    LLMUserAggregatorParams,
-)
-
-from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
-from pipecat.turns.user_turn_strategies import UserTurnStrategies
-
-from pipecat.services.sarvam.stt import SarvamSTTService
-from pipecat.services.sarvam.tts import SarvamTTSService
-from pipecat.services.groq.llm import GroqLLMService
-
-from pipecat.transports.base_transport import (
-    BaseTransport,
-    TransportParams,
-)
-
-from pipecat.transports.websocket.fastapi import (
-    FastAPIWebsocketParams,
-)
 
 class TranscriptionLogger(FrameProcessor):
 
@@ -128,7 +117,7 @@ async def run_bot(
     project_version = project_metadata.get("version", "0.1.0")
     print(f"Starting {project_name} (v{project_version})...")
 
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession():
 
         stt = SarvamSTTService(
             api_key=os.getenv("SARVAM_API_KEY"),
