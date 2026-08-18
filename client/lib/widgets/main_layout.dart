@@ -236,6 +236,7 @@ class MainLayout extends StatelessWidget {
         _buildNavItem(1, Icons.people_outline, 'My Patients', appState),
         _buildNavItem(2, Icons.local_hospital_outlined, 'Hospitals Directory', appState),
         _buildNavItem(3, Icons.analytics_outlined, 'Clinical Analytics', appState),
+        _buildNavItem(4, Icons.graphic_eq_rounded, 'AI Voice Agent', appState),
       ];
     } else if (user.isPharmacist) {
       return [
@@ -243,18 +244,21 @@ class MainLayout extends StatelessWidget {
         _buildNavItem(1, Icons.receipt_long_outlined, 'Prescriptions List', appState),
         _buildNavItem(2, Icons.warning_amber_rounded, 'Adherence Risk', appState),
         _buildNavItem(3, Icons.explore_outlined, 'Formulary Explorer', appState),
+        _buildNavItem(4, Icons.graphic_eq_rounded, 'AI Voice Agent', appState),
       ];
     } else if (user.isPatient) {
       return [
         _buildNavItem(0, Icons.favorite_rounded, 'My Health & Meds', appState),
         _buildNavItem(1, Icons.history_rounded, 'Prescription History', appState),
         _buildNavItem(2, Icons.local_hospital_outlined, 'Hospitals & Doctors', appState),
+        _buildNavItem(3, Icons.graphic_eq_rounded, 'AI Voice Agent', appState),
       ];
     } else if (user.isInsuranceAgent) {
       return [
         _buildNavItem(0, Icons.verified_user_outlined, 'Insurance Portal', appState),
         _buildNavItem(1, Icons.explore_outlined, 'Formulary Catalog', appState),
         _buildNavItem(2, Icons.fact_check_outlined, 'PA Friction Review', appState),
+        _buildNavItem(3, Icons.graphic_eq_rounded, 'AI Voice Agent', appState),
       ];
     } else {
       // Admin Role
@@ -265,6 +269,7 @@ class MainLayout extends StatelessWidget {
         _buildNavItem(3, Icons.local_pharmacy_rounded, 'Pharmacists & Users', appState),
         _buildNavItem(4, Icons.cloud_upload_outlined, 'Formulary Ingestion', appState),
         _buildNavItem(5, Icons.bar_chart_rounded, 'System Reports', appState),
+        _buildNavItem(6, Icons.graphic_eq_rounded, 'AI Voice Agent', appState),
       ];
     }
   }

@@ -36,8 +36,8 @@ jobs:
           
           # Check if backend directory has configuration files
           if [ -f "server/pyproject.toml" ] || [ -f "server/requirements.txt" ] || [ -f "pyproject.toml" ]; then
-            # Navigate to server if directory exists
-            if [ -d "server" ]; then
+            # Navigate to server if it contains pyproject.toml or requirements.txt
+            if [ -f "server/pyproject.toml" ] || [ -f "server/requirements.txt" ]; then
               cd server
             fi
             

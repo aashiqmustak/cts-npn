@@ -47,7 +47,7 @@ jobs:
         run: |
           echo "=== Preparing Backend Server ==="
           if [ -f "server/pyproject.toml" ] || [ -f "server/requirements.txt" ] || [ -f "pyproject.toml" ]; then
-            if [ -d "server" ]; then
+            if [ -f "server/pyproject.toml" ] || [ -f "server/requirements.txt" ]; then
               cd server
             fi
             # Perform dependency checks or compile bytecode

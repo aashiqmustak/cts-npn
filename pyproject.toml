@@ -1,7 +1,52 @@
 [project]
-name = "cts-npn"
+name = "Alternea-Voice"
 version = "0.1.0"
-description = "Add your description here"
+description = "Alternea-Voice is an AI-powered communications orchestrator that integrates various AI services for voice processing, including speech-to-text (STT), language models (LLM), and text-to-speech (TTS)."
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = []
+authors = [
+	{ name = "Mohammed Aashiq", email = "aashiqmustak5969@gmail.com" }
+]
+requires-python = ">=3.12"
+
+dependencies = [
+	"granian[reload]>=2.6.1",
+	"python-dotenv>=1.2.1",
+	"structlog>=25.5.0",
+	"orjson>=3.11.5",
+	"jinja2>=3.1.6",
+	"uv-build>=0.9.27",
+	"rich>=14.3.1",
+	"fastapi>=0.115.6,<0.128.0",
+	"pydantic-settings>=2.12.0",
+	"scalar-fastapi>=1.6.1",
+	"piper-tts[http]>=1.3.0",
+	"pipecat-ai[local-smart-turn-v3,openrouter,silero,webrtc,websocket,whisper,runner]>=0.0.100",
+	"websockets>=13.1,<16.0",
+	"requests>=2.32.5",
+	"pre-commit>=4.5.1",
+	"httpx>=0.28.1",
+	"torch>=2.9.1",
+	"typer>=0.21.1",
+	"pipecat-ai[sarvam]",
+	"pipecat-ai[groq]",
+]
+
+[project.scripts]
+alternea = "alternea_voice.api.cli:cli"
+
+
+[dependency-groups]
+dev = [
+	"ruff>=0.14.14",
+	"pre-commit>=4.5.1",
+	"fakeredis>=2.33.0",
+	"mypy>=1.19.1",
+	"basedpyright>=1.37.2",
+	"commitlint>=1.13.3",
+]
+
+[tool.uv]
+package = true
+
+[tool.setuptools.packages.find]
+where = ["server/src"]
