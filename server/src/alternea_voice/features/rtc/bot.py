@@ -39,6 +39,7 @@ from pipecat.turns.user_turn_strategies import UserTurnStrategies
 #     FastAPIWebsocketParams,
 # )
 
+
 def load_project_env_and_metadata():
     current_dir = pathlib.Path(__file__).resolve().parent
     pyproject_path = None
@@ -46,18 +47,18 @@ def load_project_env_and_metadata():
         if (parent / "pyproject.toml").exists():
             pyproject_path = parent / "pyproject.toml"
             break
-            
+
     env_path = None
     for parent in [current_dir] + list(current_dir.parents):
         if (parent / ".env").exists():
             env_path = parent / ".env"
             break
-            
+
     if env_path:
         load_dotenv(dotenv_path=env_path)
     else:
         load_dotenv()
-        
+
     metadata = {}
     if pyproject_path:
         try:
@@ -66,13 +67,14 @@ def load_project_env_and_metadata():
                 metadata = data.get("project", {})
         except (OSError, tomllib.TOMLDecodeError) as e:
             print(f"Warning: Could not read pyproject.toml: {e}")
-            
+
     return metadata
+
 
 project_metadata = load_project_env_and_metadata()
 
-class TranscriptionLogger(FrameProcessor):
 
+class TranscriptionLogger(FrameProcessor):
     async def process_frame(
         self,
         frame: Frame,
@@ -85,22 +87,18 @@ class TranscriptionLogger(FrameProcessor):
 
         await self.push_frame(frame, direction)
 
+
 def create_vad():
-    return SileroVADAnalyzer(
-        params=VADParams(
-            stop_secs=0.5
-        )
-    )
+    return SileroVADAnalyzer(params=VADParams(stop_secs=0.5))
+
 
 transport_params = {
-
     # # Twilio WebSocket
     # "twilio": lambda: FastAPIWebsocketParams(
     #     audio_in_enabled=True,
     #     audio_out_enabled=True,
     #     vad_analyzer=create_vad(),
     # ),
-
     # Browser WebRTC
     "webrtc": lambda: TransportParams(
         audio_in_enabled=True,
@@ -108,6 +106,7 @@ transport_params = {
         vad_analyzer=create_vad(),
     ),
 }
+
 
 async def run_bot(
     transport: BaseTransport,
@@ -118,7 +117,6 @@ async def run_bot(
     print(f"Starting {project_name} (v{project_version})...")
 
     async with aiohttp.ClientSession():
-
         stt = SarvamSTTService(
             api_key=os.getenv("SARVAM_API_KEY"),
             settings=SarvamSTTService.Settings(
@@ -155,24 +153,18 @@ async def run_bot(
 
         context = LLMContext(messages)
 
-
-        user_aggregator, assistant_aggregator = (
-            LLMContextAggregatorPair(
-                context,
-                user_params=LLMUserAggregatorParams(
-                    user_turn_strategies=UserTurnStrategies(
-                        stop=[
-                            TurnAnalyzerUserTurnStopStrategy(
-                                turn_analyzer=(
-                                    LocalSmartTurnAnalyzerV3()
-                                )
-                            )
-                        ]
-                    )
-                ),
-            )
+        user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+            context,
+            user_params=LLMUserAggregatorParams(
+                user_turn_strategies=UserTurnStrategies(
+                    stop=[
+                        TurnAnalyzerUserTurnStopStrategy(
+                            turn_analyzer=(LocalSmartTurnAnalyzerV3())
+                        )
+                    ]
+                )
+            ),
         )
-
 
         transcription_logger = TranscriptionLogger()
 
@@ -195,9 +187,7 @@ async def run_bot(
                 enable_metrics=True,
                 enable_usage_metrics=True,
             ),
-            idle_timeout_secs=(
-                runner_args.pipeline_idle_timeout_secs
-            ),
+            idle_timeout_secs=(runner_args.pipeline_idle_timeout_secs),
         )
 
         @transport.event_handler("on_client_connected")
@@ -211,17 +201,13 @@ async def run_bot(
                 {
                     "role": "system",
                     "content": (
-                        "Please introduce yourself briefly "
-                        "and greet the user."
+                        "Please introduce yourself briefly and greet the user."
                     ),
                 }
             )
 
-            await task.queue_frames(
-                [
-                    LLMRunFrame()
-                ]
-            )
+            await task.queue_frames([LLMRunFrame()])
+
         @transport.event_handler("on_client_disconnected")
         async def on_client_disconnected(
             transport,
@@ -231,11 +217,10 @@ async def run_bot(
 
             await task.cancel()
 
-        runner = PipelineRunner(
-            handle_sigint=runner_args.handle_sigint
-        )
+        runner = PipelineRunner(handle_sigint=runner_args.handle_sigint)
 
         await runner.run(task)
+
 
 async def bot(
     runner_args: RunnerArguments,
@@ -256,8 +241,8 @@ async def bot(
         runner_args,
     )
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     from pipecat.runner.run import main
 
     main()

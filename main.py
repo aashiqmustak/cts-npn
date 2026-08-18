@@ -7,6 +7,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "server", "src"))
 
 # pyrefly: ignore [missing-import]
 from alternea_voice.features.rtc.bot import bot
+
 # pyrefly: ignore [missing-import]
 from pipecat.runner.run import main
 
