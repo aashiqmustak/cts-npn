@@ -1,0 +1,80 @@
+{
+  "dataset_name": "PharmaAssist Cleaned Training Dataset",
+  "export_date": "2026-08-19T13:53:52.514331",
+  "total_records": 56430,
+  "total_patients": 1117,
+  "train_records": 47136,
+  "train_patients": 893,
+  "test_records": 9294,
+  "test_patients": 224,
+  "target_distribution": {
+    "0_adherent_persistent": 45865,
+    "1_high_discontinuation_risk": 10565,
+    "adherent_percentage": 81.28,
+    "high_risk_percentage": 18.72
+  },
+  "columns": [
+    "PATIENT",
+    "START_DT",
+    "STOP_DT",
+    "CODE",
+    "DESCRIPTION",
+    "age",
+    "healthcare_expenses",
+    "healthcare_coverage",
+    "total_conditions_prior",
+    "active_chronic_count",
+    "total_encounters_prior",
+    "emergency_visits_prior",
+    "inpatient_visits_prior",
+    "outpatient_visits_prior",
+    "wellness_visits_prior",
+    "encounter_frequency_annual",
+    "concurrent_medications_count",
+    "prior_episodes_this_drug",
+    "dispenses_prescribed",
+    "base_cost",
+    "payer_coverage_ratio",
+    "out_of_pocket_cost",
+    "gender",
+    "race",
+    "ethnicity",
+    "marital",
+    "therapeutic_class",
+    "adherence_risk_target"
+  ],
+  "features": {
+    "numerical": [
+      "age",
+      "healthcare_expenses",
+      "healthcare_coverage",
+      "total_conditions_prior",
+      "active_chronic_count",
+      "total_encounters_prior",
+      "emergency_visits_prior",
+      "inpatient_visits_prior",
+      "outpatient_visits_prior",
+      "wellness_visits_prior",
+      "encounter_frequency_annual",
+      "concurrent_medications_count",
+      "prior_episodes_this_drug",
+      "dispenses_prescribed",
+      "base_cost",
+      "payer_coverage_ratio",
+      "out_of_pocket_cost"
+    ],
+    "categorical": [
+      "gender",
+      "race",
+      "ethnicity",
+      "marital",
+      "therapeutic_class"
+    ],
+    "target": "adherence_risk_target"
+  },
+  "files_generated": [
+    "data/processed/pharmaassist_cleaned_dataset.csv",
+    "data/processed/train_data.csv",
+    "data/processed/test_data.csv"
+  ]
+}
