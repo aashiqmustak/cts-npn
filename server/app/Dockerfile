@@ -1,20 +1,29 @@
 FROM python:3.13-slim
 
+# Install uv package manager
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Set working directory
 WORKDIR /app
 
-# The user project has pyproject.toml and main.py in the root directory,
-# so we copy them from the build context (which will be set to the project root).
-COPY pyproject.toml .python-version* ./
+# Copy dependency definition files for caching
+COPY pyproject.toml uv.lock ./
 
-# In a standard setup, we would install dependencies via `pip install .`
-# However, because the root directory contains 'client' and 'server' folders
-# and pyproject.toml lacks an explicit build-system, `pip install .` fails 
-# due to multiple top-level packages discovered.
-# Since the dependencies list is currently empty, we can skip this step safely.
-# RUN pip install . 
+# Install dependencies (system libraries needed for building some python extension can go here if needed)
+# Since we are on debian/slim, we might need a compiler/git for some deps, but uv sync can try directly first.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
+RUN uv sync --frozen --no-install-project
+
+# Copy main entrypoint and the source code
 COPY main.py ./
+COPY server ./server
 
-# The backend script simply prints output and exits.
-# Using python main.py as requested.
-CMD ["python", "main.py"]
+# Expose WebRTC server port
+EXPOSE 8000
+
+# Start the bot with WebRTC transport
+CMD ["uv", "run", "python", "main.py", "-t", "webrtc", "--host", "0.0.0.0", "--port", "8000"]
