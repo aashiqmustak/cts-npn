@@ -1,12 +1,8 @@
-import pandas as pd
 import os
 
-files = [
-    "patients.csv",
-    "medications.csv",
-    "conditions.csv",
-    "encounters.csv"
-]
+import pandas as pd
+
+files = ["patients.csv", "medications.csv", "conditions.csv", "encounters.csv"]
 
 os.makedirs("cleaned_data", exist_ok=True)
 
