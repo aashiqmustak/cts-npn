@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
+import '../services/pipecat_service.dart';
 
 class VoiceAgentScreen extends StatefulWidget {
   const VoiceAgentScreen({super.key});
@@ -11,19 +12,17 @@ class VoiceAgentScreen extends StatefulWidget {
   State<VoiceAgentScreen> createState() => _VoiceAgentScreenState();
 }
 
-enum VoiceState { idle, listening, processing, speaking }
-
 class _VoiceAgentScreenState extends State<VoiceAgentScreen>
     with SingleTickerProviderStateMixin {
-  VoiceState _voiceState = VoiceState.idle;
+  late final PipecatService _pipecatService;
   late AnimationController _pulseController;
   final TextEditingController _voiceInputController = TextEditingController();
-
-  final List<Map<String, String>> _transcriptHistory = [];
 
   @override
   void initState() {
     super.initState();
+    _pipecatService = PipecatService();
+    _pipecatService.addListener(_onServiceUpdate);
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -32,86 +31,45 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
 
   @override
   void dispose() {
+    _pipecatService.removeListener(_onServiceUpdate);
+    _pipecatService.disconnect();
+    _pipecatService.dispose();
     _pulseController.dispose();
     _voiceInputController.dispose();
     super.dispose();
   }
 
-  void _triggerVoiceCommand(String commandText, AppState appState) async {
-    setState(() {
-      _voiceState = VoiceState.listening;
-      _voiceInputController.text = commandText;
-      _transcriptHistory.insert(0, {
-        'sender': 'user',
-        'text': commandText,
-        'time': 'Just now',
-      });
-    });
-
-    await Future.delayed(const Duration(milliseconds: 900));
-
-    setState(() {
-      _voiceState = VoiceState.processing;
-    });
-
-    await Future.delayed(const Duration(milliseconds: 1000));
-
-    String aiResponse = _generateRoleResponse(commandText, appState);
-
-    setState(() {
-      _voiceState = VoiceState.speaking;
-      _transcriptHistory.insert(0, {
-        'sender': 'agent',
-        'text': aiResponse,
-        'time': 'Just now',
-      });
-    });
-
-    await Future.delayed(const Duration(milliseconds: 2500));
-
+  void _onServiceUpdate() {
     if (mounted) {
-      setState(() {
-        _voiceState = VoiceState.idle;
-      });
+      setState(() {});
     }
   }
 
-  String _generateRoleResponse(String query, AppState appState) {
-    final user = appState.currentUser;
-    final lowerQuery = query.toLowerCase();
-
-    if (user.isDoctor) {
-      if (lowerQuery.contains('prescribe') || lowerQuery.contains('metformin')) {
-        return 'Understood, Doctor. Preparing digital prescription for Metformin 500mg, twice daily for Eleanor Vance at St. Jude Hospital. Shall I issue it to the pharmacist?';
-      } else if (lowerQuery.contains('notes') || lowerQuery.contains('visit')) {
-        return 'Clinical notes logged: Patient presented with routine hypertension checkup. Blood pressure stable at 128/82. Prescription updated in Supabase.';
-      }
-      return 'Doctor AI Assistant active. You can dictate patient visit details, prescribe medications, or query hospital records by voice.';
-    } else if (user.isPharmacist) {
-      if (lowerQuery.contains('eleanor') || lowerQuery.contains('lookup')) {
-        return 'Found 1 active prescription for Eleanor Vance: Metformin 500mg issued by Dr. Robert Vance at St. Jude Hospital. Status is ready for dispensing.';
-      } else if (lowerQuery.contains('dispense') || lowerQuery.contains('fill')) {
-        return 'Dispensed Metformin 500mg for Eleanor Vance. Inventory updated and patient notification sent.';
-      }
-      return 'Pharmacist AI Assistant active. Voice lookup for patient names, inspect doctor notes, or confirm medication dispensing.';
-    } else if (user.isPatient) {
-      if (lowerQuery.contains('took') || lowerQuery.contains('taken') || lowerQuery.contains('metformin')) {
-        return 'Great job! I logged your 500mg Metformin as taken today at 8:00 AM. Your adherence streak is now 7 days! 🔥';
-      } else if (lowerQuery.contains('next') || lowerQuery.contains('schedule')) {
-        return 'Your next scheduled medication is Lisinopril 10mg at 8:00 PM tonight.';
-      }
-      return 'Personal Health Voice Agent active. Ask me if you took your pills, log new supplements, or check your daily medication schedule!';
-    } else if (user.isInsuranceAgent) {
-      if (lowerQuery.contains('prior') || lowerQuery.contains('humira') || lowerQuery.contains('pa')) {
-        return 'Humira 40mg requires Prior Authorization on Tier 5 Specialty. 2 preferred generic alternatives available with \$450 monthly savings.';
-      }
-      return 'Insurance & Formulary Voice Agent active. Ask about tier copays, prior authorization requirements, or alternative savings.';
+  void _handleMicTap() async {
+    final state = _pipecatService.state;
+    if (state == PipecatState.disconnected || state == PipecatState.failed) {
+      await _pipecatService.connect();
     } else {
-      // Software Admin
-      if (lowerQuery.contains('hospital') || lowerQuery.contains('status')) {
-        return 'Software System Status: Supabase cloud database connected. Active hospitals registered: 3. Total prescriptions processed: 142.';
-      }
-      return 'Alternea Software Admin AI active. Request system diagnostics, active user counts, or database sync status.';
+      await _pipecatService.disconnect();
+    }
+  }
+
+  void _handlePromptTap(String prompt) {
+    if (_pipecatService.state == PipecatState.connected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Try speaking: \"$prompt\" aloud!"),
+          backgroundColor: AppColors.primaryTeal,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Connect to the Pipecat agent first, then speak the command."),
+          backgroundColor: AppColors.accentNavy,
+        ),
+      );
     }
   }
 
@@ -204,9 +162,9 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                     children: [
                       Row(
                         children: [
-                          Text(
+                          const Text(
                             'Alternea AI Voice Agent',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -264,15 +222,12 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
               children: [
                 // Animated Glowing Microphone Circle
                 GestureDetector(
-                  onTap: () {
-                    if (_voiceState == VoiceState.idle) {
-                      _triggerVoiceCommand(prompts.first, appState);
-                    }
-                  },
+                  onTap: _handleMicTap,
                   child: AnimatedBuilder(
                     animation: _pulseController,
                     builder: (context, child) {
-                      final pulseScale = _voiceState != VoiceState.idle
+                      final isConnected = _pipecatService.state == PipecatState.connected;
+                      final pulseScale = isConnected
                           ? 1.0 + (_pulseController.value * 0.15)
                           : 1.0;
                       return Transform.scale(
@@ -283,15 +238,15 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: LinearGradient(
-                              colors: _voiceState == VoiceState.listening
+                              colors: _pipecatService.state == PipecatState.connecting
                                   ? [AppColors.warningOrange, Colors.deepOrange]
-                                  : _voiceState == VoiceState.speaking
+                                  : _pipecatService.state == PipecatState.connected
                                       ? [AppColors.successGreen, Colors.teal]
                                       : [AppColors.primaryTeal, AppColors.accentNavy],
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: (_voiceState == VoiceState.listening
+                                color: (_pipecatService.state == PipecatState.connecting
                                         ? AppColors.warningOrange
                                         : AppColors.primaryTeal)
                                     .withValues(alpha: 0.4),
@@ -301,9 +256,9 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                             ],
                           ),
                           child: Icon(
-                            _voiceState == VoiceState.listening
-                                ? Icons.mic_rounded
-                                : _voiceState == VoiceState.speaking
+                            _pipecatService.state == PipecatState.connecting
+                                ? Icons.hourglass_empty_rounded
+                                : _pipecatService.state == PipecatState.connected
                                     ? Icons.volume_up_rounded
                                     : Icons.mic_none_rounded,
                             color: Colors.white,
@@ -319,21 +274,23 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
 
                 // Status Indicator Text
                 Text(
-                  _voiceState == VoiceState.listening
-                      ? 'Listening to your voice command...'
-                      : _voiceState == VoiceState.processing
-                          ? 'Processing AI Audio Stream...'
-                          : _voiceState == VoiceState.speaking
-                              ? 'AI Assistant Speaking Response...'
-                              : 'Tap Microphone or select prompt below to speak',
+                  _pipecatService.state == PipecatState.connecting
+                      ? 'Connecting to Pipecat voice bot...'
+                      : _pipecatService.state == PipecatState.connected
+                          ? 'Connected! Speak to the agent'
+                          : _pipecatService.state == PipecatState.failed
+                              ? 'Connection failed. Tap to retry.'
+                              : 'Tap microphone to connect and speak',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: _voiceState == VoiceState.listening
+                    color: _pipecatService.state == PipecatState.connecting
                         ? AppColors.warningOrange
-                        : _voiceState == VoiceState.speaking
+                        : _pipecatService.state == PipecatState.connected
                             ? AppColors.primaryTeal
-                            : AppColors.accentNavy,
+                            : _pipecatService.state == PipecatState.failed
+                                ? Colors.red
+                                : AppColors.accentNavy,
                   ),
                 ),
 
@@ -371,7 +328,7 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      onPressed: () => _triggerVoiceCommand(prompt, appState),
+                      onPressed: () => _handlePromptTap(prompt),
                     );
                   }).toList(),
                 ),
@@ -403,9 +360,9 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                         color: AppColors.accentNavy,
                       ),
                     ),
-                    if (_transcriptHistory.isNotEmpty)
+                    if (_pipecatService.transcripts.isNotEmpty)
                       TextButton.icon(
-                        onPressed: () => setState(() => _transcriptHistory.clear()),
+                        onPressed: () => _pipecatService.clearTranscripts(),
                         icon: const Icon(Icons.delete_outline, size: 16),
                         label: const Text('Clear Transcript'),
                       ),
@@ -413,7 +370,7 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                 ),
                 const SizedBox(height: 16),
 
-                if (_transcriptHistory.isEmpty) ...[
+                if (_pipecatService.transcripts.isEmpty) ...[
                   Container(
                     padding: const EdgeInsets.all(24),
                     width: double.infinity,
@@ -433,8 +390,8 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                   ),
                 ] else ...[
                   Column(
-                    children: _transcriptHistory.map((item) {
-                      final isUser = item['sender'] == 'user';
+                    children: _pipecatService.transcripts.map((item) {
+                      final isUser = item.sender == 'user';
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(14),
@@ -481,7 +438,7 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                                         ),
                                       ),
                                       Text(
-                                        item['time'] ?? '',
+                                        item.time,
                                         style: const TextStyle(
                                             fontSize: 11,
                                             color: AppColors.textMuted),
@@ -490,7 +447,7 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    item['text'] ?? '',
+                                    item.text,
                                     style: const TextStyle(
                                         fontSize: 13,
                                         color: AppColors.textDark,
