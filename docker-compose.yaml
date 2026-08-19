@@ -3,7 +3,7 @@ services:
   backend:
     build:
       context: ./
-      dockerfile: server/app/Dockerfile
+      dockerfile: infra/docker/backend.Dockerfile
 
     ports:
       - "8000:8000"
@@ -13,8 +13,8 @@ services:
 
   frontend:
     build:
-      context: ./client
-      dockerfile: Dockerfile
+      context: ./
+      dockerfile: infra/docker/frontend.Dockerfile
 
     ports:
       - "8080:80"

@@ -13,11 +13,10 @@ The application consists of two main services managed by Docker Compose:
 
 1. **Backend**: API server running on port `8000`.
    - Build context: `./` (Root directory)
-   - Dockerfile: `server/app/Dockerfile`
+   - Dockerfile: `infra/docker/backend.Dockerfile`
 2. **Frontend**: Client application running on port `8080`.
-   - Build context: `./client`
-   - Dockerfile: `client/Dockerfile`
-
+   - Build context: `./` (Root directory)
+   - Dockerfile: `infra/docker/frontend.Dockerfile`
 Both services communicate over a custom bridge network named `app-network`.
 
 ## Setup Instructions
