@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  flutter_webrtc
   gtk
   rive_common
   url_launcher_linux

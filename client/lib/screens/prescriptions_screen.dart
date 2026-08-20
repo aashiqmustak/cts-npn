@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/models.dart';
 import '../providers/app_state.dart';
+import '../services/data_service.dart';
+import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
 
 class PrescriptionsScreen extends StatefulWidget {
@@ -12,10 +15,55 @@ class PrescriptionsScreen extends StatefulWidget {
 
 class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
   int _activeFilterTab = 0; // 0: All, 1: Active, 2: Completed, 3: Expired, 4: Drafts
+  List<Prescription> _dbPrescriptions = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrescriptionsFromDb();
+  }
+
+  Future<void> _loadPrescriptionsFromDb() async {
+    setState(() => _isLoading = true);
+    final supabase = SupabaseService();
+    if (supabase.isInitialized) {
+      final list = await supabase.fetchPrescriptions();
+      if (mounted) {
+        setState(() {
+          _dbPrescriptions = list;
+          _isLoading = false;
+        });
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _dbPrescriptions = DataService().prescriptions;
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  List<Prescription> get _filteredPrescriptions {
+    switch (_activeFilterTab) {
+      case 1:
+        return _dbPrescriptions.where((p) => p.status.toLowerCase() == 'active').toList();
+      case 2:
+        return _dbPrescriptions.where((p) => p.status.toLowerCase() == 'completed').toList();
+      case 3:
+        return _dbPrescriptions.where((p) => p.status.toLowerCase() == 'expired').toList();
+      case 4:
+        return _dbPrescriptions.where((p) => p.status.toLowerCase() == 'draft' || p.status.toLowerCase() == 'drafts').toList();
+      default:
+        return _dbPrescriptions;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+    final displayedList = _filteredPrescriptions;
 
     return SingleChildScrollView(
       child: Column(
@@ -91,69 +139,92 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text('5 Prescriptions Found',
-                            style: TextStyle(
+                      children: [
+                        Text('${displayedList.length} Prescriptions Found',
+                            style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.textDark)),
-                        Text('Sort by: Newest First ∨',
-                            style: TextStyle(
-                                fontSize: 12, color: AppColors.textMuted)),
+                        IconButton(
+                          icon: const Icon(Icons.refresh_rounded, size: 18, color: AppColors.primaryTeal),
+                          onPressed: _loadPrescriptionsFromDb,
+                          tooltip: 'Refresh from Database',
+                        ),
                       ],
                     ),
 
                     const SizedBox(height: 14),
 
-                    _buildPrescriptionCard(
-                      id: 'Prescription #RX58921',
-                      doctor: 'Dr. Rahul Verma • General Physician',
-                      dateDetails: 'May 15, 2025 • 3 Medicines',
-                      status: 'Active',
-                      bgStatus: AppColors.successBg,
-                      textStatus: AppColors.successText,
-                      onView: () => appState.setSelectedPrescriptionId('RX58921'),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildPrescriptionCard(
-                      id: 'Prescription #RX58711',
-                      doctor: 'Dr. Neha Kapoor • Cardiologist',
-                      dateDetails: 'Apr 28, 2025 • 2 Medicines',
-                      status: 'Active',
-                      bgStatus: AppColors.successBg,
-                      textStatus: AppColors.successText,
-                      onView: () => appState.setSelectedPrescriptionId('RX58711'),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildPrescriptionCard(
-                      id: 'Prescription #RX58432',
-                      doctor: 'Dr. Rahul Verma • General Physician',
-                      dateDetails: 'Mar 20, 2025 • 4 Medicines',
-                      status: 'Completed',
-                      bgStatus: AppColors.purpleBg,
-                      textStatus: AppColors.purpleText,
-                      onView: () => appState.setSelectedPrescriptionId('RX58432'),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildPrescriptionCard(
-                      id: 'Prescription #RX58109',
-                      doctor: 'Dr. Neha Kapoor • Cardiologist',
-                      dateDetails: 'Feb 18, 2025 • 3 Medicines',
-                      status: 'Expired',
-                      bgStatus: AppColors.dangerBg,
-                      textStatus: AppColors.dangerText,
-                      onView: () => appState.setSelectedPrescriptionId('RX58109'),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildPrescriptionCard(
-                      id: 'Prescription #RX57902',
-                      doctor: 'Dr. Amit Singh • Orthopedic',
-                      dateDetails: 'Jan 10, 2025 • 2 Medicines',
-                      status: 'Active',
-                      bgStatus: AppColors.successBg,
-                      textStatus: AppColors.successText,
-                      onView: () => appState.setSelectedPrescriptionId('RX57902'),
-                    ),
+                    if (_isLoading)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(40.0),
+                          child: CircularProgressIndicator(color: AppColors.primaryTeal),
+                        ),
+                      )
+                    else if (displayedList.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(32),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.borderLight),
+                        ),
+                        child: Column(
+                          children: [
+                            const Icon(Icons.assignment_outlined, size: 44, color: AppColors.textMuted),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'No Prescriptions Found in Database',
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.accentNavy),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Prescriptions recorded in your Supabase prescriptions table will automatically display here.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              onPressed: () => _showUploadModal(context),
+                              icon: const Icon(Icons.add_rounded, size: 16),
+                              label: const Text('Create New Prescription'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryTeal,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Column(
+                        children: displayedList.map((p) {
+                          Color bgStatus = AppColors.successBg;
+                          Color textStatus = AppColors.successText;
+                          if (p.status.toLowerCase() == 'completed') {
+                            bgStatus = AppColors.purpleBg;
+                            textStatus = AppColors.purpleText;
+                          } else if (p.status.toLowerCase() == 'expired') {
+                            bgStatus = AppColors.dangerBg;
+                            textStatus = AppColors.dangerText;
+                          }
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: _buildPrescriptionCard(
+                              id: 'Prescription #${p.id.length > 8 ? p.id.substring(0, 8) : p.id}',
+                              doctor: '${p.prescriberName} • ${p.drugClass}',
+                              dateDetails: '${p.drugName} • Status: ${p.status}',
+                              status: p.status,
+                              bgStatus: bgStatus,
+                              textStatus: textStatus,
+                              onView: () => appState.setSelectedPrescriptionId(p.id),
+                            ),
+                          );
+                        }).toList(),
+                      ),
                   ],
                 ),
               ),
@@ -334,6 +405,10 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
   }
 
   Widget _buildOverviewCard() {
+    final totalCount = _dbPrescriptions.length;
+    final activeCount = _dbPrescriptions.where((p) => p.status.toLowerCase() == 'active').length;
+    final completedCount = _dbPrescriptions.where((p) => p.status.toLowerCase() == 'completed').length;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -365,13 +440,13 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
           Row(
             children: [
               Expanded(
-                  child: _buildMiniCountCard('Total', '12', AppColors.infoBg, AppColors.infoText)),
+                  child: _buildMiniCountCard('Total', '$totalCount', AppColors.infoBg, AppColors.infoText)),
               const SizedBox(width: 8),
               Expanded(
-                  child: _buildMiniCountCard('Active', '5', AppColors.successBg, AppColors.successText)),
+                  child: _buildMiniCountCard('Active', '$activeCount', AppColors.successBg, AppColors.successText)),
               const SizedBox(width: 8),
               Expanded(
-                  child: _buildMiniCountCard('Completed', '7', AppColors.purpleBg, AppColors.purpleText)),
+                  child: _buildMiniCountCard('Completed', '$completedCount', AppColors.purpleBg, AppColors.purpleText)),
             ],
           ),
         ],

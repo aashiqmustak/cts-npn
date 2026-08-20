@@ -29,6 +29,7 @@ dependencies = [
 	"typer>=0.21.1",
 	"pipecat-ai[sarvam]",
 	"pipecat-ai[groq]",
+	"aiohttp>=3.9.0",
 ]
 
 [project.scripts]

@@ -112,47 +112,53 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                 flex: 7,
                 child: Column(
                   children: [
-                    _buildMedicineDetailCard(
-                      name: 'Atorvastatin 20mg',
-                      condition: 'For Cholesterol',
-                      schedule: '☀️ Once daily • After dinner',
-                      status: 'Active',
-                      nextDose: '8:00 PM Today',
-                      remaining: '12 tablets Left',
-                      refillDate: 'May 28, 2025',
-                      adherencePct: 0.92,
-                      adherenceLabel: '92% Great',
-                      pillColor: const Color(0xFF8B5CF6),
-                      bgColor: const Color(0xFFF3E8FF),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildMedicineDetailCard(
-                      name: 'Metformin 500mg',
-                      condition: 'For Diabetes Type 2',
-                      schedule: '☀️ Twice daily • After meals',
-                      status: 'Active',
-                      nextDose: '2:00 PM Today',
-                      remaining: '18 tablets Left',
-                      refillDate: 'June 02, 2025',
-                      adherencePct: 0.78,
-                      adherenceLabel: '78% Good',
-                      pillColor: const Color(0xFF3B82F6),
-                      bgColor: const Color(0xFFE0F2FE),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildMedicineDetailCard(
-                      name: 'Vitamin D3 1000 IU',
-                      condition: 'Supplement',
-                      schedule: '☀️ Once daily • After breakfast',
-                      status: 'Active',
-                      nextDose: '8:00 AM Tomorrow',
-                      remaining: '25 tablets Left',
-                      refillDate: 'June 10, 2025',
-                      adherencePct: 0.95,
-                      adherenceLabel: '95% Excellent',
-                      pillColor: const Color(0xFFF59E0B),
-                      bgColor: const Color(0xFFFEF3C7),
-                    ),
+                    if (appState.patientLogs.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(32),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.borderLight),
+                        ),
+                        child: Column(
+                          children: const [
+                            Icon(Icons.medication_outlined, size: 44, color: AppColors.textMuted),
+                            SizedBox(height: 12),
+                            Text(
+                              'No Medicines Recorded in Database',
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.accentNavy),
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              'Your active medications and daily logs will appear here once recorded in Supabase.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Column(
+                        children: appState.patientLogs.map((log) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16.0),
+                            child: _buildMedicineDetailCard(
+                              name: log.medicineName,
+                              condition: log.notes ?? 'Prescribed Medication',
+                              schedule: '☀️ Scheduled • ${log.scheduledTime}',
+                              status: log.isTaken ? 'Taken ✓' : 'Active',
+                              nextDose: log.scheduledTime,
+                              remaining: 'Active Schedule',
+                              refillDate: 'On Schedule',
+                              adherencePct: log.isTaken ? 1.0 : 0.85,
+                              adherenceLabel: log.isTaken ? '100% Taken' : 'Pending Dose',
+                              pillColor: log.isTaken ? AppColors.primaryTeal : const Color(0xFF8B5CF6),
+                              bgColor: log.isTaken ? AppColors.primaryLight : const Color(0xFFF3E8FF),
+                            ),
+                          );
+                        }).toList(),
+                      ),
                   ],
                 ),
               ),

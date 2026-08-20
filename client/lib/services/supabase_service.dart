@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../config/supabase_config.dart';
 import '../models/models.dart';
 
@@ -331,5 +331,290 @@ class SupabaseService {
       if (kDebugMode) print('addPatientMedicineLog error: $e');
       return null;
     }
+  }
+
+  // Profile Operations
+  Future<User?> upsertUserProfile({
+    required String id,
+    required String email,
+    required String name,
+    String? phone,
+    String? hospitalName,
+    required UserRole role,
+  }) async {
+    final roleStr = _roleToDbString(role);
+    final titleStr = _roleToTitle(role);
+    final profileData = {
+      'id': id,
+      'email': email,
+      'name': name,
+      'phone': phone,
+      'hospital_name': hospitalName,
+      'role': roleStr,
+      'title': titleStr,
+    };
+
+    if (isInitialized) {
+      try {
+        await client.from('user_profiles').upsert(profileData);
+      } catch (e) {
+        if (kDebugMode) print('upsertUserProfile error: $e');
+      }
+    }
+
+    return User.fromJson(profileData);
+  }
+
+  Future<User?> fetchUserProfile(String emailOrId) async {
+    if (!isInitialized) return null;
+    try {
+      final clean = emailOrId.trim().toLowerCase();
+      final res = await client
+          .from('user_profiles')
+          .select('*')
+          .or('id.eq.$clean,email.ilike.$clean')
+          .maybeSingle();
+      if (res != null) {
+        return User.fromJson(res);
+      }
+    } catch (e) {
+      if (kDebugMode) print('fetchUserProfile error: $e');
+    }
+    return null;
+  }
+
+  Future<List<User>> fetchUserProfiles() async {
+    if (!isInitialized) return [];
+    try {
+      final res = await client.from('user_profiles').select('*').order('name');
+      return (res as List).map((j) => User.fromJson(j)).toList();
+    } catch (e) {
+      if (kDebugMode) print('fetchUserProfiles error: $e');
+      return [];
+    }
+  }
+
+  // Plans & Drugs
+  Future<List<Plan>> fetchPlans() async {
+    if (!isInitialized) return [];
+    try {
+      final res = await client.from('plans').select('*');
+      return (res as List).map((j) => Plan.fromJson(j)).toList();
+    } catch (e) {
+      if (kDebugMode) print('fetchPlans error: $e');
+      return [];
+    }
+  }
+
+  Future<List<Drug>> fetchDrugs() async {
+    if (!isInitialized) return [];
+    try {
+      final res = await client.from('drugs').select('*').order('name');
+      return (res as List).map((j) => Drug.fromJson(j)).toList();
+    } catch (e) {
+      if (kDebugMode) print('fetchDrugs error: $e');
+      return [];
+    }
+  }
+
+  Future<List<FormularyAlternative>> fetchFormularyAlternatives() async {
+    if (!isInitialized) return [];
+    try {
+      // Try formulary_alternatives first, fallback to alternatives
+      try {
+        final res = await client.from('formulary_alternatives').select('*');
+        return (res as List).map((j) => FormularyAlternative.fromJson(j)).toList();
+      } catch (_) {
+        final res = await client.from('alternatives').select('*');
+        return (res as List).map((j) => FormularyAlternative.fromJson(j)).toList();
+      }
+    } catch (e) {
+      // Table does not exist in Supabase schema yet; safely return empty list
+      return [];
+    }
+  }
+
+  Future<List<Prescription>> fetchPrescriptions() async {
+    if (!isInitialized) return [];
+    try {
+      final res = await client.from('prescriptions').select('*, patients(name), doctors(name), hospitals(name)');
+      return (res as List).map((j) => Prescription.fromJson(j)).toList();
+    } catch (e) {
+      if (kDebugMode) print('fetchPrescriptions error: $e');
+      return [];
+    }
+  }
+
+  Future<List<AdherenceFlag>> fetchAdherenceFlags() async {
+    if (!isInitialized) return [];
+    try {
+      final res = await client.from('adherence_flags').select('*');
+      return (res as List).map((j) => AdherenceFlag.fromJson(j)).toList();
+    } catch (e) {
+      if (kDebugMode) print('fetchAdherenceFlags error: $e');
+      return [];
+    }
+  }
+
+  Future<List<PAFrictionEvent>> fetchPAFrictionEvents() async {
+    if (!isInitialized) return [];
+    try {
+      final res = await client.from('pa_friction_events').select('*');
+      return (res as List).map((j) => PAFrictionEvent.fromJson(j)).toList();
+    } catch (e) {
+      if (kDebugMode) print('fetchPAFrictionEvents error: $e');
+      return [];
+    }
+  }
+
+  Future<List<PharmacistDispenseRecord>> fetchPharmacistDispenseRecords() async {
+    if (!isInitialized) return [];
+    try {
+      final res = await client.from('pharmacist_dispense_records').select('*');
+      return (res as List).map((j) => PharmacistDispenseRecord.fromJson(j)).toList();
+    } catch (e) {
+      if (kDebugMode) print('fetchPharmacistDispenseRecords error: $e');
+      return [];
+    }
+  }
+
+  Future<void> createPharmacistDispenseRecord({
+    required String prescriptionId,
+    required String prescriptionItemId,
+    required String patientId,
+    required String patientName,
+    required String doctorId,
+    required String doctorName,
+    required String pharmacistId,
+    required String pharmacistName,
+    required String medicineName,
+    required String dosage,
+    required String frequency,
+    String? notes,
+  }) async {
+    if (!isInitialized) return;
+    try {
+      await client.from('pharmacist_dispense_records').insert({
+        'prescription_id': prescriptionId,
+        'prescription_item_id': prescriptionItemId,
+        'patient_id': patientId,
+        'patient_name': patientName,
+        'doctor_id': doctorId,
+        'doctor_name': doctorName,
+        'pharmacist_id': pharmacistId,
+        'pharmacist_name': pharmacistName,
+        'medicine_name': medicineName,
+        'dosage': dosage,
+        'frequency': frequency,
+        'notes': notes,
+      });
+    } catch (e) {
+      if (kDebugMode) print('createPharmacistDispenseRecord error: $e');
+    }
+  }
+
+  // OTP Operations
+  Future<bool> saveOtp({
+    required String email,
+    required String otpCode,
+  }) async {
+    if (!isInitialized) {
+      if (kDebugMode) print('saveOtp error: Supabase service is not initialized');
+      return false;
+    }
+    try {
+      final cleanEmail = email.trim().toLowerCase();
+
+      // 1. Invalidate previous unused OTPs for this email (best-effort)
+      try {
+        await client
+            .from('otp_codes')
+            .update({'is_used': true})
+            .eq('email', cleanEmail)
+            .eq('is_used', false);
+      } catch (err) {
+        if (kDebugMode) print('saveOtp invalidation warning: $err');
+      }
+
+      // 2. Insert new 6-digit OTP code record with 10-minute expiry
+      final expiresAt = DateTime.now().toUtc().add(const Duration(minutes: 10)).toIso8601String();
+      await client.from('otp_codes').insert({
+        'email': cleanEmail,
+        'otp_code': otpCode,
+        'expires_at': expiresAt,
+        'is_used': false,
+      });
+
+      if (kDebugMode) {
+        print('OTP ($otpCode) saved successfully to Supabase DB for $cleanEmail');
+      }
+      return true;
+    } catch (e) {
+      if (kDebugMode) print('saveOtp error saving to Supabase DB: $e');
+      return false;
+    }
+  }
+
+  Future<bool> verifyOtp({
+    required String email,
+    required String otpCode,
+  }) async {
+    final cleanEmail = email.trim().toLowerCase();
+    final cleanOtp = otpCode.trim();
+
+    if (!isInitialized) {
+      if (kDebugMode) print('verifyOtp error: Supabase service is not initialized');
+      return false;
+    }
+    try {
+      final res = await client
+          .from('otp_codes')
+          .select('*')
+          .eq('email', cleanEmail)
+          .eq('otp_code', cleanOtp)
+          .eq('is_used', false)
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (res != null) {
+        final expiresAtStr = res['expires_at'];
+        if (expiresAtStr != null) {
+          final str = expiresAtStr.toString();
+          DateTime? parsedDate = DateTime.tryParse(str);
+          if (parsedDate != null) {
+            // Ensure date is treated as UTC for comparison
+            final expiresAtUtc = str.endsWith('Z') || str.contains('+')
+                ? parsedDate.toUtc()
+                : DateTime.tryParse('${str}Z')?.toUtc() ?? parsedDate.toUtc();
+            final nowUtc = DateTime.now().toUtc();
+            
+            if (expiresAtUtc.isBefore(nowUtc)) {
+              if (kDebugMode) print('verifyOtp: OTP code expired ($expiresAtUtc is before $nowUtc)');
+              return false;
+            }
+          }
+        }
+
+        // Mark OTP as used once verified
+        final otpId = res['id'];
+        await client
+            .from('otp_codes')
+            .update({'is_used': true})
+            .eq('id', otpId);
+
+        if (kDebugMode) {
+          print('OTP verified successfully in Supabase for $cleanEmail');
+        }
+        return true;
+      } else {
+        if (kDebugMode) {
+          print('verifyOtp: No valid unused OTP matching $cleanOtp for $cleanEmail found in Supabase DB');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) print('verifyOtp error reading from Supabase DB: $e');
+    }
+    return false;
   }
 }

@@ -19,6 +19,7 @@ DROP TABLE IF EXISTS adherence_flags CASCADE;
 DROP TABLE IF EXISTS drugs CASCADE;
 DROP TABLE IF EXISTS plans CASCADE;
 DROP TABLE IF EXISTS user_profiles CASCADE;
+DROP TABLE IF EXISTS otp_codes CASCADE;
 
 -- 3. HOSPITALS TABLE (Hospital name, address, city, state, zip, phone)
 CREATE TABLE hospitals (
@@ -103,9 +104,11 @@ CREATE TABLE user_profiles (
     id TEXT PRIMARY KEY,
     email TEXT NOT NULL,
     name TEXT NOT NULL,
+    phone TEXT,
     role TEXT NOT NULL CHECK (role IN ('admin', 'insurance_agent', 'doctor', 'pharmacist', 'patient')),
     title TEXT,
     hospital_id TEXT REFERENCES hospitals(id) ON DELETE SET NULL,
+    hospital_name TEXT,
     doctor_id TEXT REFERENCES doctors(id) ON DELETE SET NULL,
     patient_id TEXT REFERENCES patients(id) ON DELETE SET NULL,
     avatar_url TEXT,
@@ -167,6 +170,46 @@ CREATE TABLE pa_friction_events (
     est_annual_savings DOUBLE PRECISION NOT NULL
 );
 
+-- 14. FORMULARY ALTERNATIVES TABLE (Cheaper Drug Alternatives)
+CREATE TABLE formulary_alternatives (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    target_drug_id TEXT REFERENCES drugs(id) ON DELETE CASCADE,
+    alt_drug_id TEXT REFERENCES drugs(id) ON DELETE CASCADE,
+    alt_drug_name TEXT NOT NULL,
+    alt_tier INT NOT NULL,
+    est_annual_savings DOUBLE PRECISION NOT NULL,
+    requires_pa BOOLEAN DEFAULT FALSE,
+    clinical_notes TEXT
+);
+
+-- 15. PHARMACIST DISPENSE RECORDS TABLE (Audit log of what pharmacist gave to what patient and who prescribed it)
+CREATE TABLE pharmacist_dispense_records (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    prescription_id TEXT REFERENCES prescriptions(id) ON DELETE SET NULL,
+    prescription_item_id TEXT REFERENCES prescription_items(id) ON DELETE SET NULL,
+    patient_id TEXT REFERENCES patients(id) ON DELETE CASCADE,
+    patient_name TEXT NOT NULL,
+    doctor_id TEXT REFERENCES doctors(id) ON DELETE SET NULL,
+    doctor_name TEXT NOT NULL,
+    pharmacist_id TEXT REFERENCES user_profiles(id) ON DELETE SET NULL,
+    pharmacist_name TEXT NOT NULL,
+    medicine_name TEXT NOT NULL,
+    dosage TEXT NOT NULL,
+    frequency TEXT NOT NULL,
+    dispensed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    notes TEXT
+);
+
+-- 16. OTP CODES TABLE (Stores verification codes sent via email/SMTP)
+CREATE TABLE otp_codes (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    email TEXT NOT NULL,
+    otp_code TEXT NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '10 minutes'),
+    is_used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Enable RLS
 ALTER TABLE hospitals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE doctors ENABLE ROW LEVEL SECURITY;
@@ -179,6 +222,9 @@ ALTER TABLE plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE drugs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE adherence_flags ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pa_friction_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE formulary_alternatives ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pharmacist_dispense_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE otp_codes ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read/write access for application integration
 CREATE POLICY "Public Hospitals Access" ON hospitals FOR ALL USING (true);
@@ -192,3 +238,6 @@ CREATE POLICY "Public Plans Access" ON plans FOR ALL USING (true);
 CREATE POLICY "Public Drugs Access" ON drugs FOR ALL USING (true);
 CREATE POLICY "Public Adherence Flags Access" ON adherence_flags FOR ALL USING (true);
 CREATE POLICY "Public PA Friction Access" ON pa_friction_events FOR ALL USING (true);
+CREATE POLICY "Public Formulary Alternatives Access" ON formulary_alternatives FOR ALL USING (true);
+CREATE POLICY "Public Pharmacist Dispense Records Access" ON pharmacist_dispense_records FOR ALL USING (true);
+CREATE POLICY "Public OTP Codes Access" ON otp_codes FOR ALL USING (true) WITH CHECK (true);
