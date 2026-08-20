@@ -10,7 +10,6 @@ from .schemas import (
 
 
 class FormularyService:
-
     def __init__(self, repository: FormularyRepository):
         self.repository = repository
 
@@ -30,7 +29,7 @@ class FormularyService:
                 try:
                     dt = date.fromisoformat(request.date)
                     source_str = f"FORMULARY_{dt.strftime('%Y_%m')}"
-                except Exception:
+                except (ValueError, TypeError, AttributeError):
                     parts = request.date.split("-")
                     if len(parts) >= 2:
                         source_str = f"FORMULARY_{parts[0]}_{parts[1]}"
@@ -76,7 +75,9 @@ class FormularyService:
 
         patient_cost = int(raw_cost) if raw_cost.is_integer() else raw_cost
 
-        pa_required = bool(record.get("prior_auth_required") or record.get("pa_required", False))
+        pa_required = bool(
+            record.get("prior_auth_required") or record.get("pa_required", False)
+        )
         step_therapy_required = bool(record.get("step_therapy_required", False))
         quantity_limit = bool(record.get("quantity_limit", False))
         in_network = bool(record.get("in_network", False))

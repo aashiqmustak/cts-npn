@@ -1,6 +1,6 @@
 from datetime import date
-from typing import Optional, Union
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel
 
 
 class FormularyRequest(BaseModel):
@@ -8,13 +8,13 @@ class FormularyRequest(BaseModel):
     drug_id: str
     insurance_plan_id: str
     pharmacy_id: str
-    date: Union[date, str]
+    date: date | str
 
 
 class Coverage(BaseModel):
     covered: bool
-    tier: Optional[int] = None
-    patient_cost: Optional[Union[float, int]] = None
+    tier: int | None = None
+    patient_cost: float | int | None = None
     pa_required: bool = False
     step_therapy_required: bool = False
     quantity_limit: bool = False

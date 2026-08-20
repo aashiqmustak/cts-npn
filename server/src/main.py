@@ -1,9 +1,7 @@
-from fastapi import FastAPI
-
 from agents.formulary_agent.app.router import (
     router as formulary_router,
 )
-
+from fastapi import FastAPI
 
 app = FastAPI(
     title="CTS PharmaAssist",

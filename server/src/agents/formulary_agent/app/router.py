@@ -1,4 +1,5 @@
 from typing import Any
+
 from fastapi import APIRouter, HTTPException, Query
 
 from .agent import FormularyAgent
@@ -43,7 +44,7 @@ async def check_formulary(
             status_code=503,
             detail=f"Dataset unavailable: {exc}",
         )
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         raise HTTPException(
             status_code=500,
             detail=f"Internal Formulary Agent error: {exc}",
@@ -52,7 +53,9 @@ async def check_formulary(
 
 @router.get("/search")
 async def search_formulary_drugs(
-    query: str = Query(default="", description="Search drug name, NDC, or therapeutic class"),
+    query: str = Query(
+        default="", description="Search drug name, NDC, or therapeutic class"
+    ),
     limit: int = Query(default=20, ge=1, le=100),
 ) -> list[dict[str, Any]]:
     return agent.search_drugs(query=query, limit=limit)
