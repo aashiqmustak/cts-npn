@@ -30,6 +30,8 @@ dependencies = [
 	"pipecat-ai[sarvam]",
 	"pipecat-ai[groq]",
 	"aiohttp>=3.9.0",
+	"uvicorn>=0.52.3",
+	"pandas>=3.0.5",
 ]
 
 [project.scripts]
@@ -51,3 +53,10 @@ package = true
 
 [tool.setuptools.packages.find]
 where = ["server/src"]
+
+[tool.basedpyright]
+extraPaths = ["server/src/agents/formulary-agent"]
+
+[tool.pyright]
+extraPaths = ["server/src/agents/formulary-agent"]
+
