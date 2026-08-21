@@ -495,12 +495,12 @@ print(model_path)
 
 metrics = {
     "model_version": "improved_v2",
-    "dataset_size": int(len(df)),
-    "feature_count": int(len(feature_names)),
-    "train_size": int(len(X_train)),
-    "validation_size": int(len(X_val)),
-    "test_size": int(len(X_test)),
-    "positive_class_count": int(y.sum()),
+    "dataset_size": len(df),
+    "feature_count": len(feature_names),
+    "train_size": len(X_train),
+    "validation_size": len(X_val),
+    "test_size": len(X_test),
+    "positive_class_count": y.sum(),
     "positive_class_ratio": round(float(y.mean()), 4),
 
     "champion_model": best_model_name,
