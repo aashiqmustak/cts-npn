@@ -1,0 +1,225 @@
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, 'data')
+REFERENCE_DATA_PATH = os.path.join(DATA_DIR, 'drug_reference.csv')
+RAW_DATASET_PATH = r'D:\cts-npn\cts-npn\dataset\pharmaassist_full_50000.csv'
+
+PRESCRIPTION_COLUMNS = [
+    'patient_id',
+    'prescription_id',
+    'drug_id',
+    'drug_name',
+    'rxnorm_id',
+    'strength',
+    'dose',
+    'frequency',
+    'route',
+    'duration_days',
+    'indication',
+    'prescription_date'
+]
+
+EXCLUDED_COLUMN_CATEGORIES = [
+    'insurance_and_formulary',
+    'prior_authorization',
+    'step_therapy',
+    'alternative_discovery',
+    'patient_adherence_ml',
+    'clinical_safety_checks',
+    'claims_and_outcomes'
+]
+
+ROUTE_MAPPINGS = {
+    'oral': 'oral',
+    'po': 'oral',
+    'p.o.': 'oral',
+    'p.o': 'oral',
+    'by mouth': 'oral',
+    'per os': 'oral',
+    'swallow': 'oral',
+    'sublingual': 'oral',
+    'buccal': 'oral',
+    'tablet': 'oral',
+    'capsule': 'oral',
+    'oral tablet': 'oral',
+    'oral capsule': 'oral',
+    'oral disintegrating tablet': 'oral',
+    'delayed release capsule': 'oral',
+    'delayed release tablet': 'oral',
+    'extended oral capsule': 'oral',
+    'extended release tablet': 'oral',
+    
+    'subcutaneous': 'subcutaneous',
+    'subcut': 'subcutaneous',
+    'sc': 'subcutaneous',
+    'sq': 'subcutaneous',
+    'sub-q': 'subcutaneous',
+    's.c.': 'subcutaneous',
+    's.c': 'subcutaneous',
+    'subq': 'subcutaneous',
+    'sub cutaneous': 'subcutaneous',
+    'sub-cutaneous': 'subcutaneous',
+    'subcutaneous solution': 'subcutaneous',
+    'subcutaneous pen': 'subcutaneous',
+    
+    'inhalation': 'inhalation',
+    'inh': 'inhalation',
+    'inhaler': 'inhalation',
+    'inhaled': 'inhalation',
+    'inhalation powder': 'inhalation',
+    'inhalation solution': 'inhalation',
+    'puff': 'inhalation',
+    'puffs': 'inhalation',
+    'nebulizer': 'inhalation',
+    'neb': 'inhalation',
+    'by inhalation': 'inhalation',
+    
+    'intravenous': 'intravenous',
+    'iv': 'intravenous',
+    'i.v.': 'intravenous',
+    'i.v': 'intravenous',
+    'infusion': 'intravenous',
+    'iv drip': 'intravenous',
+    'iv push': 'intravenous',
+    'intravenous injection': 'intravenous',
+    'intravenous powder': 'intravenous',
+    'injection': 'intravenous'
+}
+
+FREQUENCY_MAPPINGS = {
+    'once_daily': 'once_daily',
+    'once daily': 'once_daily',
+    'once a day': 'once_daily',
+    'once-daily': 'once_daily',
+    'daily': 'once_daily',
+    'od': 'once_daily',
+    'qd': 'once_daily',
+    'q.d.': 'once_daily',
+    'q.d': 'once_daily',
+    '1 time daily': 'once_daily',
+    '1 time a day': 'once_daily',
+    '1x daily': 'once_daily',
+    'every day': 'once_daily',
+    'q24h': 'once_daily',
+    'every 24 hours': 'once_daily',
+    'in the morning': 'once_daily',
+    'qam': 'once_daily',
+    
+    'twice_daily': 'twice_daily',
+    'twice daily': 'twice_daily',
+    'twice a day': 'twice_daily',
+    'twice-daily': 'twice_daily',
+    'bid': 'twice_daily',
+    'b.i.d.': 'twice_daily',
+    'b.i.d': 'twice_daily',
+    '2 times daily': 'twice_daily',
+    '2 times a day': 'twice_daily',
+    '2x daily': 'twice_daily',
+    'every 12 hours': 'twice_daily',
+    'q12h': 'twice_daily',
+    
+    'twice_daily_prn': 'twice_daily_prn',
+    'twice daily prn': 'twice_daily_prn',
+    'twice daily as needed': 'twice_daily_prn',
+    'bid prn': 'twice_daily_prn',
+    'b.i.d. prn': 'twice_daily_prn',
+    '2 times daily as needed': 'twice_daily_prn',
+    'twice a day prn': 'twice_daily_prn',
+    'twice a day as needed': 'twice_daily_prn',
+    
+    'three_times_daily': 'three_times_daily',
+    'three times daily': 'three_times_daily',
+    'three times a day': 'three_times_daily',
+    'tid': 'three_times_daily',
+    't.i.d.': 'three_times_daily',
+    't.i.d': 'three_times_daily',
+    '3 times daily': 'three_times_daily',
+    '3 times a day': 'three_times_daily',
+    '3x daily': 'three_times_daily',
+    'every 8 hours': 'three_times_daily',
+    'q8h': 'three_times_daily',
+    
+    'three_times_daily_prn': 'three_times_daily_prn',
+    'three times daily prn': 'three_times_daily_prn',
+    'three times daily as needed': 'three_times_daily_prn',
+    'tid prn': 'three_times_daily_prn',
+    't.i.d. prn': 'three_times_daily_prn',
+    'three times a day prn': 'three_times_daily_prn',
+    'three times a day as needed': 'three_times_daily_prn',
+    
+    'weekly': 'weekly',
+    'once weekly': 'weekly',
+    'once a week': 'weekly',
+    'every week': 'weekly',
+    'qw': 'weekly',
+    '1x weekly': 'weekly',
+    'every 7 days': 'weekly',
+    
+    'weekly_cycle': 'weekly_cycle',
+    'weekly cycle': 'weekly_cycle',
+    'cycle weekly': 'weekly_cycle',
+    
+    'every_2_weeks': 'every_2_weeks',
+    'every 2 weeks': 'every_2_weeks',
+    'every two weeks': 'every_2_weeks',
+    'bi-weekly': 'every_2_weeks',
+    'biweekly': 'every_2_weeks',
+    'every other week': 'every_2_weeks',
+    'q2w': 'every_2_weeks',
+    'every 14 days': 'every_2_weeks',
+    
+    'every_6_hours_prn': 'every_6_hours_prn',
+    'every 6 hours prn': 'every_6_hours_prn',
+    'every 6 hours as needed': 'every_6_hours_prn',
+    'q6h prn': 'every_6_hours_prn',
+    'q6h': 'every_6_hours_prn',
+    'q4-6h prn': 'every_6_hours_prn',
+    'every 4-6 hours prn': 'every_6_hours_prn',
+    'every 4 to 6 hours as needed': 'every_6_hours_prn',
+    'every 6 hours': 'every_6_hours_prn',
+    
+    'as_needed': 'as_needed',
+    'as needed': 'as_needed',
+    'prn': 'as_needed',
+    'when needed': 'as_needed',
+    'p.r.n.': 'as_needed',
+    
+    'every_6_months': 'every_6_months',
+    'every 6 months': 'every_6_months',
+    'every six months': 'every_6_months',
+    'twice yearly': 'every_6_months',
+    'twice a year': 'every_6_months',
+    'semi-annually': 'every_6_months',
+    'q6m': 'every_6_months',
+    
+    'at_bedtime': 'at_bedtime',
+    'at bedtime': 'at_bedtime',
+    'bedtime': 'at_bedtime',
+    'qhs': 'at_bedtime',
+    'q.h.s.': 'at_bedtime',
+    'hs': 'at_bedtime',
+    'nightly': 'at_bedtime',
+    'at night': 'at_bedtime',
+    'before bed': 'at_bedtime',
+    
+    'single_dose_or_daily': 'single_dose_or_daily',
+    'single dose': 'single_dose_or_daily',
+    'single dose or daily': 'single_dose_or_daily',
+    'single dose daily': 'single_dose_or_daily',
+    'stat': 'single_dose_or_daily'
+}
+
+CONFIDENCE_WEIGHTS = {
+    'drug_identification': 0.25,
+    'rxnorm_mapping': 0.20,
+    'strength_extraction': 0.15,
+    'dose_extraction': 0.15,
+    'frequency_extraction': 0.10,
+    'route_extraction': 0.10,
+    'duration_extraction': 0.05
+}
+
+FUZZY_MATCH_THRESHOLD = 0.80
+TOKEN_MATCH_THRESHOLD = 0.70
+MIN_CONFIDENCE_THRESHOLD = 0.60
