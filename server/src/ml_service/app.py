@@ -15,12 +15,20 @@ from .schemas import (
 from .service import ml_service
 
 
-@get("/health", summary="Health Check", description="Returns health status and model load states")
+@get(
+    "/health",
+    summary="Health Check",
+    description="Returns health status and model load states",
+)
 async def health() -> HealthResponse:
     return ml_service.get_health()
 
 
-@post("/predict/adherence", summary="Predict Medication Adherence Risk", description="Evaluates patient adherence risk profile based on clinical & cost features")
+@post(
+    "/predict/adherence",
+    summary="Predict Medication Adherence Risk",
+    description="Evaluates patient adherence risk profile based on clinical & cost features",
+)
 async def predict_adherence(data: AdherenceRequest) -> AdherenceResponse:
     try:
         return ml_service.predict_adherence(data)
@@ -31,7 +39,11 @@ async def predict_adherence(data: AdherenceRequest) -> AdherenceResponse:
         ) from e
 
 
-@post("/predict/abandonment", summary="Predict Prescription Abandonment", description="Evaluates probability of a patient abandoning a prescribed drug at pharmacy")
+@post(
+    "/predict/abandonment",
+    summary="Predict Prescription Abandonment",
+    description="Evaluates probability of a patient abandoning a prescribed drug at pharmacy",
+)
 async def predict_abandonment(data: AbandonmentRequest) -> AbandonmentResponse:
     try:
         return ml_service.predict_abandonment(data)
