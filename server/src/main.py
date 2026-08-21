@@ -9,7 +9,9 @@ from fastapi import FastAPI
 ROOT = Path(__file__).resolve().parent
 CLINICAL_ROUTER_PATH = ROOT / "agents" / "clinical-agent" / "app" / "router.py"
 
-spec = importlib.util.spec_from_file_location("clinical_agent_app_router", CLINICAL_ROUTER_PATH)
+spec = importlib.util.spec_from_file_location(
+    "clinical_agent_app_router", CLINICAL_ROUTER_PATH
+)
 if spec is None or spec.loader is None:
     raise ImportError(f"Unable to load clinical router from {CLINICAL_ROUTER_PATH}")
 

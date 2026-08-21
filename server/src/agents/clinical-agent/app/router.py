@@ -27,7 +27,9 @@ async def clinical_agent_health() -> dict[str, str]:
 
 
 @router.post("/evaluate", response_model=ClinicalSafetyOutput)
-async def evaluate_clinical_safety(request: ClinicalSafetyInput) -> ClinicalSafetyOutput:
+async def evaluate_clinical_safety(
+    request: ClinicalSafetyInput,
+) -> ClinicalSafetyOutput:
     try:
         return agent.process_request(request)
     except ValidationError as exc:
