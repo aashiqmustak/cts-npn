@@ -63,8 +63,8 @@ feature_names = X.columns.tolist()
 
 print(f"Dataset: {len(df):,} rows x {len(feature_names):,} features")
 print(
-    f"Abandoned (1): {y.sum():,} ({y.mean()*100:.2f}%) | "
-    f"Retained (0): {(len(y)-y.sum()):,} ({(1-y.mean())*100:.2f}%)"
+    f"Abandoned (1): {y.sum():,} ({y.mean() * 100:.2f}%) | "
+    f"Retained (0): {(len(y) - y.sum()):,} ({(1 - y.mean()) * 100:.2f}%)"
 )
 
 # Safety check
@@ -114,20 +114,21 @@ print(f"\nscale_pos_weight: {scale_pos_weight:.4f}")
 # ============================================================
 
 models = {
-    "Logistic_Regression": Pipeline([
-        ("scaler", StandardScaler()),
-        (
-            "classifier",
-            LogisticRegression(
-                class_weight="balanced",
-                C=1.0,
-                max_iter=2000,
-                solver="lbfgs",
-                random_state=RANDOM_STATE,
+    "Logistic_Regression": Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            (
+                "classifier",
+                LogisticRegression(
+                    class_weight="balanced",
+                    C=1.0,
+                    max_iter=2000,
+                    solver="lbfgs",
+                    random_state=RANDOM_STATE,
+                ),
             ),
-        ),
-    ]),
-
+        ]
+    ),
     "Random_Forest": RandomForestClassifier(
         n_estimators=400,
         max_depth=18,
@@ -138,7 +139,6 @@ models = {
         n_jobs=-1,
         random_state=RANDOM_STATE,
     ),
-
     "Hist_Gradient_Boosting": HistGradientBoostingClassifier(
         max_iter=300,
         learning_rate=0.05,
@@ -148,7 +148,6 @@ models = {
         class_weight="balanced",
         random_state=RANDOM_STATE,
     ),
-
     "XGBoost_Classifier": xgb.XGBClassifier(
         n_estimators=500,
         learning_rate=0.03,
@@ -241,7 +240,6 @@ benchmark_results = {}
 trained_models = {}
 
 for name, model in models.items():
-
     print(f"\nTraining {name}...")
     start = time.time()
 
@@ -272,14 +270,9 @@ for name, model in models.items():
     # IMPORTANT:
     # threshold is NOT optimized on test
     # -----------------------------
-    precisions, recalls, thresholds = precision_recall_curve(
-        y_val, val_proba
-    )
+    precisions, recalls, thresholds = precision_recall_curve(y_val, val_proba)
 
-    f1_scores = (
-        2 * precisions * recalls /
-        (precisions + recalls + 1e-9)
-    )
+    f1_scores = 2 * precisions * recalls / (precisions + recalls + 1e-9)
 
     opt_idx = int(np.argmax(f1_scores))
 
@@ -303,12 +296,8 @@ for name, model in models.items():
     test_default = (test_proba >= 0.50).astype(int)
 
     default_f1 = f1_score(y_test, test_default)
-    default_precision = precision_score(
-        y_test, test_default, zero_division=0
-    )
-    default_recall = recall_score(
-        y_test, test_default, zero_division=0
-    )
+    default_precision = precision_score(y_test, test_default, zero_division=0)
+    default_recall = recall_score(y_test, test_default, zero_division=0)
 
     cm_default = confusion_matrix(y_test, test_default)
 
@@ -316,32 +305,24 @@ for name, model in models.items():
     test_opt = (test_proba >= optimal_threshold).astype(int)
 
     opt_f1 = f1_score(y_test, test_opt)
-    opt_precision = precision_score(
-        y_test, test_opt, zero_division=0
-    )
-    opt_recall = recall_score(
-        y_test, test_opt, zero_division=0
-    )
+    opt_precision = precision_score(y_test, test_opt, zero_division=0)
+    opt_recall = recall_score(y_test, test_opt, zero_division=0)
 
     cm_opt = confusion_matrix(y_test, test_opt)
 
     benchmark_results[name] = {
         "train_time_seconds": train_time,
-
         "cross_validation": cv_results[name],
-
         "validation": {
             "roc_auc": round(float(val_roc_auc), 4),
             "pr_auc": round(float(val_pr_auc), 4),
             "optimal_threshold": round(optimal_threshold, 4),
             "f1_at_optimal": round(val_f1, 4),
         },
-
         "test": {
             "roc_auc": round(float(test_roc_auc), 4),
             "pr_auc": round(float(test_pr_auc), 4),
             "brier_score": round(float(test_brier), 4),
-
             "default_threshold": {
                 "threshold": 0.50,
                 "f1": round(float(default_f1), 4),
@@ -354,7 +335,6 @@ for name, model in models.items():
                     "true_positives": cm_default[1][1],
                 },
             },
-
             "validation_optimized_threshold": {
                 "threshold": round(optimal_threshold, 4),
                 "f1": round(float(opt_f1), 4),
@@ -382,10 +362,7 @@ for name, model in models.items():
 # 7. SELECT CHAMPION USING TEST-AGNOSTIC CV PR-AUC
 # ============================================================
 
-best_model_name = max(
-    cv_results,
-    key=lambda name: cv_results[name]["pr_auc"]["mean"]
-)
+best_model_name = max(cv_results, key=lambda name: cv_results[name]["pr_auc"]["mean"])
 
 best_model = trained_models[best_model_name]
 
@@ -424,42 +401,35 @@ print("=" * 90)
 if hasattr(best_model, "feature_importances_"):
     importances = best_model.feature_importances_
 
-elif (
-    hasattr(best_model, "named_steps")
-    and hasattr(best_model.named_steps["classifier"], "coef_")
+elif hasattr(best_model, "named_steps") and hasattr(
+    best_model.named_steps["classifier"], "coef_"
 ):
-    importances = np.abs(
-        best_model.named_steps["classifier"].coef_[0]
-    )
+    importances = np.abs(best_model.named_steps["classifier"].coef_[0])
 
 else:
     importances = np.zeros(len(feature_names))
 
-df_importance = pd.DataFrame({
-    "feature_name": feature_names,
-    "importance_score": importances,
-})
+df_importance = pd.DataFrame(
+    {
+        "feature_name": feature_names,
+        "importance_score": importances,
+    }
+)
 
 total_importance = df_importance["importance_score"].sum()
 
 if total_importance > 0:
     df_importance["relative_importance_pct"] = (
-        df_importance["importance_score"] /
-        total_importance * 100
+        df_importance["importance_score"] / total_importance * 100
     ).round(2)
 else:
     df_importance["relative_importance_pct"] = 0.0
 
-df_importance = (
-    df_importance
-    .sort_values("importance_score", ascending=False)
-    .reset_index(drop=True)
-)
+df_importance = df_importance.sort_values(
+    "importance_score", ascending=False
+).reset_index(drop=True)
 
-importance_path = os.path.join(
-    MODELS_DIR,
-    "feature_importance.csv"
-)
+importance_path = os.path.join(MODELS_DIR, "feature_importance.csv")
 
 df_importance.to_csv(importance_path, index=False)
 
@@ -470,10 +440,7 @@ print(df_importance.head(20).to_string(index=False))
 # 9. SAVE MODEL
 # ============================================================
 
-model_path = os.path.join(
-    MODELS_DIR,
-    "abandonment_best_model_improved.joblib"
-)
+model_path = os.path.join(MODELS_DIR, "abandonment_best_model_improved.joblib")
 
 joblib.dump(
     {
@@ -502,24 +469,14 @@ metrics = {
     "test_size": len(X_test),
     "positive_class_count": y.sum(),
     "positive_class_ratio": round(float(y.mean()), 4),
-
     "champion_model": best_model_name,
-
     "champion_selection_metric": "5-fold CV PR-AUC",
-
     "champion_cv_pr_auc": cv_results[best_model_name]["pr_auc"],
-
-    "champion_test_metrics": benchmark_results[
-        best_model_name
-    ],
-
+    "champion_test_metrics": benchmark_results[best_model_name],
     "benchmark_summary": benchmark_results,
 }
 
-metrics_path = os.path.join(
-    MODELS_DIR,
-    "model_metrics_improved.json"
-)
+metrics_path = os.path.join(MODELS_DIR, "model_metrics_improved.json")
 
 with open(metrics_path, "w", encoding="utf-8") as f:
     json.dump(metrics, f, indent=2)
@@ -539,10 +496,7 @@ with open(
 # 11. SAVE FEATURE NAMES
 # ============================================================
 
-feature_path = os.path.join(
-    MODELS_DIR,
-    "abandonment_feature_names_improved.json"
-)
+feature_path = os.path.join(MODELS_DIR, "abandonment_feature_names_improved.json")
 
 with open(feature_path, "w", encoding="utf-8") as f:
     json.dump(feature_names, f, indent=2)
@@ -592,7 +546,9 @@ Feature Importance:
         champion_test_brier=champion_test["brier_score"],
         champion_threshold=champion_threshold,
         champion_test_f1=champion_test["validation_optimized_threshold"]["f1"],
-        champion_test_precision=champion_test["validation_optimized_threshold"]["precision"],
+        champion_test_precision=champion_test["validation_optimized_threshold"][
+            "precision"
+        ],
         champion_test_recall=champion_test["validation_optimized_threshold"]["recall"],
         model_path=model_path,
         metrics_path=metrics_path,
