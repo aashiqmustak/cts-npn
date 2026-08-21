@@ -62,8 +62,7 @@ class User {
               ?.map((e) => e.toString())
               .toList() ??
           [],
-      avatarUrl: json['avatar_url'] ??
-          'https://i.pravatar.cc/150?img=12',
+      avatarUrl: json['avatar_url'] ?? '',
       title: json['title'] ?? '',
       hospitalId: json['hospital_id']?.toString(),
       hospitalName: json['hospital_name']?.toString() ?? json['hospitals']?['name']?.toString(),
