@@ -1,8 +1,8 @@
-import pandas as pd
 import joblib
+import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.model_selection import GroupShuffleSplit
-from sklearn.metrics import accuracy_score,classification_report,confusion_matrix
 
 data_path=r"D:\cts_npn\cts-npn\dataset\adherence_training_balanced_edge.csv"
 
