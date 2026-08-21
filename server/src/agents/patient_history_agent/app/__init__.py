@@ -7,7 +7,6 @@ from .schemas import (
 )
 from .service import PatientHistoryService
 
-
 __all__ = [
     "MedicationHistory",
     "PatientHistoryAgent",

@@ -4,7 +4,6 @@ from .schemas import (
     PatientHistoryRequest,
     PatientHistoryResponse,
 )
-
 from .service import PatientHistoryService
 
 

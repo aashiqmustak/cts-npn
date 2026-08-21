@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
+from itertools import pairwise
 
 from .repository import PatientHistoryRepository
 from .schemas import (
@@ -47,7 +48,7 @@ class PatientHistoryService:
                 fill_date = datetime.strptime(
                     str(record.get("fill_date")),
                     "%Y-%m-%d"
-                )
+                ).replace(tzinfo=UTC)
             except (ValueError, TypeError):
                 continue
 
@@ -200,10 +201,7 @@ class PatientHistoryService:
 
         total_gap = 0
 
-        for previous, current in zip(
-            records,
-            records[1:]
-        ):
+        for previous, current in pairwise(records):
             expected_date = (
                 previous["fill_date"] +
                 timedelta(days=previous["days_supply"])

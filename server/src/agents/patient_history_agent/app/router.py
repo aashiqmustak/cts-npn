@@ -8,7 +8,6 @@ from .schemas import (
 )
 from .service import PatientHistoryService
 
-
 router = APIRouter(
     prefix="/patient-history",
     tags=["Patient History Agent"],
@@ -51,7 +50,7 @@ async def get_patient_history(
             detail=f"Dataset unavailable: {exc}",
         )
 
-    except Exception as exc:
+    except (KeyError, RuntimeError, TypeError, ValueError) as exc:
 
         raise HTTPException(
             status_code=500,

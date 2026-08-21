@@ -12,7 +12,6 @@ if str(_server_src) not in sys.path:
 
 from agents.patient_history_agent.app.router import router as patient_history_router
 
-
 app = FastAPI(
     title="Patient History Agent Service",
     description="Standalone microservice for retrieving patient medication history and adherence-related features",
