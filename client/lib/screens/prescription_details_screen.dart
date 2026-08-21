@@ -22,6 +22,7 @@ class _PrescriptionDetailsScreenState
     final appState = Provider.of<AppState>(context);
 
     return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -31,14 +32,21 @@ class _PrescriptionDetailsScreenState
             children: [
               Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_rounded,
-                        color: AppColors.textDark),
-                    onPressed: () {
-                      appState.setSelectedPrescriptionId(null);
-                    },
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.borderLight),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back_rounded,
+                          color: AppColors.textDark, size: 20),
+                      onPressed: () {
+                        appState.setSelectedPrescriptionId(null);
+                      },
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 14),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: const [
@@ -46,10 +54,12 @@ class _PrescriptionDetailsScreenState
                         'Prescription Details',
                         style: TextStyle(
                           fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w800,
                           color: AppColors.accentNavy,
+                          letterSpacing: 0.1,
                         ),
                       ),
+                      SizedBox(height: 2),
                       Text(
                         'View full details of your prescription',
                         style: TextStyle(
@@ -65,21 +75,44 @@ class _PrescriptionDetailsScreenState
                 children: [
                   OutlinedButton.icon(
                     icon: const Icon(Icons.download_outlined, size: 16),
-                    label: const Text('Download', style: TextStyle(fontSize: 12)),
+                    label: const Text('Download',
+                        style: TextStyle(
+                            fontSize: 12.5, fontWeight: FontWeight.w600)),
                     onPressed: () {},
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.textDark,
+                      side: const BorderSide(color: AppColors.borderLight),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 10),
                   ElevatedButton.icon(
-                    icon: const Icon(Icons.share_outlined, size: 16),
-                    label: const Text('Share >', style: TextStyle(fontSize: 12)),
+                    icon: const Icon(Icons.ios_share_rounded, size: 16),
+                    label: const Text('Share',
+                        style: TextStyle(
+                            fontSize: 12.5, fontWeight: FontWeight.w700)),
                     onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryTeal,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 18, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ],
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
           // Main 2-Column Layout
           Row(
@@ -145,208 +178,282 @@ class _PrescriptionDetailsScreenState
     );
   }
 
+  // ------------------------------------------------------------------
+  // SUMMARY HEADER CARD
+  // ------------------------------------------------------------------
   Widget _buildPrescriptionSummaryHeaderCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      child: Column(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.description_outlined,
-                    color: AppColors.primaryTeal, size: 28),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primaryTeal.withOpacity(0.18),
+                  AppColors.primaryLight,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.description_rounded,
+                color: AppColors.primaryTeal, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 10,
+                  runSpacing: 6,
                   children: [
-                    Row(
-                      children: [
-                        Text(
-                          'Prescription #${widget.prescriptionId}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textDark,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.successBg,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
+                    Text(
+                      'Prescription #${widget.prescriptionId}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.successBg,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.circle,
+                              size: 6, color: AppColors.successText),
+                          SizedBox(width: 5),
+                          Text(
                             'Active',
                             style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
                               color: AppColors.successText,
+                              letterSpacing: 0.2,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    const Text(
-                      'Prescribed by Dr. Rahul Verma • General Physician',
-                      style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: const [
-                        Icon(Icons.calendar_today_outlined,
-                            size: 14, color: AppColors.textMuted),
-                        SizedBox(width: 4),
-                        Text('May 15, 2025 10:30 AM',
-                            style: TextStyle(
-                                fontSize: 11, color: AppColors.textMuted)),
-                        SizedBox(width: 12),
-                        Icon(Icons.medication_outlined,
-                            size: 14, color: AppColors.textMuted),
-                        SizedBox(width: 4),
-                        Text('3 Medicines',
-                            style: TextStyle(
-                                fontSize: 11, color: AppColors.textMuted)),
-                        SizedBox(width: 12),
-                        Icon(Icons.access_time_rounded,
-                            size: 14, color: AppColors.textMuted),
-                        SizedBox(width: 4),
-                        Text('Valid for 30 days',
-                            style: TextStyle(
-                                fontSize: 11, color: AppColors.textMuted)),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: const [
-                  Text('Next Follow-up',
-                      style:
-                          TextStyle(fontSize: 10, color: AppColors.textMuted)),
-                  Text('May 29, 2025',
-                      style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textDark)),
-                  Text('10:30 AM',
-                      style:
-                          TextStyle(fontSize: 10, color: AppColors.textMuted)),
-                  SizedBox(height: 8),
-                  Text('Prescription ID',
-                      style:
-                          TextStyle(fontSize: 9, color: AppColors.textMuted)),
-                  Text('RX58921-250515',
-                      style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textMuted)),
-                ],
-              ),
-            ],
+                const SizedBox(height: 4),
+                const Text(
+                  'Prescribed by Dr. Rahul Verma • General Physician',
+                  style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 8,
+                  children: const [
+                    _MetaChip(
+                      icon: Icons.calendar_today_rounded,
+                      label: 'May 15, 2025 10:30 AM',
+                    ),
+                    _MetaChip(
+                      icon: Icons.medication_rounded,
+                      label: '3 Medicines',
+                    ),
+                    _MetaChip(
+                      icon: Icons.access_time_rounded,
+                      label: 'Valid for 30 days',
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.bgSlate,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.borderLight),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: const [
+                Text('NEXT FOLLOW-UP',
+                    style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
+                        color: AppColors.textMuted)),
+                SizedBox(height: 4),
+                Text('May 29, 2025',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark)),
+                Text('10:30 AM',
+                    style:
+                        TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
+                SizedBox(height: 10),
+                Text('PRESCRIPTION ID',
+                    style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
+                        color: AppColors.textMuted)),
+                SizedBox(height: 2),
+                Text('RX58921-250515',
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.accentNavy)),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
+  // ------------------------------------------------------------------
+  // SUB TABS
+  // ------------------------------------------------------------------
   Widget _buildSubTabsBar() {
     final tabs = ['Medicines', 'Instructions', 'Notes', 'Attachments'];
 
-    return Row(
-      children: tabs.asMap().entries.map((entry) {
-        final idx = entry.key;
-        final label = entry.value;
-        final isSelected = _activeSubTab == idx;
+    return Container(
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: AppColors.bgSlate,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Row(
+        children: tabs.asMap().entries.map((entry) {
+          final idx = entry.key;
+          final label = entry.value;
+          final isSelected = _activeSubTab == idx;
 
-        return Padding(
-          padding: const EdgeInsets.only(right: 10),
-          child: InkWell(
-            onTap: () {
-              setState(() {
-                _activeSubTab = idx;
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primaryTeal : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.primaryTeal
-                      : AppColors.borderLight,
+          return Expanded(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {
+                setState(() {
+                  _activeSubTab = idx;
+                });
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : [],
                 ),
-              ),
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected ? Colors.white : AppColors.textDark,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected
+                        ? AppColors.primaryTeal
+                        : AppColors.textMuted,
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
   }
 
+  // ------------------------------------------------------------------
+  // MEDICINES LIST CARD
+  // ------------------------------------------------------------------
   Widget _buildMedicinesListCard(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text(
+            children: [
+              const Text(
                 '3 Medicines Prescribed',
                 style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.textDark,
                 ),
               ),
-              Row(
-                children: [
-                  Icon(Icons.print_outlined,
-                      size: 16, color: AppColors.primaryTeal),
-                  SizedBox(width: 4),
-                  Text('Print Prescription',
-                      style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryTeal)),
-                ],
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () {},
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 4, vertical: 4),
+                  child: Row(
+                    children: const [
+                      Icon(Icons.print_rounded,
+                          size: 16, color: AppColors.primaryTeal),
+                      SizedBox(width: 5),
+                      Text('Print Prescription',
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryTeal)),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
 
           _buildPrescribedMedicineRow(
             num: '1',
@@ -396,134 +503,143 @@ class _PrescriptionDetailsScreenState
     required Color bgColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.bgSlate,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.borderLight),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 12,
-            backgroundColor: AppColors.borderLight,
+            backgroundColor: Colors.white,
             child: Text(num,
                 style: const TextStyle(
                     fontSize: 11,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textDark)),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Container(
-            width: 42,
-            height: 42,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(Icons.medication_rounded, color: pillColor, size: 24),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
                   children: [
                     Text(
                       name,
                       style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.textDark,
                       ),
                     ),
-                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.purpleBg,
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         tag,
                         style: const TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.purpleText,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   doseDetails,
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 11.5,
                     color: AppColors.textMuted,
                   ),
                 ),
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Duration',
-                  style: TextStyle(fontSize: 9, color: AppColors.textMuted)),
-              Text(duration,
-                  style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark)),
-            ],
-          ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Time',
-                  style: TextStyle(fontSize: 9, color: AppColors.textMuted)),
-              Text(time,
-                  style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark)),
-            ],
-          ),
+          const SizedBox(width: 12),
+          _StatColumn(label: 'Duration', value: duration),
+          const SizedBox(width: 20),
+          _StatColumn(label: 'Time', value: time),
         ],
       ),
     );
   }
 
+  // ------------------------------------------------------------------
+  // DOCTOR NOTE
+  // ------------------------------------------------------------------
   Widget _buildDoctorNoteCard() {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF6FF),
-        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFEFF6FF),
+            const Color(0xFFEFF6FF).withOpacity(0.6),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFBFDBFE)),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Text(
-            "Doctor's Note",
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(10),
             ),
+            child: const Icon(Icons.format_quote_rounded,
+                size: 18, color: Color(0xFF3B82F6)),
           ),
-          SizedBox(height: 6),
-          Text(
-            '“ Please take medicines regularly. Maintain a healthy diet and exercise daily. Avoid oily and high sugar foods. Stay hydrated and get enough sleep. ”',
-            style: TextStyle(
-              fontSize: 12,
-              fontStyle: FontStyle.italic,
-              color: AppColors.accentNavy,
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  "Doctor's Note",
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textDark,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Please take medicines regularly. Maintain a healthy diet and exercise daily. Avoid oily and high sugar foods. Stay hydrated and get enough sleep.',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontStyle: FontStyle.italic,
+                    color: AppColors.accentNavy,
+                    height: 1.5,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -531,13 +647,23 @@ class _PrescriptionDetailsScreenState
     );
   }
 
+  // ------------------------------------------------------------------
+  // STATUS CARD
+  // ------------------------------------------------------------------
   Widget _buildPrescriptionStatusCard() {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -545,57 +671,58 @@ class _PrescriptionDetailsScreenState
           const Text(
             'Prescription Status',
             style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+              fontSize: 14.5,
+              fontWeight: FontWeight.w800,
               color: AppColors.textDark,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.successBg,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: const [
-                Icon(Icons.check_circle_outline_rounded,
-                    color: AppColors.successText, size: 18),
-                SizedBox(width: 8),
+                Icon(Icons.check_circle_rounded,
+                    color: AppColors.successText, size: 20),
+                SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     'Active — This prescription is currently active and valid.',
                     style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.successText,
+                      height: 1.3,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(6),
             child: const LinearProgressIndicator(
               value: 0.5,
-              minHeight: 6,
+              minHeight: 8,
               backgroundColor: AppColors.borderLight,
               valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryTeal),
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
               Text('Valid for 15 more days',
                   style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.primaryTeal)),
               Text('15 / 30 days',
-                  style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                  style: TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
             ],
           ),
         ],
@@ -603,49 +730,65 @@ class _PrescriptionDetailsScreenState
     );
   }
 
+  // ------------------------------------------------------------------
+  // BENEFITS CARD
+  // ------------------------------------------------------------------
   Widget _buildBenefitsCard() {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Text(
+        children: [
+          const Text(
             'e-Prescription Benefits',
             style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+              fontSize: 14.5,
+              fontWeight: FontWeight.w800,
               color: AppColors.textDark,
             ),
           ),
-          SizedBox(height: 10),
-          Text('✓ Secure & digitally verified prescription',
-              style: TextStyle(fontSize: 11, color: AppColors.textDark)),
-          SizedBox(height: 4),
-          Text('✓ Easy access anytime, anywhere',
-              style: TextStyle(fontSize: 11, color: AppColors.textDark)),
-          SizedBox(height: 4),
-          Text('✓ Share with pharmacist in one click',
-              style: TextStyle(fontSize: 11, color: AppColors.textDark)),
-          SizedBox(height: 4),
-          Text('✓ Environment friendly',
-              style: TextStyle(fontSize: 11, color: AppColors.textDark)),
+          const SizedBox(height: 14),
+          const _BenefitRow(text: 'Secure & digitally verified prescription'),
+          const SizedBox(height: 10),
+          const _BenefitRow(text: 'Easy access anytime, anywhere'),
+          const SizedBox(height: 10),
+          const _BenefitRow(text: 'Share with pharmacist in one click'),
+          const SizedBox(height: 10),
+          const _BenefitRow(text: 'Environment friendly'),
         ],
       ),
     );
   }
 
+  // ------------------------------------------------------------------
+  // TIMELINE CARD
+  // ------------------------------------------------------------------
   Widget _buildPrescriptionTimelineCard() {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -653,60 +796,107 @@ class _PrescriptionDetailsScreenState
           const Text(
             'Prescription Timeline',
             style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+              fontSize: 14.5,
+              fontWeight: FontWeight.w800,
               color: AppColors.textDark,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           _buildTimelineNode(
-              'Prescription Created', 'May 15, 2025 • 10:30 AM', true),
+              'Prescription Created', 'May 15, 2025 • 10:30 AM', true, true),
           _buildTimelineNode(
-              'Prescription Active', 'May 15, 2025 • 10:31 AM', true),
+              'Prescription Active', 'May 15, 2025 • 10:31 AM', true, false),
           _buildTimelineNode(
-              'Follow-up Due', 'May 29, 2025 • 10:30 AM', false),
+              'Follow-up Due', 'May 29, 2025 • 10:30 AM', false, false,
+              isLast: true),
         ],
       ),
     );
   }
 
-  Widget _buildTimelineNode(String title, String time, bool isDone) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          isDone ? Icons.check_circle : Icons.radio_button_unchecked,
-          color: isDone ? AppColors.primaryTeal : AppColors.textMuted,
-          size: 16,
-        ),
-        const SizedBox(width: 8),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildTimelineNode(
+      String title, String time, bool isDone, bool isFirst,
+      {bool isLast = false}) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
             children: [
-              Text(title,
-                  style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark)),
-              Text(time,
-                  style: const TextStyle(
-                      fontSize: 9, color: AppColors.textMuted)),
+              Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: isDone
+                      ? AppColors.primaryTeal
+                      : Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isDone
+                        ? AppColors.primaryTeal
+                        : AppColors.borderLight,
+                    width: 2,
+                  ),
+                ),
+                child: isDone
+                    ? const Icon(Icons.check_rounded,
+                        size: 13, color: Colors.white)
+                    : null,
+              ),
+              if (!isLast)
+                Expanded(
+                  child: Container(
+                    width: 2,
+                    margin: const EdgeInsets.symmetric(vertical: 2),
+                    color: isDone
+                        ? AppColors.primaryTeal.withOpacity(0.3)
+                        : AppColors.borderLight,
+                  ),
+                ),
             ],
           ),
-        ),
-      ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textDark)),
+                  const SizedBox(height: 2),
+                  Text(time,
+                      style: const TextStyle(
+                          fontSize: 10.5, color: AppColors.textMuted)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
+  // ------------------------------------------------------------------
+  // DOCTOR PROFILE CARD
+  // ------------------------------------------------------------------
   Widget _buildPrescribedByDoctorCard() {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -714,45 +904,145 @@ class _PrescriptionDetailsScreenState
           const Text(
             'Prescribed By',
             style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+              fontSize: 14.5,
+              fontWeight: FontWeight.w800,
               color: AppColors.textDark,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Row(
             children: [
-              const CircleAvatar(
-                radius: 20,
-                backgroundImage:
-                    NetworkImage('https://i.pravatar.cc/150?img=60'),
+              Container(
+                padding: const EdgeInsets.all(2.5),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primaryTeal.withOpacity(0.5),
+                      AppColors.primaryTeal.withOpacity(0.1),
+                    ],
+                  ),
+                ),
+                child: const CircleAvatar(
+                  radius: 22,
+                  backgroundImage:
+                      NetworkImage('https://i.pravatar.cc/150?img=60'),
+                ),
               ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Dr. Rahul Verma',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Dr. Rahul Verma',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'MBBS, MD (General Medicine)',
-                    style: TextStyle(fontSize: 10, color: AppColors.textMuted),
-                  ),
-                  Text(
-                    'Reg. No. 58214',
-                    style: TextStyle(fontSize: 10, color: AppColors.textMuted),
-                  ),
-                ],
+                    SizedBox(height: 2),
+                    Text(
+                      'MBBS, MD (General Medicine)',
+                      style:
+                          TextStyle(fontSize: 10.5, color: AppColors.textMuted),
+                    ),
+                    Text(
+                      'Reg. No. 58214',
+                      style:
+                          TextStyle(fontSize: 10.5, color: AppColors.textMuted),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+}
+
+// ------------------------------------------------------------------
+// SMALL REUSABLE UI PIECES
+// ------------------------------------------------------------------
+
+class _MetaChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _MetaChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13.5, color: AppColors.textMuted),
+        const SizedBox(width: 5),
+        Text(label,
+            style:
+                const TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
+      ],
+    );
+  }
+}
+
+class _StatColumn extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _StatColumn({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textMuted)),
+        const SizedBox(height: 2),
+        Text(value,
+            style: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textDark)),
+      ],
+    );
+  }
+}
+
+class _BenefitRow extends StatelessWidget {
+  final String text;
+
+  const _BenefitRow({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 1),
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: AppColors.successBg,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.check_rounded,
+              size: 11, color: AppColors.successText),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(text,
+              style: const TextStyle(
+                  fontSize: 11.5, color: AppColors.textDark, height: 1.3)),
+        ),
+      ],
     );
   }
 }

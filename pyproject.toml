@@ -35,6 +35,10 @@ dependencies = [
 	"langchain-openai",
 	"langchain-groq",
 	"python-dotenv",
+	"scikit-learn>=1.9.0",
+	"xgboost>=3.4.1",
+	"joblib>=1.5.3",
+	"numpy>=2.5.2",
 ]
 
 [project.scripts]
@@ -58,8 +62,8 @@ package = true
 where = ["server/src"]
 
 [tool.basedpyright]
-extraPaths = ["server/src/agents/formulary-agent"]
+extraPaths = ["server/src", "server/src/agents/formulary_agent"]
 
 [tool.pyright]
-extraPaths = ["server/src/agents/formulary-agent"]
+extraPaths = ["server/src", "server/src/agents/formulary_agent"]
 
