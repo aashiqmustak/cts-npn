@@ -1,4 +1,3 @@
-import '../data/mock_data.dart';
 import '../models/models.dart';
 import 'supabase_service.dart';
 
@@ -8,29 +7,82 @@ class DataService {
   // Configurable PDC threshold
   double pdcThreshold = 0.80;
 
-  // Domain collections starting completely empty from scratch
+  // Domain collections starting empty
   final List<Hospital> _hospitals = [];
   final List<Doctor> _doctors = [];
   final List<PatientRecord> _patientRecords = [];
   final List<PrescriptionItem> _prescriptionItems = [];
   final List<PatientMedicineLog> _patientLogs = [];
 
-  // Global collections starting completely empty from scratch
-  final List<Plan> _plans = List.from(MockData.plans);
-  final List<User> _users = List.from(MockData.users);
-  final List<Drug> _drugs = List.from(MockData.drugs);
-  final List<FormularyAlternative> _alternatives =
-      List.from(MockData.alternatives);
-  final List<Patient> _patients = List.from(MockData.patients);
-  final List<Prescription> _prescriptions = List.from(MockData.prescriptions);
-  final List<AdherenceFlag> _adherenceFlags =
-      List.from(MockData.adherenceFlags);
-  final List<PAFrictionEvent> _paFrictionEvents =
-      List.from(MockData.paFrictionEvents);
-  final List<FormularyIngestion> _ingestionRecords =
-      List.from(MockData.ingestionRecords);
-  final List<TierCopayConfig> _tierConfigs =
-      List.from(MockData.defaultTierConfigs);
+  // Global collections starting empty from Supabase
+  final List<Plan> _plans = [];
+  final List<User> _users = [];
+  final List<Drug> _drugs = [];
+  final List<FormularyAlternative> _alternatives = [];
+  final List<Patient> _patients = [];
+  final List<Prescription> _prescriptions = [];
+  final List<AdherenceFlag> _adherenceFlags = [];
+  final List<PAFrictionEvent> _paFrictionEvents = [];
+  final List<PharmacistDispenseRecord> _dispenseRecords = [];
+  final List<FormularyIngestion> _ingestionRecords = [];
+  final List<TierCopayConfig> _tierConfigs = [
+    TierCopayConfig(tier: 1, name: 'Tier 1 - Preferred Generic', defaultCopay: 10, coinsurancePct: 0, isSpecialty: false),
+    TierCopayConfig(tier: 2, name: 'Tier 2 - Generic', defaultCopay: 20, coinsurancePct: 0, isSpecialty: false),
+    TierCopayConfig(tier: 3, name: 'Tier 3 - Preferred Brand', defaultCopay: 45, coinsurancePct: 0, isSpecialty: false),
+    TierCopayConfig(tier: 4, name: 'Tier 4 - Non-Preferred', defaultCopay: 90, coinsurancePct: 0, isSpecialty: false),
+    TierCopayConfig(tier: 5, name: 'Tier 5 - Specialty', defaultCopay: 0, coinsurancePct: 33, isSpecialty: true),
+  ];
+
+  Future<void> loadAllFromSupabase() async {
+    if (!supabaseService.isInitialized) return;
+    try {
+      final h = await supabaseService.fetchHospitals();
+      _hospitals.clear();
+      _hospitals.addAll(h);
+
+      final d = await supabaseService.fetchDoctors();
+      _doctors.clear();
+      _doctors.addAll(d);
+
+      final pr = await supabaseService.fetchPatients();
+      _patientRecords.clear();
+      _patientRecords.addAll(pr);
+
+      final List<User> u = await supabaseService.fetchUserProfiles();
+      _users.clear();
+      _users.addAll(u);
+
+      final p = await supabaseService.fetchPlans();
+      _plans.clear();
+      _plans.addAll(p);
+
+      final dr = await supabaseService.fetchDrugs();
+      _drugs.clear();
+      _drugs.addAll(dr);
+
+      final alt = await supabaseService.fetchFormularyAlternatives();
+      _alternatives.clear();
+      _alternatives.addAll(alt);
+
+      final rx = await supabaseService.fetchPrescriptions();
+      _prescriptions.clear();
+      _prescriptions.addAll(rx);
+
+      final af = await supabaseService.fetchAdherenceFlags();
+      _adherenceFlags.clear();
+      _adherenceFlags.addAll(af);
+
+      final pa = await supabaseService.fetchPAFrictionEvents();
+      _paFrictionEvents.clear();
+      _paFrictionEvents.addAll(pa);
+
+      final recs = await supabaseService.fetchPharmacistDispenseRecords();
+      _dispenseRecords.clear();
+      _dispenseRecords.addAll(recs);
+    } catch (e) {
+      // Gracefully handle empty or non-existent rows
+    }
+  }
 
   // Getters
   List<Hospital> get hospitals => List.unmodifiable(_hospitals);
@@ -50,6 +102,8 @@ class DataService {
   List<AdherenceFlag> get adherenceFlags => List.unmodifiable(_adherenceFlags);
   List<PAFrictionEvent> get paFrictionEvents =>
       List.unmodifiable(_paFrictionEvents);
+  List<PharmacistDispenseRecord> get dispenseRecords =>
+      List.unmodifiable(_dispenseRecords);
   List<FormularyIngestion> get ingestionRecords =>
       List.unmodifiable(_ingestionRecords);
   List<TierCopayConfig> get tierConfigs => List.unmodifiable(_tierConfigs);
@@ -70,19 +124,95 @@ class DataService {
   // Action: Add Patient from scratch
   void addPatientRecord(PatientRecord patient) {
     _patientRecords.add(patient);
-    if (supabaseService.isInitialized) {
-      supabaseService.addPatient(patient);
-    }
   }
 
-  // Pharmacist Action: Dispense item
-  Future<bool> dispenseItem(String itemId) async {
+  // Pharmacist Action: Dispense item and log record
+  Future<bool> dispenseItem(
+    String itemId, {
+    String? pharmacistId,
+    String? pharmacistName,
+  }) async {
+    PrescriptionItem? foundItem;
     final index = _prescriptionItems.indexWhere((i) => i.id == itemId);
     if (index != -1) {
       _prescriptionItems[index].isDispensed = true;
+      foundItem = _prescriptionItems[index];
     }
-    if (supabaseService.isInitialized) {
-      await supabaseService.dispensePrescriptionItem(itemId);
+
+    if (foundItem != null) {
+      final rx = _prescriptions.firstWhere(
+        (r) => r.id == foundItem!.prescriptionId,
+        orElse: () => Prescription(
+          id: foundItem!.prescriptionId,
+          patientId: '',
+          patientName: 'Patient',
+          drugId: '',
+          drugName: foundItem.medicineName,
+          drugClass: 'General',
+          fillDates: [],
+          fillRecords: [],
+          pdcScore: 0.85,
+          status: 'Prescribed',
+          lastFillDate: DateTime.now(),
+          nextDueDate: DateTime.now(),
+          prescriberName: 'Doctor',
+        ),
+      );
+
+      final patientObj = _patientRecords.firstWhere(
+        (p) => p.id == rx.patientId,
+        orElse: () => PatientRecord(
+          id: rx.patientId,
+          name: rx.patientName,
+          email: '',
+          phone: '',
+          age: 40,
+          gender: 'Other',
+          currentProblem: '',
+          visitDate: DateTime.now(),
+        ),
+      );
+
+      final record = PharmacistDispenseRecord(
+        id: 'DISP-${DateTime.now().millisecondsSinceEpoch}',
+        prescriptionId: rx.id,
+        prescriptionItemId: foundItem.id,
+        patientId: patientObj.id,
+        patientName: patientObj.name,
+        doctorId: rx.prescriberName,
+        doctorName: rx.prescriberName,
+        pharmacistId: pharmacistId ?? 'U_pharmacist',
+        pharmacistName: pharmacistName ?? 'Logged Pharmacist',
+        medicineName: foundItem.medicineName,
+        dosage: foundItem.dosage,
+        frequency: foundItem.frequency,
+        dispensedAt: DateTime.now(),
+        notes: foundItem.instructions,
+      );
+
+      _dispenseRecords.add(record);
+
+      if (supabaseService.isInitialized) {
+        await supabaseService.dispensePrescriptionItem(itemId);
+        await supabaseService.createPharmacistDispenseRecord(
+          prescriptionId: rx.id,
+          prescriptionItemId: foundItem.id,
+          patientId: patientObj.id,
+          patientName: patientObj.name,
+          doctorId: rx.prescriberName,
+          doctorName: rx.prescriberName,
+          pharmacistId: pharmacistId ?? 'U_pharmacist',
+          pharmacistName: pharmacistName ?? 'Logged Pharmacist',
+          medicineName: foundItem.medicineName,
+          dosage: foundItem.dosage,
+          frequency: foundItem.frequency,
+          notes: foundItem.instructions,
+        );
+      }
+    } else {
+      if (supabaseService.isInitialized) {
+        await supabaseService.dispensePrescriptionItem(itemId);
+      }
     }
     return true;
   }

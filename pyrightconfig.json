@@ -1,0 +1,5 @@
+{
+  "extraPaths": [
+    "server/src/agents/formulary_agent"
+  ]
+}

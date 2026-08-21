@@ -18,11 +18,13 @@ class User {
   final String id;
   final String name;
   final String email;
+  final String? phone;
   final UserRole role;
   final List<String> assignedPatientIds;
   final String avatarUrl;
   final String title;
   final String? hospitalId;
+  final String? hospitalName;
   final String? doctorId;
   final String? patientId;
 
@@ -30,14 +32,58 @@ class User {
     required this.id,
     required this.name,
     required this.email,
+    this.phone,
     required this.role,
     required this.assignedPatientIds,
     required this.avatarUrl,
     required this.title,
     this.hospitalId,
+    this.hospitalName,
     this.doctorId,
     this.patientId,
   });
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    UserRole parsedRole = UserRole.pharmacist;
+    final rStr = (json['role'] ?? '').toString().toLowerCase();
+    if (rStr == 'doctor') parsedRole = UserRole.doctor;
+    if (rStr == 'patient') parsedRole = UserRole.patient;
+    if (rStr == 'insurance_agent' || rStr == 'insuranceagent') parsedRole = UserRole.insuranceAgent;
+    if (rStr == 'admin') parsedRole = UserRole.admin;
+    if (rStr == 'pharmacist') parsedRole = UserRole.pharmacist;
+
+    return User(
+      id: json['id']?.toString() ?? '',
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      phone: json['phone']?.toString(),
+      role: parsedRole,
+      assignedPatientIds: (json['assigned_patient_ids'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
+      avatarUrl: json['avatar_url'] ??
+          'https://i.pravatar.cc/150?img=12',
+      title: json['title'] ?? '',
+      hospitalId: json['hospital_id']?.toString(),
+      hospitalName: json['hospital_name']?.toString() ?? json['hospitals']?['name']?.toString(),
+      doctorId: json['doctor_id']?.toString(),
+      patientId: json['patient_id']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'email': email,
+        'phone': phone,
+        'role': role.name,
+        'title': title,
+        'hospital_id': hospitalId,
+        'hospital_name': hospitalName,
+        'doctor_id': doctorId,
+        'patient_id': patientId,
+      };
 
   bool get isAdmin => role == UserRole.admin;
   bool get isInsuranceAgent => role == UserRole.insuranceAgent;
@@ -322,6 +368,17 @@ class Plan {
     required this.formularyYear,
     required this.deductible,
   });
+
+  factory Plan.fromJson(Map<String, dynamic> json) {
+    return Plan(
+      id: json['id']?.toString() ?? '',
+      name: json['name'] ?? '',
+      cmsPlanId: json['cms_plan_id'] ?? '',
+      totalEnrollees: json['total_enrollees'] ?? 0,
+      formularyYear: json['formulary_year'] ?? 2026,
+      deductible: (json['deductible'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
 }
 
 class Drug {
@@ -350,6 +407,22 @@ class Drug {
     required this.quantityLimit,
     required this.estMonthlyCost,
   });
+
+  factory Drug.fromJson(Map<String, dynamic> json) {
+    return Drug(
+      id: json['id']?.toString() ?? '',
+      name: json['name'] ?? '',
+      ndc: json['ndc'] ?? '',
+      tier: json['tier'] ?? 1,
+      planId: json['plan_id']?.toString() ?? '',
+      drugClass: json['drug_class'] ?? '',
+      costShare: (json['cost_share'] as num?)?.toDouble() ?? 0.0,
+      requiresPa: json['requires_pa'] ?? false,
+      stepTherapy: json['step_therapy'] ?? false,
+      quantityLimit: json['quantity_limit'] ?? false,
+      estMonthlyCost: (json['est_monthly_cost'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
 
   String get tierLabel {
     switch (tier) {
@@ -399,6 +472,20 @@ class FormularyAlternative {
     required this.clinicalNotes,
     required this.copayDiff,
   });
+
+  factory FormularyAlternative.fromJson(Map<String, dynamic> json) {
+    return FormularyAlternative(
+      id: json['id']?.toString() ?? '',
+      targetDrugId: json['target_drug_id']?.toString() ?? '',
+      altDrugId: json['alt_drug_id']?.toString() ?? '',
+      altDrugName: json['alt_drug_name'] ?? '',
+      altTier: json['alt_tier'] ?? 1,
+      estMonthlySavings: (json['est_monthly_savings'] as num?)?.toDouble() ?? 0.0,
+      estAnnualSavings: (json['est_annual_savings'] as num?)?.toDouble() ?? 0.0,
+      clinicalNotes: json['clinical_notes'] ?? '',
+      copayDiff: (json['copay_diff'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
 }
 
 class Patient {
@@ -425,6 +512,21 @@ class Patient {
     required this.phone,
     required this.email,
   });
+
+  factory Patient.fromJson(Map<String, dynamic> json) {
+    return Patient(
+      id: json['id']?.toString() ?? '',
+      name: json['name'] ?? '',
+      age: json['age'] ?? 40,
+      gender: json['gender'] ?? 'Other',
+      prescriberId: json['prescriber_id']?.toString() ?? '',
+      prescriberName: json['prescriber_name'] ?? json['doctors']?['name'] ?? '',
+      planId: json['plan_id']?.toString() ?? '',
+      riskScore: (json['risk_score'] as num?)?.toDouble() ?? 0.25,
+      phone: json['phone'] ?? '',
+      email: json['email'] ?? '',
+    );
+  }
 }
 
 class FillRecord {
@@ -473,6 +575,30 @@ class Prescription {
     this.hospitalName,
     this.hospitalAddress,
   });
+
+  factory Prescription.fromJson(Map<String, dynamic> json) {
+    return Prescription(
+      id: json['id']?.toString() ?? '',
+      patientId: json['patient_id']?.toString() ?? '',
+      patientName: json['patient_name'] ?? json['patients']?['name'] ?? '',
+      drugId: json['drug_id']?.toString() ?? '',
+      drugName: json['drug_name'] ?? '',
+      drugClass: json['drug_class'] ?? 'Cardiovascular',
+      fillDates: [],
+      fillRecords: [],
+      pdcScore: (json['pdc_score'] as num?)?.toDouble() ?? 0.85,
+      status: json['status'] ?? 'Active',
+      lastFillDate: json['last_fill_date'] != null
+          ? DateTime.tryParse(json['last_fill_date'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      nextDueDate: json['next_due_date'] != null
+          ? DateTime.tryParse(json['next_due_date'].toString()) ?? DateTime.now().add(const Duration(days: 30))
+          : DateTime.now().add(const Duration(days: 30)),
+      prescriberName: json['prescriber_name'] ?? json['doctors']?['name'] ?? 'Attending Doctor',
+      hospitalName: json['hospitals']?['name'],
+      hospitalAddress: json['hospitals']?['address'],
+    );
+  }
 }
 
 class AdherenceFlag {
@@ -501,6 +627,27 @@ class AdherenceFlag {
     required this.outreachStatus,
     this.notes,
   });
+
+  factory AdherenceFlag.fromJson(Map<String, dynamic> json) {
+    RiskLevel r = RiskLevel.medium;
+    final rStr = (json['risk_level'] ?? '').toString().toLowerCase();
+    if (rStr == 'high') r = RiskLevel.high;
+    if (rStr == 'low') r = RiskLevel.low;
+
+    return AdherenceFlag(
+      id: json['id']?.toString() ?? '',
+      prescriptionId: json['prescription_id']?.toString() ?? '',
+      patientId: json['patient_id']?.toString() ?? '',
+      patientName: json['patient_name'] ?? '',
+      drugName: json['drug_name'] ?? '',
+      drugClass: json['drug_class'] ?? '',
+      riskLevel: r,
+      pdcScore: (json['pdc_score'] as num?)?.toDouble() ?? 0.5,
+      reason: json['reason'] ?? '',
+      outreachStatus: OutreachStatus.pending,
+      notes: json['notes'],
+    );
+  }
 }
 
 class PAFrictionEvent {
@@ -531,6 +678,28 @@ class PAFrictionEvent {
     this.suggestedAltName,
     required this.estAnnualSavings,
   });
+
+  factory PAFrictionEvent.fromJson(Map<String, dynamic> json) {
+    BarrierType b = BarrierType.paRequired;
+    final bStr = (json['barrier_type'] ?? '').toString().toLowerCase();
+    if (bStr.contains('step')) b = BarrierType.stepTherapyFailed;
+    if (bStr.contains('quantity')) b = BarrierType.quantityLimit;
+
+    return PAFrictionEvent(
+      id: json['id']?.toString() ?? '',
+      prescriptionId: json['prescription_id']?.toString() ?? '',
+      patientId: json['patient_id']?.toString() ?? '',
+      patientName: json['patient_name'] ?? '',
+      drugName: json['drug_name'] ?? '',
+      daysDelayed: json['days_delayed'] ?? 0,
+      frictionScore: (json['friction_score'] as num?)?.toDouble() ?? 0.5,
+      status: FrictionStatus.blocked,
+      barrierType: b,
+      suggestedAltId: json['suggested_alt_id']?.toString(),
+      suggestedAltName: json['suggested_alt_name'],
+      estAnnualSavings: (json['est_annual_savings'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
 
   String get barrierLabel {
     switch (barrierType) {
@@ -580,4 +749,76 @@ class TierCopayConfig {
     required this.coinsurancePct,
     required this.isSpecialty,
   });
+}
+
+class PharmacistDispenseRecord {
+  final String id;
+  final String? prescriptionId;
+  final String? prescriptionItemId;
+  final String patientId;
+  final String patientName;
+  final String doctorId;
+  final String doctorName;
+  final String pharmacistId;
+  final String pharmacistName;
+  final String medicineName;
+  final String dosage;
+  final String frequency;
+  final DateTime dispensedAt;
+  final String? notes;
+
+  const PharmacistDispenseRecord({
+    required this.id,
+    this.prescriptionId,
+    this.prescriptionItemId,
+    required this.patientId,
+    required this.patientName,
+    required this.doctorId,
+    required this.doctorName,
+    required this.pharmacistId,
+    required this.pharmacistName,
+    required this.medicineName,
+    required this.dosage,
+    required this.frequency,
+    required this.dispensedAt,
+    this.notes,
+  });
+
+  factory PharmacistDispenseRecord.fromJson(Map<String, dynamic> json) {
+    return PharmacistDispenseRecord(
+      id: json['id']?.toString() ?? '',
+      prescriptionId: json['prescription_id']?.toString(),
+      prescriptionItemId: json['prescription_item_id']?.toString(),
+      patientId: json['patient_id']?.toString() ?? '',
+      patientName: json['patient_name'] ?? 'Patient',
+      doctorId: json['doctor_id']?.toString() ?? '',
+      doctorName: json['doctor_name'] ?? 'Doctor',
+      pharmacistId: json['pharmacist_id']?.toString() ?? '',
+      pharmacistName: json['pharmacist_name'] ?? 'Pharmacist',
+      medicineName: json['medicine_name'] ?? '',
+      dosage: json['dosage'] ?? '',
+      frequency: json['frequency'] ?? '',
+      dispensedAt: json['dispensed_at'] != null
+          ? DateTime.tryParse(json['dispensed_at'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      notes: json['notes'],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'prescription_id': prescriptionId,
+        'prescription_item_id': prescriptionItemId,
+        'patient_id': patientId,
+        'patient_name': patientName,
+        'doctor_id': doctorId,
+        'doctor_name': doctorName,
+        'pharmacist_id': pharmacistId,
+        'pharmacist_name': pharmacistName,
+        'medicine_name': medicineName,
+        'dosage': dosage,
+        'frequency': frequency,
+        'dispensed_at': dispensedAt.toIso8601String(),
+        'notes': notes,
+      };
 }

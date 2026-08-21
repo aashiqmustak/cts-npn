@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../data/mock_data.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
@@ -102,91 +101,7 @@ class MainLayout extends StatelessWidget {
             ),
           ),
 
-          // 2. Role Selector Pill Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borderLight),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundImage: NetworkImage(user.avatarUrl),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user.name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            color: AppColors.textDark,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        PopupMenuButton<UserRole>(
-                          tooltip: 'Switch Active Role (5 Roles Available)',
-                          onSelected: (selectedRole) {
-                            final roleUser = User(
-                              id: 'U_${selectedRole.name}',
-                              name: '${selectedRole.name.toUpperCase()} User',
-                              email: '${selectedRole.name}@alternea.org',
-                              role: selectedRole,
-                              assignedPatientIds: [],
-                              avatarUrl: 'https://i.pravatar.cc/150?img=12',
-                              title: selectedRole.name,
-                            );
-                            appState.setCurrentUser(roleUser);
-                          },
-                          itemBuilder: (context) => UserRole.values.map((role) {
-                            return PopupMenuItem<UserRole>(
-                              value: role,
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.shield_outlined,
-                                      size: 16, color: AppColors.primaryTeal),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    role.name.toUpperCase(),
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                          child: Row(
-                            children: [
-                              Text(
-                                user.roleLabel,
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: AppColors.primaryTeal,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                size: 14,
-                                color: AppColors.primaryTeal,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const SizedBox(height: 8),
 
           const SizedBox(height: 12),
 
@@ -370,26 +285,30 @@ class MainLayout extends StatelessWidget {
 
           const SizedBox(width: 16),
 
-          // Role Badge Pill
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.primaryTeal.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.shield_outlined, color: AppColors.primaryTeal, size: 16),
-                const SizedBox(width: 6),
-                Text(
-                  'Role: ${user.roleLabel}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryTeal,
+          // Locked Role Badge Pill (Role cannot be changed inside portal)
+          Tooltip(
+            message: 'Role is assigned at registration and locked to your account profile',
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.primaryTeal.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.primaryTeal.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.lock_outline_rounded, color: AppColors.primaryTeal, size: 15),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Role: ${user.roleLabel}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryTeal,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 

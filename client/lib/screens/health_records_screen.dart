@@ -12,6 +12,7 @@ class HealthRecordsScreen extends StatefulWidget {
 class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
   int _activeCategoryTab = 0; // 0: All, 1: Reports, 2: Lab Results, 3: Scans, 4: Vaccination, 5: Others
   final TextEditingController _searchController = TextEditingController();
+  final List<Map<String, dynamic>> _userRecords = [];
 
   @override
   void dispose() {
@@ -135,92 +136,85 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                 flex: 7,
                 child: Column(
                   children: [
-                    _buildRecordCard(
-                      title: 'Complete Blood Count Report',
-                      tag: 'Lab Report',
-                      provider: 'City Care Diagnostic Center',
-                      fileInfo: 'PDF • 1.2 MB',
-                      dateInfo: 'May 14, 2025 • 09:30 AM',
-                      tagColor: AppColors.primaryTeal,
-                      tagBg: AppColors.primaryLight,
-                      icon: Icons.science_outlined,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildRecordCard(
-                      title: 'Chest X-Ray',
-                      tag: 'Imaging',
-                      provider: 'City Care Diagnostic Center',
-                      fileInfo: 'JPG • 2.4 MB',
-                      dateInfo: 'May 10, 2025 • 11:15 AM',
-                      tagColor: AppColors.purpleText,
-                      tagBg: AppColors.purpleBg,
-                      icon: Icons.qr_code_scanner_rounded,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildRecordCard(
-                      title: 'Health Checkup Report',
-                      tag: 'Report',
-                      provider: 'Wellness Clinic',
-                      fileInfo: 'PDF • 1.8 MB',
-                      dateInfo: 'May 05, 2025 • 04:20 PM',
-                      tagColor: const Color(0xFFD97706),
-                      tagBg: const Color(0xFFFEF3C7),
-                      icon: Icons.article_outlined,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildRecordCard(
-                      title: 'COVID-19 Vaccination Certificate',
-                      tag: 'Vaccination',
-                      provider: 'Govt. Vaccination Center',
-                      fileInfo: 'PDF • 0.9 MB',
-                      dateInfo: 'Apr 25, 2025 • 10:30 AM',
-                      tagColor: const Color(0xFF2563EB),
-                      tagBg: const Color(0xFFE0F2FE),
-                      icon: Icons.verified_user_outlined,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildRecordCard(
-                      title: 'HbA1c Test Report',
-                      tag: 'Lab Report',
-                      provider: 'HealthPlus Diagnostics',
-                      fileInfo: 'PDF • 1.1 MB',
-                      dateInfo: 'Apr 20, 2025 • 09:10 AM',
-                      tagColor: AppColors.primaryTeal,
-                      tagBg: AppColors.primaryLight,
-                      icon: Icons.science_outlined,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildRecordCard(
-                      title: 'ECG Report',
-                      tag: 'Report',
-                      provider: 'City Care Diagnostic Center',
-                      fileInfo: 'PDF • 1.6 MB',
-                      dateInfo: 'Apr 15, 2025 • 02:45 PM',
-                      tagColor: const Color(0xFFD97706),
-                      tagBg: const Color(0xFFFEF3C7),
-                      icon: Icons.monitor_heart_outlined,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    Center(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 8),
+                    if (_userRecords.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(36),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.borderLight),
                         ),
-                        onPressed: () {},
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Text('Load More Records',
-                                style: TextStyle(fontSize: 12)),
-                            SizedBox(width: 4),
-                            Icon(Icons.keyboard_arrow_down_rounded, size: 16),
+                        child: Column(
+                          children: [
+                            const Icon(Icons.folder_off_outlined, size: 48, color: AppColors.textMuted),
+                            const SizedBox(height: 14),
+                            const Text(
+                              'No Health Records Found in Database',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.accentNavy,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Upload medical lab reports, X-rays, or vaccination certificates to view and manage them securely in your account.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                            ),
+                            const SizedBox(height: 18),
+                            ElevatedButton.icon(
+                              onPressed: () => _showUploadRecordModal(context),
+                              icon: const Icon(Icons.add_rounded, size: 18),
+                              label: const Text('+ Upload Health Record'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryTeal,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
+                      )
+                    else
+                      Column(
+                        children: _userRecords.map((record) {
+                          Color tagColor = AppColors.primaryTeal;
+                          Color tagBg = AppColors.primaryLight;
+                          IconData icon = Icons.science_outlined;
+
+                          final tag = record['tag'] ?? 'Report';
+                          if (tag == 'Imaging') {
+                            tagColor = AppColors.purpleText;
+                            tagBg = AppColors.purpleBg;
+                            icon = Icons.qr_code_scanner_rounded;
+                          } else if (tag == 'Vaccination') {
+                            tagColor = const Color(0xFF2563EB);
+                            tagBg = const Color(0xFFE0F2FE);
+                            icon = Icons.verified_user_outlined;
+                          } else if (tag == 'Report') {
+                            tagColor = const Color(0xFFD97706);
+                            tagBg = const Color(0xFFFEF3C7);
+                            icon = Icons.article_outlined;
+                          }
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: _buildRecordCard(
+                              title: record['title'] ?? 'Document',
+                              tag: tag,
+                              provider: record['provider'] ?? 'Provider',
+                              fileInfo: record['fileInfo'] ?? 'PDF • 1.5 MB',
+                              dateInfo: record['dateInfo'] ?? 'Today',
+                              tagColor: tagColor,
+                              tagBg: tagBg,
+                              icon: icon,
+                            ),
+                          );
+                        }).toList(),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -390,6 +384,11 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
   }
 
   Widget _buildStorageUsageCard() {
+    final count = _userRecords.length;
+    final usedMb = (count * 1.5);
+    final usedGb = (usedMb / 1024).toStringAsFixed(2);
+    final pctUsed = count == 0 ? 0.0 : (usedMb / 10240);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -425,17 +424,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                         sections: [
                           PieChartSectionData(
                               color: AppColors.primaryTeal,
-                              value: 1.2,
-                              showTitle: false,
-                              radius: 12),
-                          PieChartSectionData(
-                              color: const Color(0xFF2563EB),
-                              value: 0.8,
-                              showTitle: false,
-                              radius: 12),
-                          PieChartSectionData(
-                              color: const Color(0xFFF59E0B),
-                              value: 0.4,
+                              value: count == 0 ? 1 : count.toDouble(),
                               showTitle: false,
                               radius: 12),
                         ],
@@ -443,13 +432,13 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                     ),
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Text('2.4 GB',
-                            style: TextStyle(
-                                fontSize: 13,
+                      children: [
+                        Text('$usedGb GB',
+                            style: const TextStyle(
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.textDark)),
-                        Text('of 10 GB used',
+                        const Text('of 10 GB used',
                             style: TextStyle(
                                 fontSize: 7, color: AppColors.textMuted)),
                       ],
@@ -464,13 +453,13 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                 child: Column(
                   children: [
                     _buildStorageLegendRow(
-                        AppColors.primaryTeal, 'Documents', '1.2 GB'),
+                        AppColors.primaryTeal, 'Documents', '${(usedMb * 0.6).toStringAsFixed(1)} MB'),
                     const SizedBox(height: 6),
                     _buildStorageLegendRow(
-                        const Color(0xFF2563EB), 'Images', '0.8 GB'),
+                        const Color(0xFF2563EB), 'Images', '${(usedMb * 0.3).toStringAsFixed(1)} MB'),
                     const SizedBox(height: 6),
                     _buildStorageLegendRow(
-                        const Color(0xFFF59E0B), 'Others', '0.4 GB'),
+                        const Color(0xFFF59E0B), 'Others', '${(usedMb * 0.1).toStringAsFixed(1)} MB'),
                   ],
                 ),
               ),
@@ -481,19 +470,19 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
 
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
-            child: const LinearProgressIndicator(
-              value: 0.23,
+            child: LinearProgressIndicator(
+              value: pctUsed,
               minHeight: 6,
               backgroundColor: AppColors.borderLight,
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryTeal),
+              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryTeal),
             ),
           ),
           const SizedBox(height: 6),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('23% of storage used',
-                  style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
+              Text('${(pctUsed * 100).toStringAsFixed(1)}% of storage used',
+                  style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
               OutlinedButton(
                 style: OutlinedButton.styleFrom(
                   padding:
@@ -601,6 +590,12 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
   }
 
   Widget _buildCategoryCountListCard() {
+    final labCount = _userRecords.where((r) => r['tag'] == 'Lab Report').length;
+    final imgCount = _userRecords.where((r) => r['tag'] == 'Imaging').length;
+    final healthCount = _userRecords.where((r) => r['tag'] == 'Report').length;
+    final vaxCount = _userRecords.where((r) => r['tag'] == 'Vaccination').length;
+    final otherCount = _userRecords.where((r) => r['tag'] == 'Others' || r['tag'] == null).length;
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -620,11 +615,11 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          _buildCategoryRow('Lab Reports', '12', Icons.science_outlined, AppColors.primaryTeal),
-          _buildCategoryRow('Imaging Reports', '8', Icons.qr_code_scanner_rounded, AppColors.purpleText),
-          _buildCategoryRow('Health Reports', '6', Icons.article_outlined, const Color(0xFFD97706)),
-          _buildCategoryRow('Vaccination', '5', Icons.verified_user_outlined, const Color(0xFF2563EB)),
-          _buildCategoryRow('Others', '4', Icons.folder_open_outlined, AppColors.textMuted),
+          _buildCategoryRow('Lab Reports', '$labCount', Icons.science_outlined, AppColors.primaryTeal),
+          _buildCategoryRow('Imaging Reports', '$imgCount', Icons.qr_code_scanner_rounded, AppColors.purpleText),
+          _buildCategoryRow('Health Reports', '$healthCount', Icons.article_outlined, const Color(0xFFD97706)),
+          _buildCategoryRow('Vaccination', '$vaxCount', Icons.verified_user_outlined, const Color(0xFF2563EB)),
+          _buildCategoryRow('Others', '$otherCount', Icons.folder_open_outlined, AppColors.textMuted),
         ],
       ),
     );
@@ -706,38 +701,73 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
   }
 
   void _showUploadRecordModal(BuildContext context) {
+    final titleController = TextEditingController();
+    final providerController = TextEditingController();
+    String selectedTag = 'Lab Report';
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Upload Health Record Document'),
-        content: SizedBox(
-          width: 400,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              TextField(decoration: InputDecoration(labelText: 'Document Title')),
-              SizedBox(height: 10),
-              TextField(decoration: InputDecoration(labelText: 'Provider / Clinic Name')),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Health Record uploaded successfully!'),
-                  backgroundColor: AppColors.primaryTeal,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => AlertDialog(
+          title: const Text('Upload Health Record Document'),
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(labelText: 'Document Title (e.g. Complete Blood Count)'),
                 ),
-              );
-            },
-            child: const Text('Upload Document'),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: providerController,
+                  decoration: const InputDecoration(labelText: 'Provider / Clinic Name (e.g. City Care Center)'),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: selectedTag,
+                  decoration: const InputDecoration(labelText: 'Record Category'),
+                  items: ['Lab Report', 'Imaging', 'Report', 'Vaccination', 'Others']
+                      .map((tag) => DropdownMenuItem(value: tag, child: Text(tag)))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) setModalState(() => selectedTag = val);
+                  },
+                ),
+              ],
+            ),
           ),
-        ],
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () {
+                final t = titleController.text.trim();
+                final p = providerController.text.trim();
+                if (t.isEmpty) return;
+                setState(() {
+                  _userRecords.insert(0, {
+                    'title': t,
+                    'provider': p.isEmpty ? 'General Health Center' : p,
+                    'tag': selectedTag,
+                    'fileInfo': 'PDF • 1.5 MB',
+                    'dateInfo': 'Just now',
+                  });
+                });
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('"$t" uploaded successfully!'),
+                    backgroundColor: AppColors.primaryTeal,
+                  ),
+                );
+              },
+              child: const Text('Upload Document'),
+            ),
+          ],
+        ),
       ),
     );
   }

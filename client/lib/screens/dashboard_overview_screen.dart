@@ -66,7 +66,7 @@ class DashboardOverviewScreen extends StatelessWidget {
                     const SizedBox(height: 20),
 
                     // Upcoming Reminders Schedule
-                    _buildUpcomingRemindersCard(context),
+                    _buildUpcomingRemindersCard(context, appState),
                   ],
                 ),
               ),
@@ -79,7 +79,7 @@ class DashboardOverviewScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     // Health Summary Gauge Card
-                    _buildHealthSummaryCard(context),
+                    _buildHealthSummaryCard(context, appState),
 
                     const SizedBox(height: 20),
 
@@ -101,6 +101,11 @@ class DashboardOverviewScreen extends StatelessWidget {
   }
 
   Widget _buildKpiRow(BuildContext context, AppState appState) {
+    final activeMedsCount = appState.patientLogs.length;
+    final prescriptionsCount = appState.prescriptions.length;
+    final upcomingLogs = appState.patientLogs.where((l) => !l.isTaken).toList();
+    final nextReminderText = upcomingLogs.isEmpty ? 'None' : upcomingLogs.first.scheduledTime;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         return Row(
@@ -108,7 +113,7 @@ class DashboardOverviewScreen extends StatelessWidget {
             Expanded(
               child: _buildKpiCard(
                 title: 'Active Medicines',
-                value: '3',
+                value: '$activeMedsCount',
                 actionText: 'View all',
                 icon: Icons.medication_outlined,
                 iconColor: AppColors.primaryTeal,
@@ -120,7 +125,7 @@ class DashboardOverviewScreen extends StatelessWidget {
             Expanded(
               child: _buildKpiCard(
                 title: 'Prescriptions',
-                value: '2',
+                value: '$prescriptionsCount',
                 actionText: 'View all',
                 icon: Icons.assignment_outlined,
                 iconColor: const Color(0xFF8B5CF6),
@@ -144,12 +149,12 @@ class DashboardOverviewScreen extends StatelessWidget {
             Expanded(
               child: _buildKpiCard(
                 title: 'Next Reminder',
-                value: '8:00 PM',
-                subtitle: 'Today',
+                value: nextReminderText,
+                subtitle: upcomingLogs.isEmpty ? 'All taken' : 'Scheduled',
                 icon: Icons.notifications_active_outlined,
                 iconColor: const Color(0xFF2563EB),
                 bgColor: const Color(0xFFE0F2FE),
-                onTap: () => appState.setNavIndex(5),
+                onTap: () => appState.setNavIndex(1),
               ),
             ),
           ],
@@ -242,6 +247,8 @@ class DashboardOverviewScreen extends StatelessWidget {
   }
 
   Widget _buildMyMedicinesCard(BuildContext context, AppState appState) {
+    final logs = appState.patientLogs;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -279,29 +286,35 @@ class DashboardOverviewScreen extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          _buildMedicineListItem(
-            name: 'Atorvastatin 20mg',
-            dosage: '1 tablet • Once daily • After dinner',
-            time: '8:00 PM',
-            dayLabel: 'Today',
-            iconColor: const Color(0xFF8B5CF6),
-          ),
-          const SizedBox(height: 10),
-          _buildMedicineListItem(
-            name: 'Metformin 500mg',
-            dosage: '1 tablet • Twice daily • After meals',
-            time: '2:00 PM',
-            dayLabel: 'Today',
-            iconColor: const Color(0xFF3B82F6),
-          ),
-          const SizedBox(height: 10),
-          _buildMedicineListItem(
-            name: 'Vitamin D3 1000 IU',
-            dosage: '1 tablet • Once daily • After breakfast',
-            time: '8:00 AM',
-            dayLabel: 'Tomorrow',
-            iconColor: const Color(0xFFF59E0B),
-          ),
+          if (logs.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.bgSlate,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'No active medicines recorded in Supabase DB.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+              ),
+            )
+          else
+            Column(
+              children: logs.take(3).map((log) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10.0),
+                  child: _buildMedicineListItem(
+                    name: log.medicineName,
+                    dosage: log.notes ?? '1 tablet daily',
+                    time: log.scheduledTime,
+                    dayLabel: log.isTaken ? 'Taken' : 'Pending',
+                    iconColor: log.isTaken ? AppColors.primaryTeal : const Color(0xFF8B5CF6),
+                  ),
+                );
+              }).toList(),
+            ),
 
           const SizedBox(height: 16),
 
@@ -383,9 +396,9 @@ class DashboardOverviewScreen extends StatelessWidget {
               color: AppColors.successBg,
               borderRadius: BorderRadius.circular(6),
             ),
-            child: const Text(
-              'Active',
-              style: TextStyle(
+            child: Text(
+              dayLabel,
+              style: const TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
                 color: AppColors.successText,
@@ -404,13 +417,6 @@ class DashboardOverviewScreen extends StatelessWidget {
                   color: AppColors.textDark,
                 ),
               ),
-              Text(
-                dayLabel,
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: AppColors.textMuted,
-                ),
-              ),
             ],
           ),
           const SizedBox(width: 6),
@@ -421,7 +427,9 @@ class DashboardOverviewScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildUpcomingRemindersCard(BuildContext context) {
+  Widget _buildUpcomingRemindersCard(BuildContext context, AppState appState) {
+    final upcoming = appState.patientLogs.where((l) => !l.isTaken).toList();
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -444,7 +452,7 @@ class DashboardOverviewScreen extends StatelessWidget {
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () => appState.setNavIndex(1),
                 child: Row(
                   children: const [
                     Text('View calendar',
@@ -463,12 +471,32 @@ class DashboardOverviewScreen extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          _buildReminderRow(
-              '8:00 PM', 'Atorvastatin 20mg', '1 tablet • After dinner', 'Today', true),
-          _buildReminderRow(
-              '8:00 AM', 'Vitamin D3 1000 IU', '1 tablet • After breakfast', 'Tomorrow', false),
-          _buildReminderRow(
-              '2:00 PM', 'Metformin 500mg', '1 tablet • After lunch', 'Tomorrow', false),
+          if (upcoming.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.bgSlate,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'No upcoming medication reminders scheduled in Supabase DB.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+              ),
+            )
+          else
+            Column(
+              children: upcoming.map((log) {
+                return _buildReminderRow(
+                  log.scheduledTime,
+                  log.medicineName,
+                  log.notes ?? 'Scheduled Dose',
+                  'Today',
+                  true,
+                );
+              }).toList(),
+            ),
         ],
       ),
     );
@@ -544,7 +572,12 @@ class DashboardOverviewScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHealthSummaryCard(BuildContext context) {
+  Widget _buildHealthSummaryCard(BuildContext context, AppState appState) {
+    final total = appState.patientLogs.length;
+    final taken = appState.patientLogs.where((l) => l.isTaken).length;
+    final score = total == 0 ? 100 : ((taken / total) * 100).round();
+    final statusText = score >= 80 ? 'Good' : (score >= 50 ? 'Fair' : 'Needs Care');
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -567,7 +600,7 @@ class DashboardOverviewScreen extends StatelessWidget {
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () => appState.setNavIndex(1),
                 child: Row(
                   children: const [
                     Text('View full report',
@@ -596,7 +629,7 @@ class DashboardOverviewScreen extends StatelessWidget {
                     width: 72,
                     height: 72,
                     child: CircularProgressIndicator(
-                      value: 0.85,
+                      value: score / 100.0,
                       strokeWidth: 7,
                       backgroundColor: AppColors.borderLight,
                       valueColor:
@@ -605,18 +638,18 @@ class DashboardOverviewScreen extends StatelessWidget {
                   ),
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Text(
-                        '85',
-                        style: TextStyle(
+                        '$score',
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textDark,
                         ),
                       ),
                       Text(
-                        'Good',
-                        style: TextStyle(
+                        statusText,
+                        style: const TextStyle(
                           fontSize: 9,
                           color: AppColors.primaryTeal,
                           fontWeight: FontWeight.bold,
@@ -632,19 +665,19 @@ class DashboardOverviewScreen extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      'Your health score is good!',
-                      style: TextStyle(
+                      total == 0 ? 'No medication logs in DB' : 'Adherence Score: $score%',
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textDark,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
-                      'Keep following your medications and maintain a healthy lifestyle.',
-                      style: TextStyle(
+                      total == 0 ? 'Add your daily medicines to track your adherence.' : '$taken of $total doses completed on schedule.',
+                      style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.textMuted,
                       ),
@@ -666,23 +699,23 @@ class DashboardOverviewScreen extends StatelessWidget {
               _buildHealthMetricItem(
                 icon: Icons.directions_walk_rounded,
                 iconColor: AppColors.primaryTeal,
-                label: 'Steps',
-                val: '6,245',
-                target: '/10,000',
+                label: 'Log Count',
+                val: '$total',
+                target: ' logged',
               ),
               _buildHealthMetricItem(
                 icon: Icons.water_drop_outlined,
-                iconColor: Colors.blue,
-                label: 'Water',
-                val: '6',
-                target: 'cups',
+                iconColor: const Color(0xFF2563EB),
+                label: 'Taken',
+                val: '$taken',
+                target: ' doses',
               ),
               _buildHealthMetricItem(
-                icon: Icons.nightlight_round_outlined,
-                iconColor: Colors.purple,
-                label: 'Sleep',
-                val: '7.2',
-                target: 'hrs',
+                icon: Icons.bedtime_outlined,
+                iconColor: const Color(0xFF8B5CF6),
+                label: 'Adherence',
+                val: '$score%',
+                target: ' rate',
               ),
             ],
           ),
@@ -737,6 +770,8 @@ class DashboardOverviewScreen extends StatelessWidget {
 
   Widget _buildRecentPrescriptionsCard(
       BuildContext context, AppState appState) {
+    final rxList = appState.prescriptions;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -778,19 +813,34 @@ class DashboardOverviewScreen extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          _buildPrescriptionItem(
-            id: 'Prescription #RX58921',
-            doctor: 'Dr. Rahul Verma',
-            date: 'May 15, 2025',
-            onTap: () => appState.setNavIndex(2),
-          ),
-          const SizedBox(height: 10),
-          _buildPrescriptionItem(
-            id: 'Prescription #RX58711',
-            doctor: 'Dr. Rahul Verma',
-            date: 'Apr 28, 2025',
-            onTap: () => appState.setNavIndex(2),
-          ),
+          if (rxList.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.bgSlate,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'No prescriptions found in Supabase DB.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+              ),
+            )
+          else
+            Column(
+              children: rxList.take(2).map((rx) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10.0),
+                  child: _buildPrescriptionItem(
+                    id: 'Prescription #${rx.id.length > 8 ? rx.id.substring(0, 8) : rx.id}',
+                    doctor: rx.prescriberName,
+                    date: rx.status,
+                    onTap: () => appState.setNavIndex(2),
+                  ),
+                );
+              }).toList(),
+            ),
         ],
       ),
     );

@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import '../data/mock_data.dart';
 import '../models/models.dart';
 import '../services/data_service.dart';
 
@@ -33,13 +32,19 @@ class AppState extends ChangeNotifier {
   AppState() {
     _currentUser = const User(
       id: 'U_INIT',
-      name: 'New User',
+      name: 'User Account',
       email: 'user@alternea.org',
-      role: UserRole.doctor,
+      role: UserRole.pharmacist,
       assignedPatientIds: [],
       avatarUrl: 'https://i.pravatar.cc/150?img=12',
-      title: 'Attending Physician',
+      title: 'Clinical Pharmacist',
     );
+    refreshData();
+  }
+
+  Future<void> refreshData() async {
+    await dataService.loadAllFromSupabase();
+    notifyListeners();
   }
 
   // Getters
@@ -74,10 +79,16 @@ class AppState extends ChangeNotifier {
   List<PatientRecord> get patientRecords => dataService.patientRecords;
   List<PrescriptionItem> get prescriptionItems => dataService.prescriptionItems;
   List<PatientMedicineLog> get patientLogs => dataService.patientLogs;
+  List<PharmacistDispenseRecord> get dispenseRecords => dataService.dispenseRecords;
+  List<Prescription> get prescriptions => dataService.prescriptions;
 
   // Actions
   Future<void> dispenseItem(String itemId) async {
-    await dataService.dispenseItem(itemId);
+    await dataService.dispenseItem(
+      itemId,
+      pharmacistId: _currentUser.id,
+      pharmacistName: _currentUser.name,
+    );
     notifyListeners();
   }
 
