@@ -29,13 +29,21 @@ class CurrentMedication(BaseModel):
 
 
 class RenalFunction(BaseModel):
-    egfr: float | None = Field(default=None, description="Estimated glomerular filtration rate")
+    egfr: float | None = Field(
+        default=None, description="Estimated glomerular filtration rate"
+    )
     creatinine: float | None = None
     unit: str = "mL/min/1.73m2"
 
 
 class HepaticFunction(BaseModel):
-    status: Literal["NORMAL", "MILD_IMPAIRMENT", "MODERATE_IMPAIRMENT", "SEVERE_IMPAIRMENT", "UNKNOWN"] = "UNKNOWN"
+    status: Literal[
+        "NORMAL",
+        "MILD_IMPAIRMENT",
+        "MODERATE_IMPAIRMENT",
+        "SEVERE_IMPAIRMENT",
+        "UNKNOWN",
+    ] = "UNKNOWN"
     ast: float | None = None
     alt: float | None = None
     bilirubin: float | None = None
@@ -54,7 +62,9 @@ class PatientContext(BaseModel):
     current_medications: list[CurrentMedication] = Field(default_factory=list)
     renal_function: RenalFunction | None = None
     hepatic_function: HepaticFunction | None = None
-    pregnancy_status: Literal["PREGNANT", "NOT_PREGNANT", "UNKNOWN", "NOT_APPLICABLE"] | None = "UNKNOWN"
+    pregnancy_status: (
+        Literal["PREGNANT", "NOT_PREGNANT", "UNKNOWN", "NOT_APPLICABLE"] | None
+    ) = "UNKNOWN"
     indication: Indication | None = None
 
 

@@ -52,21 +52,39 @@ def _aggregate_status(checks: dict[str, str]) -> str:
 
 
 def _check_allergy(context: dict[str, Any]) -> dict[str, Any]:
-    allergies = context.get("allergy_flag", False) or (context.get("allergy_count", 0) > 0)
+    allergies = context.get("allergy_flag", False) or (
+        context.get("allergy_count", 0) > 0
+    )
     if allergies:
-        return {"status": "REJECT", "severity": "HIGH", "reason": "Patient has an allergy flag or recorded allergy count."}
+        return {
+            "status": "REJECT",
+            "severity": "HIGH",
+            "reason": "Patient has an allergy flag or recorded allergy count.",
+        }
     return {"status": "PASS", "severity": "LOW", "reason": "No allergy issue detected."}
 
 
 def _check_drug_interaction(context: dict[str, Any]) -> dict[str, Any]:
     if context.get("drug_interaction_flag"):
-        return {"status": "REJECT", "severity": "HIGH", "reason": "Drug interaction flag is true."}
-    return {"status": "PASS", "severity": "LOW", "reason": "No drug interaction reported."}
+        return {
+            "status": "REJECT",
+            "severity": "HIGH",
+            "reason": "Drug interaction flag is true.",
+        }
+    return {
+        "status": "PASS",
+        "severity": "LOW",
+        "reason": "No drug interaction reported.",
+    }
 
 
 def _check_contraindication(context: dict[str, Any]) -> dict[str, Any]:
     if context.get("contraindication_flag"):
-        return {"status": "REJECT", "severity": "CRITICAL", "reason": "Contraindication flag is true."}
+        return {
+            "status": "REJECT",
+            "severity": "CRITICAL",
+            "reason": "Contraindication flag is true.",
+        }
     return {"status": "PASS", "severity": "LOW", "reason": "No contraindication found."}
 
 
@@ -78,45 +96,93 @@ def _check_drug_disease(context: dict[str, Any]) -> dict[str, Any]:
         and indication.lower() == "diabetes"
         and candidate_name.lower() in {"metformin"}
     ):
-        return {"status": "PASS", "severity": "LOW", "reason": "Indication and candidate drug are clinically consistent."}
-    return {"status": "PASS", "severity": "LOW", "reason": "No disease-drug conflict detected."}
+        return {
+            "status": "PASS",
+            "severity": "LOW",
+            "reason": "Indication and candidate drug are clinically consistent.",
+        }
+    return {
+        "status": "PASS",
+        "severity": "LOW",
+        "reason": "No disease-drug conflict detected.",
+    }
 
 
 def _check_renal(context: dict[str, Any]) -> dict[str, Any]:
     renal_status = str(context.get("renal_status", "UNKNOWN")).upper()
     if renal_status in {"NORMAL", "MILD_IMPAIRMENT"}:
-        return {"status": "PASS", "severity": "LOW", "reason": "Renal function is acceptable."}
+        return {
+            "status": "PASS",
+            "severity": "LOW",
+            "reason": "Renal function is acceptable.",
+        }
     if renal_status in {"MODERATE_IMPAIRMENT", "SEVERE_IMPAIRMENT"}:
-        return {"status": "REVIEW", "severity": "MODERATE", "reason": "Renal function is impaired; medication review recommended."}
-    return {"status": "REVIEW", "severity": "MODERATE", "reason": "Renal function is unknown."}
+        return {
+            "status": "REVIEW",
+            "severity": "MODERATE",
+            "reason": "Renal function is impaired; medication review recommended.",
+        }
+    return {
+        "status": "REVIEW",
+        "severity": "MODERATE",
+        "reason": "Renal function is unknown.",
+    }
 
 
 def _check_hepatic(context: dict[str, Any]) -> dict[str, Any]:
     hepatic_status = str(context.get("hepatic_status", "UNKNOWN")).upper()
     if hepatic_status == "NORMAL":
-        return {"status": "PASS", "severity": "LOW", "reason": "Hepatic function is normal."}
+        return {
+            "status": "PASS",
+            "severity": "LOW",
+            "reason": "Hepatic function is normal.",
+        }
     if hepatic_status in {"MILD_IMPAIRMENT", "MODERATE_IMPAIRMENT"}:
-        return {"status": "REVIEW", "severity": "MODERATE", "reason": "Hepatic impairment may require dose adjustment."}
-    return {"status": "REVIEW", "severity": "HIGH", "reason": "Hepatic status is abnormal or unknown."}
+        return {
+            "status": "REVIEW",
+            "severity": "MODERATE",
+            "reason": "Hepatic impairment may require dose adjustment.",
+        }
+    return {
+        "status": "REVIEW",
+        "severity": "HIGH",
+        "reason": "Hepatic status is abnormal or unknown.",
+    }
 
 
 def _check_age(context: dict[str, Any]) -> dict[str, Any]:
     age = int(context.get("patient_age", 0) or 0)
     if age < 0 or age > 120:
-        return {"status": "REJECT", "severity": "HIGH", "reason": "Age is outside the supported range."}
-    return {"status": "PASS", "severity": "LOW", "reason": "Age is within the supported range."}
+        return {
+            "status": "REJECT",
+            "severity": "HIGH",
+            "reason": "Age is outside the supported range.",
+        }
+    return {
+        "status": "PASS",
+        "severity": "LOW",
+        "reason": "Age is within the supported range.",
+    }
 
 
 def _check_indication(context: dict[str, Any]) -> dict[str, Any]:
     indication = context.get("indication")
     if not indication:
-        return {"status": "REVIEW", "severity": "MODERATE", "reason": "No indication supplied."}
+        return {
+            "status": "REVIEW",
+            "severity": "MODERATE",
+            "reason": "No indication supplied.",
+        }
     return {"status": "PASS", "severity": "LOW", "reason": "Indication is provided."}
 
 
 def _check_pregnancy(context: dict[str, Any]) -> dict[str, Any]:
     if context.get("pregnancy_relevant_flag"):
-        return {"status": "REVIEW", "severity": "HIGH", "reason": "Pregnancy relevance requires clinical review."}
+        return {
+            "status": "REVIEW",
+            "severity": "HIGH",
+            "reason": "Pregnancy relevance requires clinical review.",
+        }
     return {"status": "PASS", "severity": "LOW", "reason": "Not pregnancy-relevant."}
 
 
@@ -129,7 +195,8 @@ def clinical_eligibility_agent(row: dict[str, Any]) -> ClinicalSafetyOutput:
         "patient_id": patient_id,
         "patient_age": patient_context.get("age", 0),
         "gender": patient_context.get("sex", "UNKNOWN"),
-        "indication": patient_context.get("indication", {}).get("name") or row.get("indication"),
+        "indication": patient_context.get("indication", {}).get("name")
+        or row.get("indication"),
         "allergy_flag": bool(row.get("allergy_flag", False)),
         "allergy_count": row.get("allergy_count", 0),
         "renal_status": row.get("renal_status"),
@@ -180,17 +247,19 @@ def clinical_eligibility_agent(row: dict[str, Any]) -> ClinicalSafetyOutput:
         if result["status"] != "PASS":
             issues.append(_as_issue(name, result))
 
-    final_status = _aggregate_status({
-        "allergy": checks.allergy,
-        "drug_interaction": checks.drug_interaction,
-        "contraindication": contraindication_result["status"],
-        "drug_disease": checks.drug_disease,
-        "renal": checks.renal,
-        "hepatic": checks.hepatic,
-        "age": checks.age,
-        "indication": checks.indication,
-        "pregnancy": checks.pregnancy or "PASS",
-    })
+    final_status = _aggregate_status(
+        {
+            "allergy": checks.allergy,
+            "drug_interaction": checks.drug_interaction,
+            "contraindication": contraindication_result["status"],
+            "drug_disease": checks.drug_disease,
+            "renal": checks.renal,
+            "hepatic": checks.hepatic,
+            "age": checks.age,
+            "indication": checks.indication,
+            "pregnancy": checks.pregnancy or "PASS",
+        }
+    )
 
     eligible_candidates: list[EligibleCandidate] = []
     rejected_candidates: list[RejectedCandidate] = []
@@ -231,7 +300,14 @@ def clinical_eligibility_agent(row: dict[str, Any]) -> ClinicalSafetyOutput:
         eligible_candidates=eligible_candidates,
         rejected_candidates=rejected_candidates,
         review_required=review_required,
-        evidence=[Evidence(source="clinical_agent", section="evaluation", document_id=str(patient_id), version="v1")],
+        evidence=[
+            Evidence(
+                source="clinical_agent",
+                section="evaluation",
+                document_id=str(patient_id),
+                version="v1",
+            )
+        ],
         overall_status=final_status,
     )
 
