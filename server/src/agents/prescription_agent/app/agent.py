@@ -1,19 +1,19 @@
-import uuid
 import logging
-from typing import Optional
-from .models import PrescriptionOutput
+import uuid
+
+from .config import REFERENCE_DATA_PATH
 from .drug_mapper import DrugMapper
+from .models import PrescriptionOutput
 from .normalizer import (
-    TextPreprocessor,
-    StrengthExtractor,
     DoseExtractor,
-    FrequencyNormalizer,
-    RouteNormalizer,
     DurationExtractor,
-    IndicationExtractor
+    FrequencyNormalizer,
+    IndicationExtractor,
+    RouteNormalizer,
+    StrengthExtractor,
+    TextPreprocessor,
 )
 from .validator import PrescriptionValidator
-from .config import REFERENCE_DATA_PATH
 
 logger = logging.getLogger("prescription_agent")
 
@@ -21,17 +21,24 @@ logger = logging.getLogger("prescription_agent")
 class PrescriptionAgent:
     def __init__(self, reference_path: str = REFERENCE_DATA_PATH):
         self.drug_mapper = DrugMapper(reference_path=reference_path)
-        logger.info("PrescriptionAgent initialized with %d reference drugs.", self.drug_mapper.count())
+        logger.info(
+            "PrescriptionAgent initialized with %d reference drugs.",
+            self.drug_mapper.count(),
+        )
 
     def process(
         self,
         patient_id: str,
         prescription_text: str,
         doctor_id: str,
-        prescription_id: Optional[str] = None
+        prescription_id: str | None = None,
     ) -> PrescriptionOutput:
-        logger.info("Processing prescription for patient_id: %s, doctor_id: %s", patient_id, doctor_id)
-        
+        logger.info(
+            "Processing prescription for patient_id: %s, doctor_id: %s",
+            patient_id,
+            doctor_id,
+        )
+
         # 1. Input Validation
         if not patient_id or not patient_id.strip():
             raise ValueError("patient_id must not be empty")
@@ -53,10 +60,12 @@ class PrescriptionAgent:
                 "Identified drug: %s (RxNorm: %s, confidence: %.2f)",
                 drug_match.canonical_drug_name,
                 drug_match.rxnorm_id,
-                drug_match.confidence
+                drug_match.confidence,
             )
         else:
-            logger.warning("Unrecognized drug in prescription text: '%s'", prescription_text)
+            logger.warning(
+                "Unrecognized drug in prescription text: '%s'", prescription_text
+            )
 
         def_strength = drug_match.default_strength if drug_match else None
         def_dose = drug_match.default_dose if drug_match else None
@@ -68,10 +77,14 @@ class PrescriptionAgent:
         strength = StrengthExtractor.extract(clean_text, default_strength=def_strength)
 
         # 5. Dose Extraction
-        dose = DoseExtractor.extract(clean_text, extracted_strength=strength, default_dose=def_dose)
+        dose = DoseExtractor.extract(
+            clean_text, extracted_strength=strength, default_dose=def_dose
+        )
 
         # 6. Frequency Normalization
-        frequency = FrequencyNormalizer.normalize(clean_text, default_frequency=def_freq)
+        frequency = FrequencyNormalizer.normalize(
+            clean_text, default_frequency=def_freq
+        )
 
         # 7. Route Normalization
         route = RouteNormalizer.normalize(clean_text, default_route=def_route)
@@ -90,7 +103,7 @@ class PrescriptionAgent:
             frequency=frequency,
             route=route,
             duration_days=duration_days,
-            indication=indication
+            indication=indication,
         )
 
         # 11. Prescription ID generation
@@ -104,7 +117,7 @@ class PrescriptionAgent:
             "Prescription %s normalized with status: %s, confidence: %.2f",
             prescription_id,
             status,
-            confidence
+            confidence,
         )
 
         return PrescriptionOutput(
@@ -113,5 +126,5 @@ class PrescriptionAgent:
             drug=drug_details,
             indication=indication,
             confidence=confidence,
-            status=status
+            status=status,
         )
