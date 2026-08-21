@@ -5,15 +5,23 @@ from .repository import AlternativeDiscoveryRepository
 from .schemas import AlternativeDiscoveryInput, AlternativeDiscoveryOutput
 from .service import AlternativeDiscoveryService
 
-router = APIRouter(prefix="/alternative-discovery", tags=["Alternative Discovery Agent"])
+router = APIRouter(
+    prefix="/alternative-discovery", tags=["Alternative Discovery Agent"]
+)
 
 repository = AlternativeDiscoveryRepository()
 service = AlternativeDiscoveryService(repository)
 agent = AlternativeDiscoveryAgent(service)
 
+
 @router.get("/health")
 def health():
-    return {"status": "healthy", "agent": "alternative_discovery", "dataset_records": len(repository.records)}
+    return {
+        "status": "healthy",
+        "agent": "alternative_discovery",
+        "dataset_records": len(repository.records),
+    }
+
 
 @router.post("/discover", response_model=AlternativeDiscoveryOutput)
 def discover(request: AlternativeDiscoveryInput) -> AlternativeDiscoveryOutput:

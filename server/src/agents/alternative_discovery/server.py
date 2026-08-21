@@ -19,9 +19,11 @@ from agents.alternative_discovery.app.router import router as alt_router
 app = FastAPI(title="Alternative Discovery Service", version="1.0.0")
 app.include_router(alt_router)
 
+
 @app.get("/")
 async def root():
     return {"service": "Alternative Discovery Agent API", "status": "online"}
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8004)

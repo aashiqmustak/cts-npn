@@ -8,6 +8,7 @@ def parse_bool(val: str | None) -> bool:
         return False
     return val.strip().lower() in ("true", "1", "yes", "t", "y")
 
+
 def parse_float(val: str | None) -> float | None:
     if not val or val.strip().lower() == "nan":
         return None
@@ -16,6 +17,7 @@ def parse_float(val: str | None) -> float | None:
     except ValueError:
         return None
 
+
 def parse_int(val: str | None) -> int | None:
     if not val or val.strip().lower() == "nan":
         return None
@@ -23,6 +25,7 @@ def parse_int(val: str | None) -> int | None:
         return int(float(val))
     except ValueError:
         return None
+
 
 class AlternativeDiscoveryRepository:
     def __init__(self, csv_path: str | None = None):
@@ -65,7 +68,11 @@ class AlternativeDiscoveryRepository:
         print(f"Loaded {len(self.records)} alternative discovery records.")
 
     def find_candidate_drugs(
-        self, therapeutic_class: str, indication: str, exclude_drug_id: str, limit: int = 15
+        self,
+        therapeutic_class: str,
+        indication: str,
+        exclude_drug_id: str,
+        limit: int = 15,
     ) -> list[dict[str, Any]]:
         results: list[dict[str, Any]] = []
         t_class = (therapeutic_class or "").strip().lower()
@@ -83,7 +90,12 @@ class AlternativeDiscoveryRepository:
             r_ind = (record.get("indication") or "").strip().lower()
 
             # Find drugs where the record's therapeutic class OR indication loosely matches
-            if ((t_class and t_class in r_class) or (ind and ind in r_ind) or (r_class and r_class in t_class) or (r_ind and r_ind in ind)) and r_id not in seen:
+            if (
+                (t_class and t_class in r_class)
+                or (ind and ind in r_ind)
+                or (r_class and r_class in t_class)
+                or (r_ind and r_ind in ind)
+            ) and r_id not in seen:
                 seen.add(r_id)
                 results.append(record)
                 if len(results) >= limit:
