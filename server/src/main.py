@@ -1,11 +1,10 @@
 import importlib.util
 from pathlib import Path
 
-from fastapi import FastAPI
-
 from agents.formulary_agent.app.router import (
     router as formulary_router,
 )
+from fastapi import FastAPI
 
 ROOT = Path(__file__).resolve().parent
 CLINICAL_ROUTER_PATH = ROOT / "agents" / "clinical-agent" / "app" / "router.py"
