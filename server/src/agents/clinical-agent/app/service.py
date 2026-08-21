@@ -10,8 +10,8 @@ try:
     from .schemas import (
         ClinicalSafetyInput,
         ClinicalSafetyOutput,
-        Evidence,
         EligibleCandidate,
+        Evidence,
         RejectedCandidate,
         ReviewCandidate,
         SafetyChecks,
@@ -21,8 +21,8 @@ except ImportError:  # pragma: no cover - allows standalone script execution
     from schemas import (
         ClinicalSafetyInput,
         ClinicalSafetyOutput,
-        Evidence,
         EligibleCandidate,
+        Evidence,
         RejectedCandidate,
         ReviewCandidate,
         SafetyChecks,
@@ -71,9 +71,14 @@ def _check_contraindication(context: dict[str, Any]) -> dict[str, Any]:
 
 
 def _check_drug_disease(context: dict[str, Any]) -> dict[str, Any]:
-    if context.get("indication") and context.get("indication").lower() == "diabetes":
-        if context.get("candidate_drug_name", "").lower() in {"metformin"}:
-            return {"status": "PASS", "severity": "LOW", "reason": "Indication and candidate drug are clinically consistent."}
+    indication = context.get("indication")
+    candidate_name = context.get("candidate_drug_name", "")
+    if (
+        indication
+        and indication.lower() == "diabetes"
+        and candidate_name.lower() in {"metformin"}
+    ):
+        return {"status": "PASS", "severity": "LOW", "reason": "Indication and candidate drug are clinically consistent."}
     return {"status": "PASS", "severity": "LOW", "reason": "No disease-drug conflict detected."}
 
 

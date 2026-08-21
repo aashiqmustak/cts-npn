@@ -1,29 +1,27 @@
-import os
 import json
+import os
 import time
 import warnings
+
 import joblib
 import numpy as np
 import pandas as pd
-
-from sklearn.model_selection import train_test_split, StratifiedKFold, cross_validate
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
+import xgboost as xgb
+from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
 from sklearn.metrics import (
-    roc_auc_score,
     average_precision_score,
-    classification_report,
-    confusion_matrix,
     brier_score_loss,
-    precision_recall_curve,
+    confusion_matrix,
     f1_score,
+    precision_recall_curve,
     precision_score,
     recall_score,
+    roc_auc_score,
 )
-
-import xgboost as xgb
+from sklearn.model_selection import StratifiedKFold, cross_validate, train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 warnings.filterwarnings("ignore")
 
@@ -350,10 +348,10 @@ for name, model in models.items():
                 "precision": round(float(default_precision), 4),
                 "recall": round(float(default_recall), 4),
                 "confusion_matrix": {
-                    "true_negatives": int(cm_default[0][0]),
-                    "false_positives": int(cm_default[0][1]),
-                    "false_negatives": int(cm_default[1][0]),
-                    "true_positives": int(cm_default[1][1]),
+                    "true_negatives": cm_default[0][0],
+                    "false_positives": cm_default[0][1],
+                    "false_negatives": cm_default[1][0],
+                    "true_positives": cm_default[1][1],
                 },
             },
 
@@ -363,10 +361,10 @@ for name, model in models.items():
                 "precision": round(float(opt_precision), 4),
                 "recall": round(float(opt_recall), 4),
                 "confusion_matrix": {
-                    "true_negatives": int(cm_opt[0][0]),
-                    "false_positives": int(cm_opt[0][1]),
-                    "false_negatives": int(cm_opt[1][0]),
-                    "true_positives": int(cm_opt[1][1]),
+                    "true_negatives": cm_opt[0][0],
+                    "false_positives": cm_opt[0][1],
+                    "false_negatives": cm_opt[1][0],
+                    "true_positives": cm_opt[1][1],
                 },
             },
         },
@@ -488,7 +486,7 @@ joblib.dump(
     model_path,
 )
 
-print(f"\n[OK] Champion model saved:")
+print("\n[OK] Champion model saved:")
 print(model_path)
 
 # ============================================================
@@ -526,7 +524,7 @@ metrics_path = os.path.join(
 with open(metrics_path, "w", encoding="utf-8") as f:
     json.dump(metrics, f, indent=2)
 
-print(f"[OK] Metrics saved:")
+print("[OK] Metrics saved:")
 print(metrics_path)
 
 # Also save to BASE_DIR for convenience
@@ -557,22 +555,23 @@ print("\n" + "=" * 90)
 print("FINAL ABANDONMENT MODEL REPORT")
 print("=" * 90)
 
-print(f"""
+print(
+    """
 Champion Model       : {best_model_name}
-Dataset Size         : {len(df):,}
-Feature Count        : {len(feature_names):,}
+Dataset Size         : {df_size:,}
+Feature Count        : {feature_count:,}
 
-5-Fold CV PR-AUC     : {cv_results[best_model_name]['pr_auc']['mean']:.4f}
-5-Fold CV ROC-AUC    : {cv_results[best_model_name]['roc_auc']['mean']:.4f}
+5-Fold CV PR-AUC     : {cv_pr_auc:.4f}
+5-Fold CV ROC-AUC    : {cv_roc_auc:.4f}
 
-Test ROC-AUC         : {champion_test['roc_auc']:.4f}
-Test PR-AUC          : {champion_test['pr_auc']:.4f}
-Test Brier Score     : {champion_test['brier_score']:.4f}
+Test ROC-AUC         : {champion_test_roc_auc:.4f}
+Test PR-AUC          : {champion_test_pr_auc:.4f}
+Test Brier Score     : {champion_test_brier:.4f}
 
 Optimal Threshold    : {champion_threshold:.4f}
-Test F1              : {champion_test['validation_optimized_threshold']['f1']:.4f}
-Test Precision       : {champion_test['validation_optimized_threshold']['precision']:.4f}
-Test Recall          : {champion_test['validation_optimized_threshold']['recall']:.4f}
+Test F1              : {champion_test_f1:.4f}
+Test Precision       : {champion_test_precision:.4f}
+Test Recall          : {champion_test_recall:.4f}
 
 Model File:
 {model_path}
@@ -582,7 +581,24 @@ Metrics File:
 
 Feature Importance:
 {importance_path}
-""")
+""".format(
+        best_model_name=best_model_name,
+        df_size=len(df),
+        feature_count=len(feature_names),
+        cv_pr_auc=cv_results[best_model_name]["pr_auc"]["mean"],
+        cv_roc_auc=cv_results[best_model_name]["roc_auc"]["mean"],
+        champion_test_roc_auc=champion_test["roc_auc"],
+        champion_test_pr_auc=champion_test["pr_auc"],
+        champion_test_brier=champion_test["brier_score"],
+        champion_threshold=champion_threshold,
+        champion_test_f1=champion_test["validation_optimized_threshold"]["f1"],
+        champion_test_precision=champion_test["validation_optimized_threshold"]["precision"],
+        champion_test_recall=champion_test["validation_optimized_threshold"]["recall"],
+        model_path=model_path,
+        metrics_path=metrics_path,
+        importance_path=importance_path,
+    )
+)
 
 print("=" * 90)
 print("TRAINING COMPLETE")
