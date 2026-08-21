@@ -5,7 +5,7 @@ extractor = LLMExtractor()
 tests = [
     "Atorvastatin 20 mg once daily for 30 days",
     "Metformin 500 mg tablet twice daily after meals for 60 days for type 2 diabetes",
-    "Amlodipine 5 mg once daily for 30 days for hypertension"
+    "Amlodipine 5 mg once daily for 30 days for hypertension",
 ]
 
 for text in tests:
