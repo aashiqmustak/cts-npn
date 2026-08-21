@@ -38,20 +38,15 @@ async def get_patient_history(
 ) -> PatientHistoryResponse:
 
     try:
-
-        return agent.process_request(
-            request
-        )
+        return agent.process_request(request)
 
     except FileNotFoundError as exc:
-
         raise HTTPException(
             status_code=503,
             detail=f"Dataset unavailable: {exc}",
         )
 
     except (KeyError, RuntimeError, TypeError, ValueError) as exc:
-
         raise HTTPException(
             status_code=500,
             detail=f"Internal Patient History Agent error: {exc}",
