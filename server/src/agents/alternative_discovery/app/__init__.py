@@ -5,8 +5,8 @@ from .service import AlternativeDiscoveryService
 
 __all__ = [
     "AlternativeDiscoveryAgent",
-    "AlternativeDiscoveryRepository",
     "AlternativeDiscoveryInput",
     "AlternativeDiscoveryOutput",
+    "AlternativeDiscoveryRepository",
     "AlternativeDiscoveryService",
 ]

@@ -1,8 +1,11 @@
 from typing import cast
-from langchain_groq import ChatGroq
+
 from langchain_core.prompts import PromptTemplate
-from .schemas import AlternativeDiscoveryInput, AlternativeDiscoveryOutput
+from langchain_groq import ChatGroq
+
 from .repository import AlternativeDiscoveryRepository
+from .schemas import AlternativeDiscoveryInput, AlternativeDiscoveryOutput
+
 
 class AlternativeDiscoveryService:
     def __init__(self, repository: AlternativeDiscoveryRepository):

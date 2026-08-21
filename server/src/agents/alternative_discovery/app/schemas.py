@@ -1,5 +1,6 @@
+
 from pydantic import BaseModel, Field
-from typing import List, Optional
+
 
 class OriginalDrug(BaseModel):
     drug_id: str
@@ -8,7 +9,7 @@ class OriginalDrug(BaseModel):
     indication: str
 
 class Constraints(BaseModel):
-    insurance_plan_id: Optional[str] = None
+    insurance_plan_id: str | None = None
     generic_only: bool = False
     same_class_preferred: bool = True
 
@@ -24,5 +25,5 @@ class Candidate(BaseModel):
 
 class AlternativeDiscoveryOutput(BaseModel):
     original_drug: str
-    candidates: List[Candidate]
+    candidates: list[Candidate]
     candidate_count: int

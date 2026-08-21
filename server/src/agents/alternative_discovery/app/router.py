@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+
 from .agent import AlternativeDiscoveryAgent
 from .repository import AlternativeDiscoveryRepository
 from .schemas import AlternativeDiscoveryInput, AlternativeDiscoveryOutput
@@ -18,5 +19,5 @@ def health():
 def discover(request: AlternativeDiscoveryInput) -> AlternativeDiscoveryOutput:
     try:
         return agent.process_request(request)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=f"Internal Agent Error: {exc}")

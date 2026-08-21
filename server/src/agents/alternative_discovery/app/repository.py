@@ -2,6 +2,7 @@ import csv
 import pathlib
 from typing import Any
 
+
 def parse_bool(val: str | None) -> bool:
     if not val:
         return False
@@ -82,11 +83,10 @@ class AlternativeDiscoveryRepository:
             r_ind = (record.get("indication") or "").strip().lower()
 
             # Find drugs where the record's therapeutic class OR indication loosely matches
-            if (t_class and t_class in r_class) or (ind and ind in r_ind) or (r_class and r_class in t_class) or (r_ind and r_ind in ind):
-                if r_id not in seen:
-                    seen.add(r_id)
-                    results.append(record)
-                    if len(results) >= limit:
-                        break
+            if ((t_class and t_class in r_class) or (ind and ind in r_ind) or (r_class and r_class in t_class) or (r_ind and r_ind in ind)) and r_id not in seen:
+                seen.add(r_id)
+                results.append(record)
+                if len(results) >= limit:
+                    break
 
         return results

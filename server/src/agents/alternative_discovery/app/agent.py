@@ -1,6 +1,8 @@
 from typing import Any
+
 from .schemas import AlternativeDiscoveryInput, AlternativeDiscoveryOutput
 from .service import AlternativeDiscoveryService
+
 
 class AlternativeDiscoveryAgent:
     def __init__(self, service: AlternativeDiscoveryService):
