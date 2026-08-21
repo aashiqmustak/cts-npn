@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/bento_card.dart';
 
 class FrictionScreen extends StatelessWidget {
   const FrictionScreen({super.key});
@@ -15,83 +17,53 @@ class FrictionScreen extends StatelessWidget {
     final fmt = NumberFormat.currency(symbol: '\$', decimalDigits: 0);
 
     return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Title
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Prior-Auth & Step-Therapy Friction Center',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Identify claims delayed or abandoned due to prior authorization rules and step therapy restrictions.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
+          // 1. Enterprise Bento Hero Banner
+          BentoHeroBanner(
+            title: 'Prior-Auth & Step-Therapy Friction Center',
+            subtitle: 'Identify pharmacy claims delayed or abandoned due to prior authorization rules and step therapy restrictions.',
+            icon: Icons.fact_check_rounded,
+            statusLabel: 'Real-time Claims Stream',
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.warningBg,
+                borderRadius: BorderRadius.circular(20),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.warningBg,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${events.length} Active Friction Bottlenecks',
-                  style: const TextStyle(
-                    color: AppColors.warningText,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
+              child: Text(
+                '${events.length} Active Bottlenecks',
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.warningText,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
                 ),
               ),
-            ],
+            ),
           ),
 
           const SizedBox(height: 20),
 
-          // Filters Bar
+          // 2. Filters Bento Card
           _buildFilterBar(context, appState),
 
           const SizedBox(height: 20),
 
-          // Main Friction Table
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.borderLight),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
+          // 3. Main Friction Table Bento Card
+          BentoCard(
+            title: 'Prior-Authorization Bottleneck Log',
+            subtitle: 'Clinical claims requiring doctor intervention or alternative tier substitution',
             child: Column(
               children: [
                 if (events.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(32.0),
+                  Padding(
+                    padding: const EdgeInsets.all(36.0),
                     child: Center(
                       child: Text(
                         'No PA or Step Therapy friction points match your query.',
-                        style: TextStyle(color: AppColors.textMuted),
+                        style: GoogleFonts.plusJakartaSans(color: AppColors.textMuted),
                       ),
                     ),
                   )
@@ -100,112 +72,101 @@ class FrictionScreen extends StatelessWidget {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: events.length,
-                    separatorBuilder: (context, index) => const Divider(height: 1),
+                    separatorBuilder: (context, index) => const Divider(
+                      height: 1,
+                      color: AppColors.borderLight,
+                    ),
                     itemBuilder: (context, index) {
                       final event = events[index];
-
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Days Delayed Circle
-                            _buildDaysDelayedBadge(event.daysDelayed),
+                            // Type Icon Badge
+                            _buildFrictionTypeBadge(event.barrierType),
 
                             const SizedBox(width: 14),
 
                             // Patient & Drug Info
                             Expanded(
-                              flex: 3,
+                              flex: 4,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${event.patientName} — ${event.drugName}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
+                                    event.patientName,
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontWeight: FontWeight.w800,
                                       fontSize: 14,
                                       color: AppColors.textDark,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    'Friction Index Score: ${event.frictionScore} / 10',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.textMuted,
-                                    ),
+                                    'Drug: ${event.drugName} • ${event.daysDelayed} Days Delayed',
+                                    style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textMuted),
                                   ),
+                                  if (event.suggestedAltName != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: Text(
+                                        'Suggested Alternative: ${event.suggestedAltName}',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.primaryTeal,
+                                        ),
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
 
-                            // Barrier Type Chip
-                            Expanded(
-                              flex: 2,
-                              child: _buildBarrierChip(event.barrierType),
-                            ),
-
-                            // Suggested Alternative & Savings
+                            // Resolution & Savings
                             Expanded(
                               flex: 3,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (event.suggestedAltName != null) ...[
-                                    Text(
-                                      'Alt: ${event.suggestedAltName}',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                        color: AppColors.primaryDark,
-                                      ),
+                                  Text(
+                                    'Est. Annual Savings: ${fmt.format(event.estAnnualSavings)}',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 12.5,
+                                      color: AppColors.successText,
                                     ),
-                                    Text(
-                                      'Est Savings: ${fmt.format(event.estAnnualSavings)}/yr',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: AppColors.successText,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Status: ${event.status.name.toUpperCase()}',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: _getStatusColor(event.status),
                                     ),
-                                  ] else
-                                    const Text('No Alt Available',
-                                        style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                                  ),
                                 ],
                               ),
                             ),
 
-                            // Action Buttons
-                            Row(
-                              children: [
-                                OutlinedButton(
-                                  style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  ),
-                                  onPressed: () {
-                                    _showPAAppealModal(context, event, appState);
-                                  },
-                                  child: const Text('Expedite PA', style: TextStyle(fontSize: 11)),
+                            // Action Button
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryTeal,
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              ),
+                              onPressed: () {
+                                _showResolveModal(context, event, appState);
+                              },
+                              child: Text(
+                                'Resolve',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
                                 ),
-                                const SizedBox(width: 8),
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  ),
-                                  onPressed: () {
-                                    appState.updateFrictionStatus(event.id, FrictionStatus.resolved);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Switched ${event.patientName} to ${event.suggestedAltName}! Friction resolved.',
-                                        ),
-                                        backgroundColor: AppColors.primaryTeal,
-                                      ),
-                                    );
-                                  },
-                                  child: const Text('Switch Alt', style: TextStyle(fontSize: 11)),
-                                ),
-                              ],
+                              ),
                             ),
                           ],
                         ),
@@ -221,39 +182,38 @@ class FrictionScreen extends StatelessWidget {
   }
 
   Widget _buildFilterBar(BuildContext context, AppState appState) {
-    return Container(
+    return BentoCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
-      ),
       child: Row(
         children: [
           Expanded(
             flex: 3,
-            child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'Search patient name or restricted drug...',
-                prefixIcon: Icon(Icons.search_rounded),
-                isDense: true,
+            child: SizedBox(
+              height: 42,
+              child: TextField(
+                style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                decoration: InputDecoration(
+                  hintText: 'Search patient, drug, or suggested alternative...',
+                  prefixIcon: const Icon(Icons.search_rounded, size: 19, color: AppColors.primaryTeal),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                  filled: true,
+                  fillColor: AppColors.bgSlate,
+                ),
+                onChanged: (val) => appState.setFrictionSearchQuery(val),
               ),
-              onChanged: (val) => appState.setFrictionSearchQuery(val),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             flex: 2,
             child: DropdownButtonFormField<BarrierType?>(
-              value: appState.selectedBarrierFilter,
-              decoration: const InputDecoration(
-                labelText: 'Barrier Type',
-                isDense: true,
-              ),
+              initialValue: appState.selectedBarrierFilter,
+              style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textDark),
+              decoration: const InputDecoration(labelText: 'Barrier Type'),
               items: const [
                 DropdownMenuItem(value: null, child: Text('All Barriers')),
                 DropdownMenuItem(value: BarrierType.paRequired, child: Text('Prior Authorization')),
-                DropdownMenuItem(value: BarrierType.stepTherapyFailed, child: Text('Step Therapy Friction')),
+                DropdownMenuItem(value: BarrierType.stepTherapyFailed, child: Text('Step Therapy Failed')),
                 DropdownMenuItem(value: BarrierType.quantityLimit, child: Text('Quantity Limit')),
               ],
               onChanged: (val) => appState.setFrictionBarrierFilter(val),
@@ -264,119 +224,107 @@ class FrictionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDaysDelayedBadge(int days) {
-    return Container(
-      width: 46,
-      height: 46,
-      decoration: BoxDecoration(
-        color: days > 14 ? AppColors.dangerBg : AppColors.warningBg,
-        shape: BoxShape.circle,
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            '$days',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-              color: days > 14 ? AppColors.dangerText : AppColors.warningText,
-            ),
-          ),
-          Text(
-            'Days',
-            style: TextStyle(
-              fontSize: 9,
-              color: days > 14 ? AppColors.dangerText : AppColors.warningText,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBarrierChip(BarrierType type) {
-    String label;
+  Widget _buildFrictionTypeBadge(BarrierType type) {
     Color bg;
-    Color text;
+    Color color;
+    IconData icon;
 
     switch (type) {
       case BarrierType.paRequired:
-        label = 'PA Required';
         bg = AppColors.dangerBg;
-        text = AppColors.dangerText;
+        color = AppColors.dangerText;
+        icon = Icons.lock_clock_rounded;
         break;
       case BarrierType.stepTherapyFailed:
-        label = 'Step Therapy';
         bg = AppColors.warningBg;
-        text = AppColors.warningText;
+        color = AppColors.warningText;
+        icon = Icons.stairs_rounded;
         break;
       case BarrierType.quantityLimit:
-        label = 'Qty Limit';
         bg = AppColors.infoBg;
-        text = AppColors.infoText;
+        color = AppColors.infoText;
+        icon = Icons.hourglass_top_rounded;
         break;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: text,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+      child: Icon(icon, color: color, size: 20),
     );
   }
 
-  void _showPAAppealModal(BuildContext context, PAFrictionEvent event, AppState appState) {
+  Color _getStatusColor(FrictionStatus status) {
+    switch (status) {
+      case FrictionStatus.blocked:
+        return AppColors.dangerText;
+      case FrictionStatus.inReview:
+        return AppColors.warningText;
+      case FrictionStatus.appealed:
+        return AppColors.infoText;
+      case FrictionStatus.resolved:
+        return AppColors.successText;
+    }
+  }
+
+  void _showResolveModal(BuildContext context, PAFrictionEvent event, AppState appState) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Expedite Prior Authorization: ${event.patientName}'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          'Resolve Claim Bottleneck',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
         content: SizedBox(
-          width: 480,
+          width: 440,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Drug: ${event.drugName}'),
-              Text('Days Delayed: ${event.daysDelayed} Days'),
-              const SizedBox(height: 12),
-              const TextField(
-                maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: 'Clinical Exception Rationale',
-                  hintText: 'Enter clinical justification for Part D prior auth override...',
-                ),
+              Text(
+                'Patient: ${event.patientName}',
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13.5),
               ),
+              const SizedBox(height: 4),
+              Text(
+                'Target Drug: ${event.drugName} • Barrier: ${event.barrierLabel}',
+                style: GoogleFonts.plusJakartaSans(color: AppColors.textMuted, fontSize: 12),
+              ),
+              if (event.suggestedAltName != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Suggested Alternative: ${event.suggestedAltName}',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryTeal),
+                ),
+              ],
             ],
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(context),
+            child: Text('Close', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryTeal,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            ),
             onPressed: () {
-              appState.updateFrictionStatus(event.id, FrictionStatus.appealed);
-              Navigator.of(context).pop();
+              appState.updateFrictionStatus(event.id, FrictionStatus.resolved);
+              Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('PA Exception document submitted to health plan! Status set to Appealed.'),
+                  content: Text('Claim Friction Point Marked as Resolved!'),
                   backgroundColor: AppColors.primaryTeal,
                 ),
               );
             },
-            child: const Text('Submit Exception Request'),
+            child: Text('Mark Resolved', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
           ),
         ],
       ),

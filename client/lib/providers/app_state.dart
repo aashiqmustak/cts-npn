@@ -36,7 +36,7 @@ class AppState extends ChangeNotifier {
       email: 'user@alternea.org',
       role: UserRole.pharmacist,
       assignedPatientIds: [],
-      avatarUrl: 'https://i.pravatar.cc/150?img=12',
+      avatarUrl: '',
       title: 'Clinical Pharmacist',
     );
     refreshData();
@@ -140,7 +140,7 @@ class AppState extends ChangeNotifier {
       email: email,
       role: role,
       assignedPatientIds: ['PT-301', 'PT-302'],
-      avatarUrl: 'https://i.pravatar.cc/150?img=32',
+      avatarUrl: '',
       title: _getRoleTitle(role),
     );
     dataService.addUser(newUser);
@@ -163,6 +163,52 @@ class AppState extends ChangeNotifier {
       case UserRole.patient:
         return 'Patient Account';
     }
+  }
+
+  void switchRole(UserRole newRole) {
+    String name = 'User';
+    String email = 'user@alternea.org';
+    String title = _getRoleTitle(newRole);
+
+    switch (newRole) {
+      case UserRole.doctor:
+        name = 'Dr. Rahul Verma';
+        email = 'doctor@alternea.org';
+        break;
+      case UserRole.pharmacist:
+        name = 'Sarah Jenkins, PharmD';
+        email = 'pharmacist@alternea.org';
+        break;
+      case UserRole.patient:
+        name = 'Eleanor Vance';
+        email = 'patient@alternea.org';
+        break;
+      case UserRole.insuranceAgent:
+        name = 'Marcus Brody';
+        email = 'insurance@alternea.org';
+        break;
+      case UserRole.admin:
+        name = 'Admin Director';
+        email = 'admin@alternea.org';
+        break;
+    }
+
+    _currentUser = User(
+      id: 'U_${newRole.name.toUpperCase()}',
+      name: name,
+      email: email,
+      role: newRole,
+      assignedPatientIds: const ['PT-301', 'PT-302'],
+      avatarUrl: '',
+      title: title,
+      doctorId: newRole == UserRole.doctor ? 'DOC-201' : null,
+      patientId: newRole == UserRole.patient ? 'PT-301' : null,
+      hospitalId: 'HOSP-101',
+      hospitalName: 'MetroHealth Medical Center',
+    );
+    _currentNavIndex = 0;
+    _selectedPrescriptionId = null;
+    notifyListeners();
   }
 
   void logout() {

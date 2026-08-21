@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/bento_card.dart';
 
 class AdherenceScreen extends StatelessWidget {
   const AdherenceScreen({super.key});
@@ -14,89 +15,63 @@ class AdherenceScreen extends StatelessWidget {
     final flags = appState.filteredAdherenceFlags;
 
     return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Screen Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Adherence Risk Monitoring (PDC Engine)',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Synthea-backed fill histories & CMS Proportion of Days Covered (PDC) compliance benchmarks.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
+          // 1. Enterprise Bento Hero Banner
+          BentoHeroBanner(
+            title: 'Adherence Risk Core (PDC Engine)',
+            subtitle:
+                'CMS Proportion of Days Covered (PDC) compliance telemetry & proactive pharmacist outreach.',
+            icon: Icons.insights_rounded,
+            statusLabel: 'PDC Core Active',
+            trailing: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.dangerBg,
+                borderRadius: BorderRadius.circular(20),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.dangerBg,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${flags.length} Patients Flagged At-Risk',
-                  style: const TextStyle(
-                    color: AppColors.dangerText,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
+              child: Text(
+                '${flags.length} Flagged Patients',
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.dangerText,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
                 ),
               ),
-            ],
+            ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
-          // Configurable PDC Threshold Slider Card
+          // 2. Configurable PDC Threshold Slider Bento Card
           _buildPdcThresholdControlCard(context, appState),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
-          // Filter Controls Card
+          // 3. Search & Filter Bento Card
           _buildFilterCard(context, appState),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
-          // Patient Adherence Risk List
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.borderLight),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
+          // 4. Patient Adherence Risk List Bento Card
+          BentoCard(
+            title: 'Patient Risk Stratification Queue',
+            subtitle:
+                'Real-time refill intervals calculated from pharmacy fill history',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (flags.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(32.0),
+                  Padding(
+                    padding: const EdgeInsets.all(36.0),
                     child: Center(
                       child: Text(
                         'No patients flagged at current PDC threshold and filter criteria.',
-                        style: TextStyle(color: AppColors.textMuted),
+                        style: GoogleFonts.plusJakartaSans(
+                            color: AppColors.textMuted),
                       ),
                     ),
                   )
@@ -105,140 +80,110 @@ class AdherenceScreen extends StatelessWidget {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: flags.length,
-                    separatorBuilder: (context, index) => const Divider(height: 1),
+                    separatorBuilder: (context, index) => const Divider(
+                      height: 1,
+                      color: AppColors.borderLight,
+                    ),
                     itemBuilder: (context, index) {
                       final flag = flags[index];
                       final rx = appState.dataService.prescriptions.firstWhere(
                         (p) => p.id == flag.prescriptionId,
-                        orElse: () => appState.dataService.prescriptions.first,
+                        orElse: () => appState
+                                .dataService.prescriptions.isNotEmpty
+                            ? appState.dataService.prescriptions.first
+                            : Prescription(
+                                id: flag.prescriptionId,
+                                patientId: flag.patientId,
+                                patientName: flag.patientName,
+                                drugId: 'DRUG-01',
+                                drugName: flag.drugName,
+                                drugClass: flag.drugClass,
+                                fillDates: const [],
+                                fillRecords: const [],
+                                pdcScore: flag.pdcScore,
+                                status: 'Active',
+                                lastFillDate: DateTime.now(),
+                                nextDueDate: DateTime.now()
+                                    .add(const Duration(days: 30)),
+                                prescriberName: 'Dr. Rahul Verma',
+                              ),
                       );
                       final patient = appState.dataService.patients.firstWhere(
                         (p) => p.id == flag.patientId,
-                        orElse: () => appState.dataService.patients.first,
+                        orElse: () => appState.dataService.patients.isNotEmpty
+                            ? appState.dataService.patients.first
+                            : Patient(
+                                id: flag.patientId,
+                                name: flag.patientName.isNotEmpty
+                                    ? flag.patientName
+                                    : 'Eleanor Vance',
+                                age: 67,
+                                gender: 'Female',
+                                prescriberId: 'DOC-201',
+                                prescriberName: 'Dr. Rahul Verma',
+                                planId: 'PLAN-01',
+                                riskScore: 0.35,
+                                phone: '(555) 019-2834',
+                                email: 'patient@alternea.org',
+                              ),
                       );
 
                       return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            // Risk Indicator Avatar
                             _buildRiskAvatar(flag.riskLevel),
-
-                            const SizedBox(width: 14),
-
-                            // Patient & Prescriber Info
-                            Expanded(
-                              flex: 3,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    patient.name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                      color: AppColors.textDark,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${patient.age} yrs • ${patient.gender} • Prescriber: ${patient.prescriberName}',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.textMuted,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            // Drug & Class
-                            Expanded(
-                              flex: 3,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    flag.drugName,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                      color: AppColors.textDark,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    flag.drugClass,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.textMuted,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            // PDC Score Gauge Bar
-                            Expanded(
-                              flex: 3,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'PDC: ${(flag.pdcScore * 100).toInt()}%',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                          color: flag.pdcScore < appState.pdcThreshold
-                                              ? AppColors.dangerText
-                                              : AppColors.successText,
-                                        ),
-                                      ),
-                                      Text(
-                                        flag.pdcScore < appState.pdcThreshold ? 'Below Target' : 'Compliant',
-                                        style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: LinearProgressIndicator(
-                                      value: flag.pdcScore,
-                                      minHeight: 6,
-                                      backgroundColor: AppColors.borderLight,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        flag.pdcScore < appState.pdcThreshold
-                                            ? AppColors.dangerText
-                                            : AppColors.successText,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
                             const SizedBox(width: 12),
-
-                            // Outreach Status Badge
                             Expanded(
-                              flex: 2,
-                              child: _buildOutreachChip(flag.outreachStatus),
-                            ),
-
-                            // Action Button
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    flag.patientName,
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.textDark,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${flag.drugName} • Prescriber: ${patient.prescriberName}',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 11,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              onPressed: () {
-                                _showPatientOutreachModal(context, flag, rx, patient, appState);
-                              },
-                              child: const Text('View Timeline & Outreach', style: TextStyle(fontSize: 12)),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.bgSlate,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                    color: AppColors.metallicBorder),
+                              ),
+                              child: Text(
+                                'PDC ${(flag.pdcScore * 100).toInt()}%',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: flag.pdcScore < 0.65
+                                      ? AppColors.jewelSoftCoral
+                                      : AppColors.jewelWarmAmber,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            _buildOutreachChip(flag.outreachStatus),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: const Icon(Icons.chevron_right_rounded,
+                                  size: 20, color: AppColors.primaryTeal),
+                              onPressed: () => _showPatientOutreachModal(
+                                  context, flag, rx, patient, appState),
                             ),
                           ],
                         ),
@@ -254,15 +199,18 @@ class AdherenceScreen extends StatelessWidget {
   }
 
   Widget _buildPdcThresholdControlCard(BuildContext context, AppState appState) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primaryTeal.withOpacity(0.3)),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
-        ],
+    return BentoCard(
+      title: 'Configurable CMS PDC Threshold Control',
+      subtitle:
+          'Adjust threshold percentage to dynamically recalculate adherence flags across your patient panel',
+      icon: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppColors.primaryLight,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Icon(Icons.tune_rounded,
+            color: AppColors.primaryTeal, size: 18),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,59 +218,55 @@ class AdherenceScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.tune_rounded, color: AppColors.primaryTeal),
-                  const SizedBox(width: 10),
-                  Text(
-                    'CMS Adherence Benchmark PDC Threshold: ${(appState.pdcThreshold * 100).toInt()}%',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: AppColors.primaryDark,
-                    ),
-                  ),
-                ],
+              Text(
+                'Active PDC Adherence Target: ${(appState.pdcThreshold * 100).toInt()}%',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textDark,
+                ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
+                  color: appState.pdcThreshold >= 0.80
+                      ? AppColors.successBg
+                      : AppColors.warningBg,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text(
-                  'Configurable Rule',
-                  style: TextStyle(
+                child: Text(
+                  appState.pdcThreshold >= 0.80
+                      ? 'CMS 5-Star Compliant'
+                      : 'Sub-Optimal Benchmark',
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryDark,
+                    fontWeight: FontWeight.w800,
+                    color: appState.pdcThreshold >= 0.80
+                        ? AppColors.successText
+                        : AppColors.warningText,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          const Text(
-            'Adjust the PDC (Proportion of Days Covered) cutoff threshold to dynamically filter patients with gaps in refill adherence.',
-            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Text('50%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-              Expanded(
-                child: Slider(
-                  value: appState.pdcThreshold,
-                  min: 0.50,
-                  max: 0.95,
-                  divisions: 9,
-                  label: '${(appState.pdcThreshold * 100).toInt()}% PDC',
-                  activeColor: AppColors.primaryTeal,
-                  onChanged: (val) => appState.setPdcThreshold(val),
-                ),
-              ),
-              const Text('95%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-            ],
+          const SizedBox(height: 8),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: AppColors.primaryTeal,
+              inactiveTrackColor: AppColors.borderLight,
+              thumbColor: AppColors.primaryTeal,
+              overlayColor: AppColors.primaryTeal.withValues(alpha: 0.12),
+              trackHeight: 6,
+            ),
+            child: Slider(
+              value: appState.pdcThreshold,
+              min: 0.50,
+              max: 0.95,
+              divisions: 9,
+              label: '${(appState.pdcThreshold * 100).toInt()}%',
+              onChanged: (val) => appState.setPdcThreshold(val),
+            ),
           ),
         ],
       ),
@@ -330,42 +274,57 @@ class AdherenceScreen extends StatelessWidget {
   }
 
   Widget _buildFilterCard(BuildContext context, AppState appState) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
-      ),
+    return BentoCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           Expanded(
             flex: 3,
-            child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'Search patient name or drug...',
-                prefixIcon: Icon(Icons.search_rounded),
-                isDense: true,
+            child: SizedBox(
+              height: 40,
+              child: TextField(
+                style: GoogleFonts.plusJakartaSans(fontSize: 12.5),
+                decoration: InputDecoration(
+                  hintText: 'Search patient name or prescribed medication...',
+                  prefixIcon: const Icon(Icons.search_rounded,
+                      size: 18, color: AppColors.primaryTeal),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+                  filled: true,
+                  fillColor: AppColors.bgSlate,
+                ),
+                onChanged: (val) => appState.setAdherenceSearchQuery(val),
               ),
-              onChanged: (val) => appState.setAdherenceSearchQuery(val),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             flex: 2,
-            child: DropdownButtonFormField<RiskLevel?>(
-              value: appState.selectedRiskFilter,
-              decoration: const InputDecoration(
-                labelText: 'Risk Level',
-                isDense: true,
+            child: SizedBox(
+              height: 40,
+              child: DropdownButtonFormField<RiskLevel?>(
+                initialValue: appState.selectedRiskFilter,
+                style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12.5, color: AppColors.textDark),
+                decoration: const InputDecoration(
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                  labelText: 'Risk Filter',
+                ),
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('All Risk Levels')),
+                  DropdownMenuItem(
+                      value: RiskLevel.high,
+                      child: Text('High Risk (<65% PDC)')),
+                  DropdownMenuItem(
+                      value: RiskLevel.medium,
+                      child: Text('Medium Risk (65-79% PDC)')),
+                  DropdownMenuItem(
+                      value: RiskLevel.low,
+                      child: Text('Low Risk (>=80% PDC)')),
+                ],
+                onChanged: (val) => appState.setAdherenceRiskFilter(val),
               ),
-              items: const [
-                DropdownMenuItem(value: null, child: Text('All Risk Levels')),
-                DropdownMenuItem(value: RiskLevel.high, child: Text('High Risk (<65% PDC)')),
-                DropdownMenuItem(value: RiskLevel.medium, child: Text('Medium Risk (65-79% PDC)')),
-                DropdownMenuItem(value: RiskLevel.low, child: Text('Low Risk (>=80% PDC)')),
-              ],
-              onChanged: (val) => appState.setAdherenceRiskFilter(val),
             ),
           ),
         ],
@@ -380,22 +339,33 @@ class AdherenceScreen extends StatelessWidget {
     switch (risk) {
       case RiskLevel.high:
         bg = AppColors.dangerBg;
-        iconColor = AppColors.dangerText;
+        iconColor = AppColors.jewelSoftCoral;
         break;
       case RiskLevel.medium:
         bg = AppColors.warningBg;
-        iconColor = AppColors.warningText;
+        iconColor = AppColors.jewelWarmAmber;
         break;
       case RiskLevel.low:
         bg = AppColors.successBg;
-        iconColor = AppColors.successText;
+        iconColor = AppColors.jewelEmerald;
         break;
     }
 
-    return CircleAvatar(
-      radius: 18,
-      backgroundColor: bg,
-      child: Icon(Icons.warning_amber_rounded, color: iconColor, size: 20),
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: bg,
+        shape: BoxShape.circle,
+        border: Border.all(color: iconColor.withValues(alpha: 0.25)),
+      ),
+      child: Icon(
+        risk == RiskLevel.low
+            ? Icons.check_circle_rounded
+            : Icons.warning_amber_rounded,
+        color: iconColor,
+        size: 19,
+      ),
     );
   }
 
@@ -436,10 +406,10 @@ class AdherenceScreen extends StatelessWidget {
       child: Text(
         label,
         textAlign: TextAlign.center,
-        style: TextStyle(
+        style: GoogleFonts.plusJakartaSans(
           color: text,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
+          fontSize: 10.5,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -447,156 +417,77 @@ class AdherenceScreen extends StatelessWidget {
 
   void _showPatientOutreachModal(BuildContext context, AdherenceFlag flag,
       Prescription rx, Patient patient, AppState appState) {
-    final fmtDate = DateFormat('MMM d, yyyy');
-    final noteController = TextEditingController(text: flag.notes ?? '');
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.history_rounded, color: AppColors.primaryTeal),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Adherence Detail & Outreach: ${patient.name}',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-            ),
-          ],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          'Patient Adherence Timeline & Outreach',
+          style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w800, fontSize: 16),
         ),
         content: SizedBox(
-          width: 580,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Patient Summary
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.bgSlate,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.borderLight),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Medication: ${flag.drugName}',
-                                style: const TextStyle(fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 2),
-                            Text('Prescriber: ${rx.prescriberName} • Phone: ${patient.phone}'),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.dangerBg,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          'PDC Score: ${(flag.pdcScore * 100).toInt()}%',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.dangerText,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+          width: 480,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${patient.name} (Age: ${patient.age})',
+                style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w700, fontSize: 14),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Prescribed: ${flag.drugName} • Prescriber: ${patient.prescriberName}',
+                style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12, color: AppColors.textMuted),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.bgSlate,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-
-                const SizedBox(height: 16),
-
-                const Text('Adherence Gap Rationale', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text(flag.reason, style: const TextStyle(color: AppColors.textDark, fontSize: 13)),
-
-                const SizedBox(height: 20),
-
-                const Text('Synthea Refill History Timeline', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
-
-                // Timeline List
-                Column(
-                  children: rx.fillRecords.map((fill) {
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color: fill.wasOnTime ? AppColors.borderLight : AppColors.dangerBg),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            fill.wasOnTime ? Icons.check_circle : Icons.error,
-                            color: fill.wasOnTime ? AppColors.successText : AppColors.dangerText,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Fill Date: ${fmtDate.format(fill.date)} (${fill.daysSupply} Days Supply)',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                          Text(
-                            fill.wasOnTime ? 'On Time' : 'Refill Delayed',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: fill.wasOnTime ? AppColors.successText : AppColors.dangerText,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Current PDC: ${(flag.pdcScore * 100).toInt()}%',
+                        style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w700)),
+                    Text('Risk: ${flag.riskLevel.name.toUpperCase()}',
+                        style: GoogleFonts.plusJakartaSans(
+                            color: AppColors.textMuted,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700)),
+                  ],
                 ),
-
-                const SizedBox(height: 20),
-
-                const Text('Pharmacist Outreach Action & Notes', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: noteController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    hintText: 'Enter clinical outreach notes (e.g. Spoke with patient, offered copay assistance, contacted prescriber)...',
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
         actions: [
-          OutlinedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Close',
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryTeal,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+            ),
             onPressed: () {
               appState.updateOutreachStatus(
-                flag.id,
-                OutreachStatus.contacted,
-                noteController.text,
-              );
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Patient outreach logged successfully!'),
-                  backgroundColor: AppColors.primaryTeal,
-                ),
-              );
+                  flag.id,
+                  OutreachStatus.contacted,
+                  'Outreach initiated by clinical pharmacist');
+              Navigator.pop(context);
             },
-            child: const Text('Log Outreach & Update'),
+            child: Text('Mark Contacted',
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
           ),
         ],
       ),

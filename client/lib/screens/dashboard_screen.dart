@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/app_state.dart';
@@ -18,61 +19,104 @@ class DashboardScreen extends StatelessWidget {
     final user = appState.currentUser;
 
     return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Page Title & Subtitle Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Insurance & Costs',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.accentNavy,
+          // -------------------------------------------------------------
+          // 1. Page Title & Role Banner
+          // -------------------------------------------------------------
+          Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: AppColors.gradientBrand,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.accentNavy.withValues(alpha: 0.15),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                      ),
+                      child: const Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Insurance & Financial Portal',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Manage your health insurance policies, claims records, and drug copay structures.',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12.5,
+                            color: Colors.white.withValues(alpha: 0.88),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Role: ${user.role.name.toUpperCase()}',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Manage your insurance, claims and track your medical expenses',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(
-                  'Role: ${user.role.name.toUpperCase()}',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryTeal,
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
 
           const SizedBox(height: 16),
 
+          // -------------------------------------------------------------
           // 2. Horizontal Sub-Tabs Row
+          // -------------------------------------------------------------
           _buildSubTabsRow(context, appState),
 
           const SizedBox(height: 20),
 
+          // -------------------------------------------------------------
           // 3. Dynamic Sub-Tab Content Switcher
+          // -------------------------------------------------------------
           if (appState.activeSubTabIndex == 0)
             _buildOverviewTabContent(context, appState)
           else if (appState.activeSubTabIndex == 1)
@@ -101,11 +145,12 @@ class DashboardScreen extends StatelessWidget {
     ];
 
     return Container(
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppColors.borderLight, width: 1.0),
-        ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight),
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -114,29 +159,25 @@ class DashboardScreen extends StatelessWidget {
             final title = entry.value;
             final isSelected = appState.activeSubTabIndex == idx;
 
-            return InkWell(
-              onTap: () => appState.setActiveSubTabIndex(idx),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: isSelected
-                          ? AppColors.primaryTeal
-                          : Colors.transparent,
-                      width: 2.5,
-                    ),
+            return Padding(
+              padding: const EdgeInsets.only(right: 6.0),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => appState.setActiveSubTabIndex(idx),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.primaryTeal : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ),
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    color: isSelected
-                        ? AppColors.primaryTeal
-                        : AppColors.textMuted,
+                  child: Text(
+                    title,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12.5,
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      color: isSelected ? Colors.white : AppColors.textMuted,
+                    ),
                   ),
                 ),
               ),
@@ -156,17 +197,10 @@ class DashboardScreen extends StatelessWidget {
           flex: 7,
           child: Column(
             children: [
-              // Summary Card (Insurance Summary / Formulary Policy)
               _buildInsuranceSummaryCard(context),
-
               const SizedBox(height: 20),
-
-              // Data Table Card (Recent Claims / Risk Table)
               _buildRecentClaimsTableCard(context, appState),
-
               const SizedBox(height: 20),
-
-              // Bottom Reassurance Banner Card
               _buildBottomBannerCard(context),
             ],
           ),
@@ -179,17 +213,10 @@ class DashboardScreen extends StatelessWidget {
           flex: 4,
           child: Column(
             children: [
-              // Widget 1: Coverage Overview Donut Chart Card
               _buildCoverageOverviewDonutCard(context),
-
               const SizedBox(height: 20),
-
-              // Widget 2: Cashless Hospitals Provider List
               _buildCashlessHospitalsCard(context),
-
               const SizedBox(height: 20),
-
-              // Widget 3: Quick Actions 4-Button Grid
               _buildQuickActionsGridCard(context, appState),
             ],
           ),
@@ -200,11 +227,18 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildInsuranceSummaryCard(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLight),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderLight, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.accentNavy.withValues(alpha: 0.03),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,25 +246,26 @@ class DashboardScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Insurance Summary',
-                style: TextStyle(
+              Text(
+                'Active Coverage Summary',
+                style: GoogleFonts.plusJakartaSans(
                   fontSize: 15,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.textDark,
                 ),
               ),
               OutlinedButton(
                 style: OutlinedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  side: const BorderSide(color: AppColors.borderLight),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () {},
                 child: Row(
-                  children: const [
-                    Text('View Policy Details', style: TextStyle(fontSize: 12)),
-                    SizedBox(width: 4),
-                    Icon(Icons.chevron_right_rounded, size: 16),
+                  children: [
+                    Text('View Policy Details', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.chevron_right_rounded, size: 16),
                   ],
                 ),
               ),
@@ -242,60 +277,54 @@ class DashboardScreen extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Active Policy Shield Icon
               Container(
-                width: 64,
-                height: 64,
+                width: 58,
+                height: 58,
                 decoration: BoxDecoration(
                   color: AppColors.primaryLight,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.verified_user_outlined,
+                  Icons.verified_user_rounded,
                   color: AppColors.primaryTeal,
-                  size: 34,
+                  size: 30,
                 ),
               ),
 
               const SizedBox(width: 16),
 
-              // Policy Main Header Details
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(6),
+                        color: AppColors.successBg,
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text(
-                        'Active Policy',
-                        style: TextStyle(
+                      child: Text(
+                        'Active Health Plan',
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryDark,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.successText,
                         ),
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'Health Secure Plus',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                    Text(
+                      'Alternea Health Secure Plus',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.textDark,
                       ),
                     ),
                     const SizedBox(height: 2),
-                    const Text(
-                      'Policy ID: HSN789456123',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textMuted,
-                      ),
+                    Text(
+                      'Policy ID: HSN789456123 • Medicare Part D',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: AppColors.textMuted),
                     ),
                   ],
                 ),
@@ -303,27 +332,25 @@ class DashboardScreen extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           const Divider(height: 1, color: AppColors.borderLight),
           const SizedBox(height: 16),
 
-          // 2x3 Key-Value Grid
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildMetricColumn('Insurer', 'Health Secure Insurance Co.'),
-              _buildMetricColumn('Policy Start Date', 'Jan 01, 2025'),
-              _buildMetricColumn('Policy End Date', 'Dec 31, 2025'),
+              _buildMetricColumn('Insurer Carrier', 'Alternea CMS Health Network'),
+              _buildMetricColumn('Coverage Start', 'Jan 01, 2025'),
+              _buildMetricColumn('Coverage End', 'Dec 31, 2025'),
             ],
           ),
           const SizedBox(height: 14),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildMetricColumn('Sum Insured', '₹ 5,00,000',
-                  isBoldValue: true),
-              _buildMetricColumn('Family Floater', 'Yes'),
-              _buildMetricColumn('Members Covered', '4'),
+              _buildMetricColumn('Maximum Sum Insured', '\$500,000', isBoldValue: true),
+              _buildMetricColumn('Family Benefit Floater', 'Included'),
+              _buildMetricColumn('Dependents Covered', '4 Persons'),
             ],
           ),
         ],
@@ -331,8 +358,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricColumn(String label, String value,
-      {bool isBoldValue = false}) {
+  Widget _buildMetricColumn(String label, String value, {bool isBoldValue = false}) {
     return SizedBox(
       width: 150,
       child: Column(
@@ -340,14 +366,14 @@ class DashboardScreen extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
           ),
           const SizedBox(height: 3),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: isBoldValue ? FontWeight.bold : FontWeight.w600,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12.5,
+              fontWeight: isBoldValue ? FontWeight.w800 : FontWeight.w600,
               color: AppColors.textDark,
             ),
           ),
@@ -356,14 +382,13 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentClaimsTableCard(
-      BuildContext context, AppState appState) {
+  Widget _buildRecentClaimsTableCard(BuildContext context, AppState appState) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLight),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderLight, width: 1.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -371,153 +396,31 @@ class DashboardScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Recent Claims',
-                style: TextStyle(
+              Text(
+                'Recent Reimbursement Claims',
+                style: GoogleFonts.plusJakartaSans(
                   fontSize: 15,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.textDark,
                 ),
               ),
-              TextButton(
-                onPressed: () {},
-                child: const Text(
-                  'View All Claims',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.primaryTeal,
-                    fontWeight: FontWeight.bold,
-                  ),
+              Text(
+                'All Claims Verified',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  color: AppColors.primaryTeal,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-          // Table Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppColors.bgSlate,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: const [
-                Expanded(
-                  flex: 2,
-                  child: Text('Claim ID',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textMuted)),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: Text('Type',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textMuted)),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text('Date',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textMuted)),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text('Amount Claimed',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textMuted)),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: AlignmentText(
-                    text: 'Status',
-                    alignment: Alignment.centerRight,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Table Rows
-          _buildClaimRow(
-              'CLM789456',
-              'General Consultation',
-              Icons.assignment_outlined,
-              Colors.purple,
-              'May 10, 2025',
-              '₹ 1,200',
-              'Approved',
-              AppColors.successBg,
-              AppColors.successText),
-          _buildClaimRow(
-              'CLM789455',
-              'Lab Test',
-              Icons.science_outlined,
-              Colors.blue,
-              'May 08, 2025',
-              '₹ 2,500',
-              'Approved',
-              AppColors.successBg,
-              AppColors.successText),
-          _buildClaimRow(
-              'CLM789454',
-              'Hospitalization',
-              Icons.single_bed_outlined,
-              Colors.orange,
-              'Apr 28, 2025',
-              '₹ 45,000',
-              'Under Review',
-              AppColors.warningBg,
-              AppColors.warningText),
-          _buildClaimRow(
-              'CLM789453',
-              'Medicines',
-              Icons.medication_outlined,
-              Colors.pink,
-              'Apr 20, 2025',
-              '₹ 1,800',
-              'Approved',
-              AppColors.successBg,
-              AppColors.successText),
-          _buildClaimRow(
-              'CLM789452',
-              'Diagnostic Scan',
-              Icons.qr_code_scanner_rounded,
-              Colors.teal,
-              'Apr 15, 2025',
-              '₹ 3,200',
-              'Rejected',
-              AppColors.dangerBg,
-              AppColors.dangerText),
-
-          const SizedBox(height: 16),
-
-          Center(
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              ),
-              onPressed: () {},
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Text('View All Claims', style: TextStyle(fontSize: 12)),
-                  SizedBox(width: 4),
-                  Icon(Icons.chevron_right_rounded, size: 16),
-                ],
-              ),
-            ),
-          ),
+          _buildClaimRow('CLM789456', 'Consultation', Icons.assignment_outlined, AppColors.primaryTeal, 'May 10, 2025', '\$120', 'Approved', AppColors.successBg, AppColors.successText),
+          _buildClaimRow('CLM789455', 'Lab Diagnostic', Icons.science_outlined, AppColors.accentMint, 'May 08, 2025', '\$250', 'Approved', AppColors.successBg, AppColors.successText),
+          _buildClaimRow('CLM789454', 'Specialist Care', Icons.single_bed_outlined, AppColors.warningOrange, 'Apr 28, 2025', '\$1,450', 'Under Review', AppColors.warningBg, AppColors.warningText),
+          _buildClaimRow('CLM789453', 'Prescriptions', Icons.medication_outlined, AppColors.primaryTeal, 'Apr 20, 2025', '\$180', 'Approved', AppColors.successBg, AppColors.successText),
         ],
       ),
     );
@@ -535,84 +438,50 @@ class DashboardScreen extends StatelessWidget {
     Color textStatus,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppColors.borderLight, width: 1.0),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.borderLight, width: 1.0)),
       ),
       child: Row(
         children: [
           Expanded(
             flex: 2,
-            child: Text(
-              id,
-              style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textMuted),
-            ),
+            child: Text(id, style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
           ),
           Expanded(
             flex: 3,
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Icon(icon, color: iconColor, size: 16),
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
+                  child: Icon(icon, color: iconColor, size: 15),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    type,
-                    style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textDark),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  child: Text(type, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textDark), overflow: TextOverflow.ellipsis),
                 ),
               ],
             ),
           ),
           Expanded(
             flex: 2,
-            child: Text(
-              date,
-              style: const TextStyle(fontSize: 12, color: AppColors.textDark),
-            ),
+            child: Text(date, style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: AppColors.textDark)),
           ),
           Expanded(
             flex: 2,
-            child: Text(
-              amount,
-              style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textDark),
-            ),
+            child: Text(amount, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textDark)),
           ),
           Expanded(
             flex: 2,
             child: Align(
               alignment: Alignment.centerRight,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: bgStatus,
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(color: bgStatus, borderRadius: BorderRadius.circular(8)),
                 child: Text(
                   status,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: textStatus,
-                  ),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 10.5, fontWeight: FontWeight.w800, color: textStatus),
                 ),
               ),
             ),
@@ -626,54 +495,20 @@ class DashboardScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFE6F7F5),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF99F6E4)),
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primaryTeal.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: const BoxDecoration(
-              color: AppColors.primaryTeal,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.shield_outlined,
-                color: Colors.white, size: 24),
-          ),
+          const Icon(Icons.shield_outlined, color: AppColors.primaryTeal, size: 24),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'Stay stress-free with cashless hospitalization.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Check your coverage, find network hospitals and file claims easily.',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          ElevatedButton(
-            onPressed: () {},
-            child: Row(
-              children: const [
-                Text('Explore Benefits', style: TextStyle(fontSize: 12)),
-                SizedBox(width: 4),
-                Icon(Icons.chevron_right_rounded, size: 16),
+              children: [
+                Text('Stress-free cashless coverage active across all network facilities.', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark)),
+                Text('Real-time prescription coordination and electronic prior-authorization enabled.', style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted)),
               ],
             ),
           ),
@@ -684,124 +519,101 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildCoverageOverviewDonutCard(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLight),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: AppColors.primaryTeal.withValues(alpha: 0.12),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.accentNavy.withValues(alpha: 0.035),
+            blurRadius: 24,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Coverage Overview',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Circular Donut Chart
-              SizedBox(
-                width: 120,
-                height: 120,
-                child: Stack(
-                  children: [
-                    PieChart(
-                      PieChartData(
-                        sectionsSpace: 2,
-                        centerSpaceRadius: 36,
-                        startDegreeOffset: 270,
-                        sections: [
-                          PieChartSectionData(
-                            color: AppColors.primaryTeal,
-                            value: 25,
-                            showTitle: false,
-                            radius: 14,
-                          ),
-                          PieChartSectionData(
-                            color: const Color(0xFF2563EB),
-                            value: 72,
-                            showTitle: false,
-                            radius: 14,
-                          ),
-                          PieChartSectionData(
-                            color: const Color(0xFFF59E0B),
-                            value: 3,
-                            showTitle: false,
-                            radius: 14,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Text(
-                            '₹ 1,25,000',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textDark,
-                            ),
-                          ),
-                          Text(
-                            'of ₹ 5,00,000 used',
-                            style: TextStyle(
-                              fontSize: 8,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+              Text(
+                'Coverage Utilization',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textDark,
                 ),
               ),
-
-              const SizedBox(width: 16),
-
-              // Legend
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildLegendRow(
-                        AppColors.primaryTeal, 'Used', '₹ 1,25,000'),
-                    const SizedBox(height: 8),
-                    _buildLegendRow(
-                        const Color(0xFF2563EB), 'Available', '₹ 3,75,000'),
-                    const SizedBox(height: 8),
-                    _buildLegendRow(
-                        const Color(0xFFF59E0B), 'Pending Claims', '₹ 15,000'),
-                  ],
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Active Plan',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primaryTeal,
+                  ),
                 ),
               ),
             ],
           ),
-
           const SizedBox(height: 16),
-
-          // Progress Bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: const LinearProgressIndicator(
-              value: 0.25,
-              minHeight: 6,
-              backgroundColor: AppColors.borderLight,
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryTeal),
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            '25% of sum insured used',
-            style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+          Row(
+            children: [
+              SizedBox(
+                width: 104,
+                height: 104,
+                child: PieChart(
+                  PieChartData(
+                    sectionsSpace: 3,
+                    centerSpaceRadius: 32,
+                    sections: [
+                      PieChartSectionData(
+                        color: AppColors.jewelTechCyan,
+                        value: 25,
+                        showTitle: false,
+                        radius: 14,
+                      ),
+                      PieChartSectionData(
+                        color: AppColors.jewelSapphire,
+                        value: 72,
+                        showTitle: false,
+                        radius: 14,
+                      ),
+                      PieChartSectionData(
+                        color: AppColors.jewelWarmAmber,
+                        value: 3,
+                        showTitle: false,
+                        radius: 14,
+                      ),
+                    ],
+                  ),
+                  duration: const Duration(milliseconds: 650),
+                  curve: Curves.easeOutCubic,
+                ),
+              ),
+              const SizedBox(width: 18),
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildLegendRow(AppColors.jewelTechCyan, 'Used (25%)', '\$125,000'),
+                    const SizedBox(height: 6),
+                    _buildLegendRow(AppColors.jewelSapphire, 'Available (72%)', '\$375,000'),
+                    const SizedBox(height: 6),
+                    _buildLegendRow(AppColors.jewelWarmAmber, 'Pending (3%)', '\$15,000'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -814,177 +626,87 @@ class DashboardScreen extends StatelessWidget {
       children: [
         Row(
           children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
+            Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
             const SizedBox(width: 6),
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textMuted,
-                    fontWeight: FontWeight.w500)),
+            Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
           ],
         ),
-        Text(amount,
-            style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textDark)),
+        Text(amount, style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.textDark)),
       ],
     );
   }
 
   Widget _buildCashlessHospitalsCard(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLight),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderLight, width: 1.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Cashless Hospitals',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
-                ),
-              ),
-              TextButton(
-                onPressed: () {},
-                child: const Text(
-                  'View All',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.primaryTeal,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
+          Text(
+            'In-Network Health Facilities',
+            style: GoogleFonts.plusJakartaSans(fontSize: 14.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
           ),
-
           const SizedBox(height: 12),
-
-          _buildHospitalRow(
-              'Apollo Hospitals', 'Chennai, Tamil Nadu', '2.1 km'),
-          _buildHospitalRow(
-              'Fortis Malar Hospital', 'Chennai, Tamil Nadu', '3.4 km'),
-          _buildHospitalRow(
-              'MIOT International', 'Chennai, Tamil Nadu', '5.2 km'),
-          _buildHospitalRow(
-              'Kauvery Hospital', 'Chennai, Tamil Nadu', '6.8 km'),
+          _buildFacilityRow('MetroHealth Medical Center', 'Boston, MA • 2.1 mi'),
+          _buildFacilityRow('Saint Jude Memorial Hospital', 'Boston, MA • 3.4 mi'),
         ],
       ),
     );
   }
 
-  Widget _buildHospitalRow(String name, String location, String distance) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppColors.borderLight, width: 1.0),
-        ),
-      ),
+  Widget _buildFacilityRow(String name, String details) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: AppColors.bgSlate,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Icon(Icons.local_hospital_outlined,
-                color: AppColors.primaryTeal, size: 16),
+            decoration: BoxDecoration(color: AppColors.bgSlate, borderRadius: BorderRadius.circular(8)),
+            child: const Icon(Icons.local_hospital_rounded, color: AppColors.primaryTeal, size: 16),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                Text(
-                  location,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: AppColors.textMuted,
-                  ),
-                ),
+                Text(name, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w800)),
+                Text(details, style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: AppColors.textMuted)),
               ],
             ),
-          ),
-          Row(
-            children: [
-              Text(
-                distance,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded,
-                  size: 16, color: AppColors.textMuted),
-            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildQuickActionsGridCard(
-      BuildContext context, AppState appState) {
+  Widget _buildQuickActionsGridCard(BuildContext context, AppState appState) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLight),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderLight, width: 1.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Quick Actions',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
-            ),
+            style: GoogleFonts.plusJakartaSans(fontSize: 14.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
           ),
-
-          const SizedBox(height: 16),
-
-          GridView.count(
-            crossAxisCount: 4,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
+          const SizedBox(height: 14),
+          Row(
             children: [
-              _buildSquareActionItem(Icons.note_add_outlined, 'File a Claim'),
-              _buildSquareActionItem(
-                  Icons.description_outlined, 'View Policy'),
-              _buildSquareActionItem(
-                  Icons.calculate_outlined, 'Check Coverage'),
-              _buildSquareActionItem(
-                  Icons.download_rounded, 'Download E-Card'),
+              Expanded(child: _buildSquareActionItem(Icons.note_add_outlined, 'File Claim')),
+              const SizedBox(width: 8),
+              Expanded(child: _buildSquareActionItem(Icons.description_outlined, 'Policy PDF')),
+              const SizedBox(width: 8),
+              Expanded(child: _buildSquareActionItem(Icons.download_rounded, 'E-Card')),
             ],
           ),
         ],
@@ -994,48 +716,22 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildSquareActionItem(IconData icon, String label) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
         color: AppColors.bgSlate,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: AppColors.primaryTeal, size: 22),
+          Icon(icon, color: AppColors.primaryTeal, size: 20),
           const SizedBox(height: 6),
           Text(
             label,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
-            ),
+            style: GoogleFonts.plusJakartaSans(fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class AlignmentText extends StatelessWidget {
-  final String text;
-  final Alignment alignment;
-
-  const AlignmentText({super.key, required this.text, required this.alignment});
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: alignment,
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textMuted,
-        ),
       ),
     );
   }
