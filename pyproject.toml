@@ -32,6 +32,9 @@ dependencies = [
 	"aiohttp>=3.9.0",
 	"uvicorn>=0.52.3",
 	"pandas>=3.0.5",
+	"langchain-openai",
+	"langchain-groq",
+	"python-dotenv",
 ]
 
 [project.scripts]
