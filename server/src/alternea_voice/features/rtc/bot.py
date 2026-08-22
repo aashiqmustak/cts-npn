@@ -2,9 +2,9 @@ import logging
 import os
 import pathlib
 import sys
+import tomllib
 
 import aiohttp
-import tomllib
 from dotenv import load_dotenv
 from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import (
