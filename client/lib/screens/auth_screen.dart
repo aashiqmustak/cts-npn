@@ -187,60 +187,67 @@ class _AuthScreenState extends State<AuthScreen> {
   }) {
     return Container(
       color: Colors.white,
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 8 : 56,
-        vertical: isMobile ? 8 : 40,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          if (!isMobile) _buildBrandLogoHeader(),
+      child: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 8 : 56,
+          vertical: isMobile ? 8 : 40,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isMobile) ...[
+              _buildBrandLogoHeader(),
+              const SizedBox(height: 20),
+            ],
 
-          Center(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 420),
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    _activeTabIndex == 0
-                        ? 'Sign in to Alternea'
-                        : 'Create an Account',
-                    textAlign: TextAlign.center,
-                    style: AppFonts.googleSans(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF0F172A),
-                      letterSpacing: -0.5,
+            Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 420),
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      _activeTabIndex == 0
+                          ? 'Sign in to Alternea'
+                          : 'Create an Account',
+                      textAlign: TextAlign.center,
+                      style: AppFonts.googleSans(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF0F172A),
+                        letterSpacing: -0.5,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _activeTabIndex == 0
-                        ? 'All Your Hospital & Pharmacy Needs in One Place.'
-                        : 'Join the Alternea Intelligent Healthcare Ecosystem.',
-                    textAlign: TextAlign.center,
-                    style: AppFonts.googleSans(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xFF64748B),
+                    const SizedBox(height: 8),
+                    Text(
+                      _activeTabIndex == 0
+                          ? 'All Your Hospital & Pharmacy Needs in One Place.'
+                          : 'Join the Alternea Intelligent Healthcare Ecosystem.',
+                      textAlign: TextAlign.center,
+                      style: AppFonts.googleSans(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w400,
+                        color: const Color(0xFF64748B),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 28),
+                    const SizedBox(height: 28),
 
-                  _activeTabIndex == 0
-                      ? _buildSignInTab(context, appState)
-                      : _buildRegisterTab(context, appState),
-                ],
+                    _activeTabIndex == 0
+                        ? _buildSignInTab(context, appState)
+                        : _buildRegisterTab(context, appState),
+                  ],
+                ),
               ),
             ),
-          ),
 
-          if (!isMobile) _buildTrustFooter(),
-        ],
+            if (!isMobile) ...[
+              const SizedBox(height: 20),
+              _buildTrustFooter(),
+            ],
+          ],
+        ),
       ),
     );
   }

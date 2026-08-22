@@ -82,8 +82,10 @@ class MainLayout extends StatelessWidget {
             ],
           ),
 
-          // Interactive Draggable Floating e-Rx Notification Card Overlay
-          if (appState.notifications.isNotEmpty)
+          // Interactive Draggable Floating e-Rx Notification Card Overlay (Only shown for Patient and Doctor)
+          if (appState.notifications.isNotEmpty &&
+              (appState.currentUser.role == UserRole.patient ||
+               appState.currentUser.role == UserRole.doctor))
             _DraggableNotificationCard(appState: appState),
         ],
       ),
