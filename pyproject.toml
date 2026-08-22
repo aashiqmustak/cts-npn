@@ -32,6 +32,7 @@ dependencies = [
 	"aiohttp>=3.9.0",
 	"uvicorn>=0.52.3",
 	"pandas>=3.0.5",
+	"groq>=1.6.0",
 ]
 
 [project.scripts]

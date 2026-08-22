@@ -53,14 +53,11 @@ Prescription:
             messages=[
                 {
                     "role": "system",
-                    "content": "Extract prescription information and return only JSON."
+                    "content": "Extract prescription information and return only JSON.",
                 },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
+                {"role": "user", "content": prompt},
             ],
-            temperature=0
+            temperature=0,
         )
 
         content = response.choices[0].message.content or ""
@@ -76,6 +73,6 @@ Prescription:
             end = content.rfind("}")
 
             if start != -1 and end != -1:
-                return json.loads(content[start:end + 1])
+                return json.loads(content[start : end + 1])
 
             raise ValueError("Groq returned invalid JSON")
