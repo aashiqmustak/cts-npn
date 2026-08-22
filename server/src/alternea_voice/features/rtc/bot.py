@@ -1,15 +1,26 @@
+import json
+import logging
 import os
 import pathlib
+import sys
 import tomllib
+from typing import Any
 
 import aiohttp
 from dotenv import load_dotenv
+from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import (
     LocalSmartTurnAnalyzerV3,
 )
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.audio.vad.vad_analyzer import VADParams
-from pipecat.frames.frames import Frame, LLMRunFrame, TranscriptionFrame
+from pipecat.frames.frames import (
+    Frame,
+    LLMMessagesAppendFrame,
+    LLMRunFrame,
+    TTSSpeakFrame,
+    TranscriptionFrame,
+)
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
 from pipecat.pipeline.task import PipelineParams, PipelineTask
@@ -34,10 +45,17 @@ from pipecat.transports.base_transport import (
 from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
 from pipecat.turns.user_turn_strategies import UserTurnStrategies
 
-# # Twilio WebSocket
-# from pipecat.transports.websocket.fastapi import (
-#     FastAPIWebsocketParams,
-# )
+# Import backend Multi-Agent Orchestrator
+_current = pathlib.Path(__file__).resolve().parent
+_server_src = _current.parents[2]
+if str(_server_src) not in sys.path:
+    sys.path.insert(0, str(_server_src))
+
+from agents.ranking_agent.app.schemas import PatientContext
+from orchestrator.schemas import PrescriptionEvaluationRequest
+from orchestrator.workflow import MultiAgentOrchestrator
+
+logger = logging.getLogger(__name__)
 
 
 def load_project_env_and_metadata():
@@ -72,6 +90,7 @@ def load_project_env_and_metadata():
 
 
 project_metadata = load_project_env_and_metadata()
+backend_orchestrator = MultiAgentOrchestrator()
 
 
 class TranscriptionLogger(FrameProcessor):
@@ -83,7 +102,7 @@ class TranscriptionLogger(FrameProcessor):
         await super().process_frame(frame, direction)
 
         if isinstance(frame, TranscriptionFrame):
-            print(f"Transcription: {frame.text}")
+            print(f"\n[STT Heard User]: {frame.text}\n")
 
         await self.push_frame(frame, direction)
 
@@ -93,12 +112,6 @@ def create_vad():
 
 
 transport_params = {
-    # # Twilio WebSocket
-    # "twilio": lambda: FastAPIWebsocketParams(
-    #     audio_in_enabled=True,
-    #     audio_out_enabled=True,
-    #     vad_analyzer=create_vad(),
-    # ),
     # Browser WebRTC
     "webrtc": lambda: TransportParams(
         audio_in_enabled=True,
@@ -106,6 +119,139 @@ transport_params = {
         vad_analyzer=create_vad(),
     ),
 }
+
+
+# =====================================================================
+# AGENT BACKEND TOOL HANDLER (Called by LLM)
+# =====================================================================
+async def handle_evaluate_prescription(*args_list, **kwargs):
+    """Executes the 7-stage Clinical Agent pipeline and returns the Top-1 drug."""
+    # Handle Pipecat 1.7+ FunctionCallParams single object or legacy positional args
+    if len(args_list) == 1 and hasattr(args_list[0], "arguments"):
+        params = args_list[0]
+        args = params.arguments or {}
+        result_callback = params.result_callback
+    elif len(args_list) >= 6:
+        function_name, tool_call_id, args, llm, context, result_callback = args_list[:6]
+    else:
+        args = kwargs.get("args") or kwargs.get("arguments") or {}
+        result_callback = kwargs.get("result_callback")
+
+    prescription_text = args.get("prescription_text", "")
+    patient_id = args.get("patient_id", "PAT_001")
+    allergies = args.get("allergies", [])
+        # Infer condition from drug name if not explicitly provided
+    inferred_cond = ["Hypertension"]
+    d_low = prescription_text.lower()
+    if any(k in d_low for k in ["entresto", "valsartan", "lisinopril", "losartan", "amlodipine", "telmisartan", "enalapril"]):
+        inferred_cond = ["Hypertension", "Heart Failure"]
+    elif any(k in d_low for k in ["metformin", "januvia", "jardiance", "glipizide", "glimepiride", "sitagliptin"]):
+        inferred_cond = ["Type 2 Diabetes Mellitus"]
+    elif any(k in d_low for k in ["atorvastatin", "rosuvastatin", "simvastatin", "crestor", "lipitor"]):
+        inferred_cond = ["Hyperlipidemia"]
+    elif any(k in d_low for k in ["advair", "albuterol", "fluticasone", "symbicort"]):
+        inferred_cond = ["Asthma", "COPD"]
+
+    conditions = args.get("conditions") or inferred_cond
+    current_medications = args.get("current_medications", [])
+
+    print(f"\n[Alternea Agent Bridge] Running Multi-Agent Pipeline for '{prescription_text}'...")
+
+    try:
+        # Build patient context
+        parsed_allergies = [
+            {"substance": a, "severity": "HIGH"} if isinstance(a, str) else a
+            for a in allergies
+        ]
+        parsed_conditions = [
+            {"name": c} if isinstance(c, str) else c for c in conditions
+        ]
+        parsed_meds = [
+            {"drug_name": m} if isinstance(m, str) else m
+            for m in current_medications
+        ]
+
+        req = PrescriptionEvaluationRequest(
+            patient_id=patient_id,
+            prescription_text=prescription_text,
+            patient_context=PatientContext(
+                age=args.get("age", 58),
+                allergies=parsed_allergies,  # type: ignore[arg-type]
+                conditions=parsed_conditions,  # type: ignore[arg-type]
+                current_medications=parsed_meds,  # type: ignore[arg-type]
+                renal_status=args.get("renal_status", "NORMAL"),
+                hepatic_status=args.get("hepatic_status", "NORMAL"),
+            ),
+            force_alternative_discovery=True,
+        )
+
+        report = backend_orchestrator.evaluate_prescription(req)
+
+        top_drug = report.top_recommended_drug
+        top_name = top_drug.drug_name if top_drug else "None"
+        top_score = top_drug.total_score if top_drug else 0
+        decision = report.action_decision
+        rationale = (
+            top_drug.clinical_rationale
+            if top_drug
+            else "Standard clinical evaluation completed."
+        )
+
+        rejections = [
+            f"{r.drug_name}: {r.reason}"
+            for r in report.rejected_alternatives
+        ]
+
+        result_payload = {
+            "status": "success",
+            "action_decision": decision,
+            "top_recommended_drug": top_name,
+            "composite_score": top_score,
+            "clinical_rationale": rationale,
+            "disqualified_alternatives_with_reasons": rejections[:3],
+            "executive_summary": report.ranking_result.ranking_summary,
+        }
+
+        print(f"[Alternea Agent Bridge] Multi-Agent Evaluation Complete. Winning Drug: {top_name} (Score: {top_score}/100)\n")
+        await result_callback(result_payload)
+    except Exception as exc:
+        logger.exception("Error executing backend multi-agent pipeline")
+        await result_callback({"status": "error", "message": str(exc)})
+
+
+# Define Tools Schema for Groq LLM using Pipecat's FunctionSchema
+agent_tools = [
+    FunctionSchema(
+        name="evaluate_prescription_and_find_alternatives",
+        description="Evaluates a prescription across formulary coverage, patient history, PA rules, ML adherence risk, and finds the Top-1 safest, lowest-cost ranked alternative drug.",
+        properties={
+            "prescription_text": {
+                "type": "string",
+                "description": "The drug name and dosage from the prescription (e.g. 'Atorvastatin 20mg once daily' or 'Lipitor').",
+            },
+            "patient_id": {
+                "type": "string",
+                "description": "Patient identifier (e.g. 'PAT_001').",
+            },
+            "allergies": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "List of documented patient drug allergies.",
+            },
+            "conditions": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "List of patient diagnosed medical conditions.",
+            },
+            "current_medications": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "List of concurrent medications the patient is currently taking.",
+            },
+        },
+        required=["prescription_text"],
+    )
+]
 
 
 async def run_bot(
@@ -116,44 +262,62 @@ async def run_bot(
     project_version = project_metadata.get("version", "0.1.0")
     print(f"Starting {project_name} (v{project_version})...")
 
+    sarvam_key = os.getenv("SARVAM_API_KEY")
+    groq_key = os.getenv("GROQ_API_KEY")
+    groq_model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+
+    if not sarvam_key:
+        print("\n[Alternea Voice] WARNING: SARVAM_API_KEY is not set in .env! Voice STT/TTS requires a Sarvam API key.")
+    if not groq_key:
+        print("[Alternea Voice] WARNING: GROQ_API_KEY is not set in .env! Voice LLM requires a Groq API key.\n")
+
     async with aiohttp.ClientSession():
         stt = SarvamSTTService(
-            api_key=os.getenv("SARVAM_API_KEY"),
+            api_key=sarvam_key or "missing_key",
             settings=SarvamSTTService.Settings(
-                model="saarika:v2.5",
+                model="saaras:v3",
+                language="en-IN",
             ),
         )
 
         tts = SarvamTTSService(
-            api_key=os.getenv("SARVAM_API_KEY"),
+            api_key=sarvam_key or "missing_key",
             settings=SarvamTTSService.Settings(
                 model="bulbul:v2",
-                voice="manisha",
+                voice="anushka",
+                language="en-IN",
             ),
         )
 
         llm = GroqLLMService(
-            api_key=os.getenv("GROQ_API_KEY"),
-            model=os.getenv("GROQ_MODEL", "groq/compound"),
+            api_key=groq_key or "missing_key",
+            settings=GroqLLMService.Settings(
+                model=groq_model,
+            ),
+        )
+
+        # Register the backend Agent bridge tool with Pipecat LLM
+        llm.register_function(
+            "evaluate_prescription_and_find_alternatives",
+            handle_evaluate_prescription,
         )
 
         messages = [
             {
                 "role": "system",
                 "content": (
-                    "You are Alternea, an AI Pharmacy & Formulary Optimization and Adherence Assistant in a WebRTC call. "
-                    "Your job is to analyze formulary tiers, cost-share details, prescribing data, and medication history to "
-                    "surface high-cost drug opportunities, medication adherence risks, or prior-authorization/step-therapy friction points. "
-                    "You assist doctors, pharmacists, patients, and insurance agents with finding lower-cost generic alternatives, "
-                    "tracking/logging patient adherence streaks (such as taking Metformin), and explaining prior authorization requirements "
-                    "for specialty drugs (like Humira). "
-                    "Your responses will be spoken aloud, so keep them natural, conversational, and very concise. "
-                    "Avoid emojis, markdown, bullet points, asterisks, and any special characters or formatting that are difficult to speak."
+                    "You are Alternea, an AI Pharmacy & Formulary Optimization Voice Assistant connected directly to the CTS Multi-Agent backend. "
+                    "You assist doctors, pharmacists, and patients with finding lower-cost generic alternatives, checking prior-authorizations, "
+                    "and evaluating medication safety. "
+                    "When the user asks for alternative drugs, cost savings, or prescription evaluation, call the `evaluate_prescription_and_find_alternatives` tool. "
+                    "Once the agent returns the Top-1 drug and rationale, speak the recommendation clearly, concisely, and naturally. "
+                    "Mention the winning drug name, the score out of 100, and why it is better (e.g. Tier 1 preferred, zero drug interactions). "
+                    "Avoid emojis, markdown, asterisks, or complex bullet points that are difficult to speak aloud."
                 ),
             }
         ]
 
-        context = LLMContext(messages)
+        context = LLMContext(messages, tools=agent_tools)
 
         user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
             context,
@@ -197,30 +361,31 @@ async def run_bot(
             transport,
             client,
         ):
-            print("Client connected")
-
-            messages.append(
-                {
-                    "role": "system",
-                    "content": (
-                        "Please introduce yourself briefly and greet the user."
+            print("\n[Alternea Voice] Client connected! Sending spoken greeting...")
+            greeting = "Hello! I am Alternea, your AI pharmacy and formulary assistant. How can I assist you with your prescriptions today?"
+            await task.queue_frames(
+                [
+                    TTSSpeakFrame(greeting),
+                    LLMMessagesAppendFrame(
+                        messages=[
+                            {
+                                "role": "assistant",
+                                "content": greeting,
+                            }
+                        ]
                     ),
-                }
+                ]
             )
-
-            await task.queue_frames([LLMRunFrame()])
 
         @transport.event_handler("on_client_disconnected")
         async def on_client_disconnected(
             transport,
             client,
         ):
-            print("Client disconnected")
-
+            print("\n[Alternea Voice] Client disconnected.")
             await task.cancel()
 
         runner = PipelineRunner(handle_sigint=runner_args.handle_sigint)
-
         await runner.run(task)
 
 
@@ -229,10 +394,8 @@ async def bot(
 ):
     """
     Main bot entry point.
-
     Compatible with Pipecat runner and Pipecat Cloud.
     """
-
     transport = await create_transport(
         runner_args,
         transport_params,

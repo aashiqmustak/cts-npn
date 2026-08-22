@@ -8,11 +8,15 @@ class LLMExtractor:
     def __init__(self):
         api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
-            raise RuntimeError("GROQ_API_KEY is not set")
+            self.client = None
+            self.model = None
+            return
         self.client = Groq(api_key=api_key)
-        self.model = "openai/gpt-oss-120b"
+        self.model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
     def extract(self, prescription_text):
+        if not self.client or not self.model:
+            return {}
         prompt = f"""
 You are a prescription information extraction system.
 

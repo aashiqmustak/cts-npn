@@ -35,6 +35,8 @@ dependencies = [
 	"langchain-openai",
 	"langchain-groq",
 	"python-dotenv",
+	"litestar>=2.24.0",
+	"langchain-core>=0.3.0",
 	"scikit-learn>=1.9.0",
 	"xgboost>=3.4.1",
 	"joblib>=1.5.3",
