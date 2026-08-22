@@ -43,6 +43,8 @@ dependencies = [
 	"xgboost>=3.4.1",
 	"joblib>=1.5.3",
 	"numpy>=2.5.2",
+	"easyocr>=1.7.2",
+	"pypdf>=6.16.1",
 ]
 
 [project.scripts]
@@ -70,4 +72,8 @@ extraPaths = ["server/src", "server/src/agents/formulary_agent"]
 
 [tool.pyright]
 extraPaths = ["server/src", "server/src/agents/formulary_agent"]
+
+[tool.pytest.ini_options]
+testpaths = ["server"]
+norecursedirs = ["ml-model", "client", "infra", "dataset", "handsoff"]
 
