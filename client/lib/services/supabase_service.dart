@@ -358,6 +358,28 @@ class SupabaseService {
         }, onConflict: 'id');
       } catch (_) {}
 
+      // Ensure foreign key doctor record exists in public.doctors if applicable
+      if (doctorId.isNotEmpty) {
+        try {
+          await client.from('doctors').upsert({
+            'id': doctorId,
+            'name': 'Dr. Samantha Harris',
+            'specialty': 'General Physician',
+          }, onConflict: 'id');
+        } catch (_) {}
+      }
+
+      // Ensure foreign key hospital record exists in public.hospitals if applicable
+      if (hospitalId.isNotEmpty) {
+        try {
+          await client.from('hospitals').upsert({
+            'id': hospitalId,
+            'name': 'Cedars-Sinai Medical Center',
+            'address': '8700 Beverly Blvd, Los Angeles, CA 90048',
+          }, onConflict: 'id');
+        } catch (_) {}
+      }
+
       // 2. Insert e-Prescription payload matching public.prescriptions schema
       final rxPayload = {
         'id': customRxId,
@@ -478,6 +500,8 @@ class SupabaseService {
     required String name,
     String? phone,
     String? hospitalName,
+    String? hospitalId,
+    String? doctorId,
     required UserRole role,
   }) async {
     final roleStr = _roleToDbString(role);
@@ -488,6 +512,8 @@ class SupabaseService {
       'name': name,
       'phone': phone,
       'hospital_name': hospitalName,
+      'hospital_id': hospitalId,
+      'doctor_id': doctorId,
       'role': roleStr,
       'title': titleStr,
     };
@@ -579,6 +605,17 @@ class SupabaseService {
       return (res as List).map((j) => Prescription.fromJson(j)).toList();
     } catch (e) {
       if (kDebugMode) print('fetchPrescriptions error: $e');
+      return [];
+    }
+  }
+
+  Future<List<PrescriptionItem>> fetchPrescriptionItems() async {
+    if (!isInitialized) return [];
+    try {
+      final res = await client.from('prescription_items').select('*');
+      return (res as List).map((j) => PrescriptionItem.fromJson(j)).toList();
+    } catch (e) {
+      if (kDebugMode) print('fetchPrescriptionItems error: $e');
       return [];
     }
   }

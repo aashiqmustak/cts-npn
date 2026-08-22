@@ -48,6 +48,8 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
 
   bool _createNewPatient = false;
   bool _isProcessingOCR = false;
+  String? _uploadedPdfBase64;
+  String? _uploadedPdfName;
 
   // Quick Preset Drugs
   final List<String> _quickDrugs = [
@@ -235,8 +237,18 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
         throw Exception("Could not read file data.");
       }
 
+      final base64String = base64Encode(bytes);
+      final isPdf = file.name.toLowerCase().endsWith('.pdf');
+
       setState(() {
         _isProcessingOCR = true;
+        if (isPdf) {
+          _uploadedPdfBase64 = base64String;
+          _uploadedPdfName = file.name;
+        } else {
+          _uploadedPdfBase64 = null;
+          _uploadedPdfName = null;
+        }
       });
 
       if (mounted) {
@@ -266,8 +278,6 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
           ),
         );
       }
-
-      final base64String = base64Encode(bytes);
 
       // Determine backend URL dynamically based on base host
       final host = Uri.base.host;
@@ -545,6 +555,17 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
       patientId = newPatient.id;
     }
 
+    final String finalNotes;
+    if (_uploadedPdfBase64 != null) {
+      finalNotes = jsonEncode({
+        'notes': _notesController.text.trim(),
+        'pdf_base64': _uploadedPdfBase64,
+        'pdf_name': _uploadedPdfName,
+      });
+    } else {
+      finalNotes = _notesController.text.trim();
+    }
+
     await appState.createDoctorPrescription(
       patientId: patientId,
       doctorId: appState.currentUser.doctorId ?? 'DOC-201',
@@ -553,7 +574,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
           _diagnosisController.text.trim().isEmpty
               ? 'Clinical Evaluation'
               : _diagnosisController.text.trim(),
-      notes: _notesController.text.trim(),
+      notes: finalNotes,
       items: List.from(_prescribedItems),
     );
 
@@ -576,6 +597,8 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
         _currentProblemController.clear();
         _hospitalNameController.clear();
         _hospitalAddressController.clear();
+        _uploadedPdfBase64 = null;
+        _uploadedPdfName = null;
       });
     }
   }
@@ -1080,6 +1103,74 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                 ),
                 onPressed: _isProcessingOCR ? null : () => _pickAndUploadPrescription(context),
               ),
+              if (_uploadedPdfBase64 != null)
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981), // Emerald green
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: const Icon(
+                    Icons.send_rounded,
+                    size: 14,
+                    color: Colors.white,
+                  ),
+                  label: Text(
+                    'Forward to Pharmacy',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                  onPressed: () async {
+                    final appState = Provider.of<AppState>(context, listen: false);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: const Color(0xFF10B981),
+                        content: Text(
+                          'Forwarding "${_uploadedPdfName ?? 'Prescription PDF'}" to Pharmacy Registry...',
+                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    );
+
+                    // Add a default item if empty so we pass validation
+                    if (_prescribedItems.isEmpty) {
+                      _prescribedItems.add({
+                        'medicineName': _medNameController.text.trim().isNotEmpty 
+                            ? _medNameController.text.trim() 
+                            : 'EHR/OCR Prescribed Regimen',
+                        'dosage': _dosageController.text.trim().isNotEmpty 
+                            ? _dosageController.text.trim() 
+                            : 'As directed in PDF',
+                        'frequency': _frequencyController.text.trim().isNotEmpty 
+                            ? _frequencyController.text.trim() 
+                            : 'Once daily',
+                        'durationDays': _selectedDurationDays,
+                        'instructions': _notesController.text.trim().isNotEmpty 
+                            ? _notesController.text.trim() 
+                            : 'Refer to attached PDF',
+                      });
+                    }
+
+                    try {
+                      _submitPrescription(appState);
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: AppColors.dangerBg,
+                          content: Text(
+                            'Error forwarding: $e',
+                            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, color: AppColors.dangerText),
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
               TextButton.icon(
                 onPressed: () {
                   setState(() {

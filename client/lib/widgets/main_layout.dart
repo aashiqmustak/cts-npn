@@ -26,6 +26,8 @@ import '../screens/admin_data_users_screen.dart';
 import '../screens/admin_reports_screen.dart';
 import '../screens/voice_agent_screen.dart';
 import '../screens/profile_screen.dart';
+import '../screens/pharmacist_insurance_screen.dart';
+import '../screens/insurance_pharmacy_connections_screen.dart';
 
 class MainLayout extends StatelessWidget {
   final Widget? child;
@@ -325,12 +327,18 @@ class MainLayout extends StatelessWidget {
         ),
         _SidebarNavItem(
           index: 5,
+          icon: Icons.verified_user_rounded,
+          label: 'Connected Insurance',
+          appState: appState,
+        ),
+        _SidebarNavItem(
+          index: 6,
           icon: Icons.graphic_eq_rounded,
           label: 'AI Voice Assistant',
           appState: appState,
         ),
         _SidebarNavItem(
-          index: 6,
+          index: 7,
           icon: Icons.person_rounded,
           label: 'My Profile',
           appState: appState,
@@ -397,12 +405,18 @@ class MainLayout extends StatelessWidget {
         ),
         _SidebarNavItem(
           index: 3,
+          icon: Icons.connect_without_contact_rounded,
+          label: 'Pharmacy Connected',
+          appState: appState,
+        ),
+        _SidebarNavItem(
+          index: 4,
           icon: Icons.graphic_eq_rounded,
           label: 'AI Voice Assistant',
           appState: appState,
         ),
         _SidebarNavItem(
-          index: 4,
+          index: 5,
           icon: Icons.person_rounded,
           label: 'My Profile',
           appState: appState,
@@ -600,7 +614,7 @@ class _RoleScreenStack extends StatelessWidget {
       }
     } else if (user.isPharmacist) {
       final isViewingDetails = appState.selectedPrescriptionId != null;
-      switch (appState.currentNavIndex.clamp(0, 6)) {
+      switch (appState.currentNavIndex.clamp(0, 7)) {
         case 0:
           return const PharmacistDispenseScreen();
         case 1:
@@ -616,8 +630,10 @@ class _RoleScreenStack extends StatelessWidget {
         case 4:
           return const FormularyScreen();
         case 5:
-          return const VoiceAgentScreen();
+          return const PharmacistInsuranceScreen();
         case 6:
+          return const VoiceAgentScreen();
+        case 7:
           return const UserProfileScreen();
         default:
           return const PharmacistDispenseScreen();
@@ -640,7 +656,7 @@ class _RoleScreenStack extends StatelessWidget {
           return const PatientInteractiveScreen();
       }
     } else if (user.isInsuranceAgent) {
-      switch (appState.currentNavIndex.clamp(0, 4)) {
+      switch (appState.currentNavIndex.clamp(0, 5)) {
         case 0:
           return const InsurancePortalScreen();
         case 1:
@@ -648,8 +664,10 @@ class _RoleScreenStack extends StatelessWidget {
         case 2:
           return const FrictionScreen();
         case 3:
-          return const VoiceAgentScreen();
+          return const InsurancePharmacyConnectionsScreen();
         case 4:
+          return const VoiceAgentScreen();
+        case 5:
           return const UserProfileScreen();
         default:
           return const InsurancePortalScreen();

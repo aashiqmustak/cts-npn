@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart';
+import 'dart:convert';
+import '../models/models.dart';
 import '../providers/app_state.dart';
+import '../services/pdf_export_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bento_card.dart';
 
@@ -15,9 +20,61 @@ class PrescriptionsScreen extends StatefulWidget {
 class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
   int _activeFilterTab = 0; // 0: All, 1: Active, 2: Completed, 3: Expired, 4: Drafts
 
+  String _formatDate(DateTime date) {
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  Widget _buildEmptyState() {
+    return BentoCard(
+      padding: const EdgeInsets.all(48),
+      child: Center(
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: AppColors.bgSlate,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.search_off_rounded,
+                size: 38,
+                color: AppColors.textMuted,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No Prescriptions Found',
+              style: AppFonts.googleSans(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textDark,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'No active prescriptions match your filter.',
+              style: AppFonts.googleSans(
+                fontSize: 12.5,
+                color: AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+
+    // Calculate dynamic tab counts
+    final activeCount = appState.prescriptions.where((rx) => rx.status.toLowerCase() == 'active' || rx.status.toLowerCase() == 'prescribed').length;
+    final completedCount = appState.prescriptions.where((rx) => rx.status.toLowerCase() == 'completed').length;
+    final expiredCount = appState.prescriptions.where((rx) => rx.status.toLowerCase() == 'expired').length;
+    final draftsCount = appState.prescriptions.where((rx) => rx.status.toLowerCase() == 'draft').length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
@@ -74,13 +131,13 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                 children: [
                   _buildSubTabButton(0, 'All Prescriptions'),
                   const SizedBox(width: 8),
-                  _buildSubTabButton(1, 'Active (3)'),
+                  _buildSubTabButton(1, 'Active ($activeCount)'),
                   const SizedBox(width: 8),
-                  _buildSubTabButton(2, 'Completed (1)'),
+                  _buildSubTabButton(2, 'Completed ($completedCount)'),
                   const SizedBox(width: 8),
-                  _buildSubTabButton(3, 'Expired (1)'),
+                  _buildSubTabButton(3, 'Expired ($expiredCount)'),
                   const SizedBox(width: 8),
-                  _buildSubTabButton(4, 'Drafts (0)'),
+                  _buildSubTabButton(4, 'Drafts ($draftsCount)'),
                 ],
               ),
             ),
@@ -93,58 +150,51 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
             builder: (context, constraints) {
               final isDesktop = constraints.maxWidth >= 900;
 
+              final filteredRxList = appState.prescriptions.reversed.where((rx) {
+                if (_activeFilterTab == 0) return true;
+                if (_activeFilterTab == 1) return rx.status.toLowerCase() == 'active' || rx.status.toLowerCase() == 'prescribed';
+                if (_activeFilterTab == 2) return rx.status.toLowerCase() == 'completed';
+                if (_activeFilterTab == 3) return rx.status.toLowerCase() == 'expired';
+                if (_activeFilterTab == 4) return rx.status.toLowerCase() == 'draft';
+                return true;
+              }).toList();
+
               final listColumn = Column(
-                children: [
-                  _buildPrescriptionBentoCard(
-                    id: 'Prescription #RX58921',
-                    doctor: 'Dr. Rahul Verma • General Physician',
-                    dateDetails: 'May 15, 2025 • 3 Medicines Prescribed',
-                    status: 'Active',
-                    bgStatus: AppColors.successBg,
-                    textStatus: AppColors.successText,
-                    onView: () => appState.setSelectedPrescriptionId('RX58921'),
-                  ),
-                  const SizedBox(height: 14),
-                  _buildPrescriptionBentoCard(
-                    id: 'Prescription #RX58711',
-                    doctor: 'Dr. Neha Kapoor • Cardiologist',
-                    dateDetails: 'Apr 28, 2025 • 2 Medicines Prescribed',
-                    status: 'Active',
-                    bgStatus: AppColors.successBg,
-                    textStatus: AppColors.successText,
-                    onView: () => appState.setSelectedPrescriptionId('RX58711'),
-                  ),
-                  const SizedBox(height: 14),
-                  _buildPrescriptionBentoCard(
-                    id: 'Prescription #RX58432',
-                    doctor: 'Dr. Rahul Verma • General Physician',
-                    dateDetails: 'Mar 20, 2025 • 4 Medicines Prescribed',
-                    status: 'Completed',
-                    bgStatus: AppColors.purpleBg,
-                    textStatus: AppColors.purpleText,
-                    onView: () => appState.setSelectedPrescriptionId('RX58432'),
-                  ),
-                  const SizedBox(height: 14),
-                  _buildPrescriptionBentoCard(
-                    id: 'Prescription #RX58109',
-                    doctor: 'Dr. Neha Kapoor • Cardiologist',
-                    dateDetails: 'Feb 18, 2025 • 3 Medicines Prescribed',
-                    status: 'Expired',
-                    bgStatus: AppColors.dangerBg,
-                    textStatus: AppColors.dangerText,
-                    onView: () => appState.setSelectedPrescriptionId('RX58109'),
-                  ),
-                  const SizedBox(height: 14),
-                  _buildPrescriptionBentoCard(
-                    id: 'Prescription #RX57902',
-                    doctor: 'Dr. Amit Singh • Orthopedic',
-                    dateDetails: 'Jan 10, 2025 • 2 Medicines Prescribed',
-                    status: 'Active',
-                    bgStatus: AppColors.successBg,
-                    textStatus: AppColors.successText,
-                    onView: () => appState.setSelectedPrescriptionId('RX57902'),
-                  ),
-                ],
+                children: filteredRxList.isEmpty
+                  ? [
+                      _buildEmptyState(),
+                    ]
+                  : filteredRxList.map((rx) {
+                      final items = appState.prescriptionItems.where((i) => i.prescriptionId == rx.id).toList();
+                      final medsText = items.isEmpty
+                          ? '${rx.drugName.isNotEmpty ? rx.drugName : "1 Medicine"} Prescribed'
+                          : '${items.length} Medicine${items.length > 1 ? "s" : ""} Prescribed';
+                          
+                      Color bgStatus = AppColors.successBg;
+                      Color textStatus = AppColors.successText;
+                      if (rx.status.toLowerCase() == 'completed') {
+                        bgStatus = AppColors.purpleBg;
+                        textStatus = AppColors.purpleText;
+                      } else if (rx.status.toLowerCase() == 'expired') {
+                        bgStatus = AppColors.dangerBg;
+                        textStatus = AppColors.dangerText;
+                      }
+                      
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: _buildPrescriptionBentoCard(
+                          rx: rx,
+                          items: items,
+                          id: rx.id,
+                          doctor: 'Dr. ${rx.prescriberName}',
+                          dateDetails: '${_formatDate(rx.prescribedDate ?? rx.lastFillDate)} • $medsText',
+                          status: rx.status,
+                          bgStatus: bgStatus,
+                          textStatus: textStatus,
+                          onView: () => appState.setSelectedPrescriptionId(rx.id),
+                        ),
+                      );
+                    }).toList(),
               );
 
               final sideColumn = Column(
@@ -216,6 +266,8 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
   }
 
   Widget _buildPrescriptionBentoCard({
+    required Prescription rx,
+    required List<PrescriptionItem> items,
     required String id,
     required String doctor,
     required String dateDetails,
@@ -249,7 +301,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                 Row(
                   children: [
                     Text(
-                      id,
+                      'Prescription #${rx.id}',
                       style: AppFonts.googleSans(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w800,
@@ -272,6 +324,30 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                         ),
                       ),
                     ),
+                    if (rx.hasPdf) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.picture_as_pdf_rounded, size: 10, color: AppColors.primaryTeal),
+                            SizedBox(width: 4),
+                            Text(
+                              'ORIGINAL PDF',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.primaryTeal,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 3),
@@ -294,21 +370,24 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          const SizedBox(width: 12),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               OutlinedButton.icon(
-                onPressed: () => _showDownloadPdfModal(context, id, doctor, dateDetails),
+                onPressed: () => _showDownloadPdfModal(context, rx, items),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF1244A2),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   side: BorderSide(color: const Color(0xFF1244A2).withValues(alpha: 0.4)),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                icon: const Icon(Icons.picture_as_pdf_rounded, size: 15, color: Color(0xFF1244A2)),
+                icon: Icon(
+                  rx.hasPdf ? Icons.download_rounded : Icons.picture_as_pdf_rounded,
+                  size: 15,
+                  color: const Color(0xFF1244A2),
+                ),
                 label: Text(
-                  'Download PDF',
+                  rx.hasPdf ? 'Download PDF' : 'Download PDF',
                   style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w800),
                 ),
               ),
@@ -340,7 +419,11 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
     );
   }
 
-  void _showDownloadPdfModal(BuildContext context, String id, String doctor, String dateDetails) {
+  void _showDownloadPdfModal(BuildContext context, Prescription rx, List<PrescriptionItem> items) {
+    final prescriberName = rx.prescriberName.isNotEmpty ? rx.prescriberName : 'Attending Doctor';
+    final dateDetails = _formatDate(rx.prescribedDate ?? rx.lastFillDate);
+    final diagnosis = rx.diagnosis ?? 'Clinical Regimen Evaluation';
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -355,120 +438,188 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1244A2),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white, size: 24),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Official Clinical e-Prescription Document',
-                          style: AppFonts.googleSans(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.textDark),
-                        ),
-                        Text(
-                          'FHIR v4.0 Certified • DEA & NPI Signed',
-                          style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const Divider(height: 24),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFCBD5E1)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('ALTERNEA HEALTH CLINICAL NETWORK', style: AppFonts.googleSans(fontSize: 10, fontWeight: FontWeight.w900, color: const Color(0xFF1244A2))),
-                        Text('Rx ID: $id', style: AppFonts.googleSans(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.textDark)),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text('Prescribing Physician:', style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted)),
-                    Text(doctor, style: AppFonts.googleSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark)),
-                    const SizedBox(height: 8),
-                    Text('Patient & Date Details:', style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted)),
-                    Text(dateDetails, style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textDark)),
-                    const SizedBox(height: 12),
-                    const Divider(height: 1),
-                    const SizedBox(height: 12),
-                    Text('Rx Regimen Payload:', style: AppFonts.googleSans(fontSize: 11, fontWeight: FontWeight.w800, color: const Color(0xFF1244A2))),
-                    const SizedBox(height: 4),
-                    Text('1. Amantadine 100mg Capsule — 1 Cap Oral QD (30 Days)', style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w600)),
-                    Text('2. Lipitor (Atorvastatin) 20mg Tablet — 1 Tab QHS (90 Days)', style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF10B981)),
-                          const SizedBox(width: 6),
-                          Text('SHA-256 Signature Stamp: Verified & Encrypted', style: AppFonts.googleSans(fontSize: 10.5, fontWeight: FontWeight.w800, color: const Color(0xFF10B981))),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 18),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: Text('Close', style: AppFonts.googleSans(fontWeight: FontWeight.w700, color: AppColors.textMuted)),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1244A2),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    ),
-                    icon: const Icon(Icons.download_rounded, size: 16, color: Colors.white),
-                    label: Text('Save / Download PDF', style: AppFonts.googleSans(fontWeight: FontWeight.w800, color: Colors.white)),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('e-Prescription PDF ($id) downloaded successfully!'),
-                          backgroundColor: const Color(0xFF1244A2),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+                     padding: const EdgeInsets.all(10),
+                     decoration: BoxDecoration(
+                       color: const Color(0xFF1244A2),
+                       borderRadius: BorderRadius.circular(14),
+                     ),
+                     child: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white, size: 24),
+                   ),
+                   const SizedBox(width: 14),
+                   Expanded(
+                     child: Column(
+                       crossAxisAlignment: CrossAxisAlignment.start,
+                       children: [
+                         Text(
+                           rx.hasPdf 
+                             ? 'Doctor Uploaded Rx Document' 
+                             : 'Official Clinical e-Prescription Document',
+                           style: AppFonts.googleSans(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.textDark),
+                         ),
+                         Text(
+                           'FHIR v4.0 Certified • DEA & NPI Signed',
+                           style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted),
+                         ),
+                       ],
+                     ),
+                   ),
+                   IconButton(
+                     icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
+                     onPressed: () => Navigator.pop(ctx),
+                   ),
+                 ],
+               ),
+               const Divider(height: 24),
+               Container(
+                 padding: const EdgeInsets.all(16),
+                 decoration: BoxDecoration(
+                   color: const Color(0xFFF8FAFC),
+                   borderRadius: BorderRadius.circular(16),
+                   border: Border.all(color: const Color(0xFFCBD5E1)),
+                 ),
+                 child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                     Row(
+                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                       children: [
+                         Text('ALTERNEA HEALTH CLINICAL NETWORK', style: AppFonts.googleSans(fontSize: 10, fontWeight: FontWeight.w900, color: const Color(0xFF1244A2))),
+                         Text('Rx ID: ${rx.id}', style: AppFonts.googleSans(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.textDark)),
+                       ],
+                     ),
+                     const SizedBox(height: 10),
+                     Text('Prescribing Physician:', style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted)),
+                     Text('Dr. $prescriberName', style: AppFonts.googleSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark)),
+                     const SizedBox(height: 8),
+                     Text('Patient & Date Details:', style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted)),
+                     Text('Patient Name: ${rx.patientName} • Issued: $dateDetails', style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textDark)),
+                     const SizedBox(height: 8),
+                     Text('Diagnosis / Indication:', style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted)),
+                     Text(diagnosis, style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textDark)),
+                     const SizedBox(height: 12),
+                     const Divider(height: 1),
+                     const SizedBox(height: 12),
+                     Text('Rx Regimen Payload:', style: AppFonts.googleSans(fontSize: 11, fontWeight: FontWeight.w800, color: const Color(0xFF1244A2))),
+                     const SizedBox(height: 4),
+                     if (items.isEmpty)
+                       Text('1. ${rx.drugName.isNotEmpty ? rx.drugName : "Prescribed Clinical Therapy"} — 1 Oral QD (30 Days)', style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w600))
+                     else
+                       Column(
+                         crossAxisAlignment: CrossAxisAlignment.start,
+                         children: items.asMap().entries.map((e) {
+                           final i = e.value;
+                           return Text('${e.key + 1}. ${i.medicineName} ${i.dosage} — ${i.frequency} (${i.durationDays} Days)', style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w600));
+                         }).toList(),
+                       ),
+                     const SizedBox(height: 12),
+                     Container(
+                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                       decoration: BoxDecoration(
+                         color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                         borderRadius: BorderRadius.circular(8),
+                       ),
+                       child: Row(
+                         children: [
+                           const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF10B981)),
+                           const SizedBox(width: 6),
+                           Text('SHA-256 Signature Stamp: Verified & Encrypted', style: AppFonts.googleSans(fontSize: 10.5, fontWeight: FontWeight.w800, color: const Color(0xFF10B981))),
+                         ],
+                       ),
+                     ),
+                   ],
+                 ),
+               ),
+               const SizedBox(height: 18),
+               Row(
+                 mainAxisAlignment: MainAxisAlignment.end,
+                 children: [
+                   TextButton(
+                     onPressed: () => Navigator.pop(ctx),
+                     child: Text('Close', style: AppFonts.googleSans(fontWeight: FontWeight.w700, color: AppColors.textMuted)),
+                   ),
+                   const SizedBox(width: 8),
+                   OutlinedButton.icon(
+                     style: OutlinedButton.styleFrom(
+                       foregroundColor: const Color(0xFF1244A2),
+                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                       side: const BorderSide(color: Color(0xFF1244A2)),
+                     ),
+                     icon: const Icon(Icons.remove_red_eye_rounded, size: 16, color: Color(0xFF1244A2)),
+                     label: Text(
+                       rx.hasPdf ? 'View Original PDF' : 'View PDF',
+                       style: AppFonts.googleSans(fontWeight: FontWeight.w800, color: const Color(0xFF1244A2)),
+                     ),
+                     onPressed: () async {
+                       Navigator.pop(ctx);
+                       if (rx.hasPdf) {
+                         try {
+                           final bytes = base64Decode(rx.pdfBase64!);
+                           await Printing.layoutPdf(
+                             onLayout: (PdfPageFormat format) async => bytes,
+                             name: rx.pdfName ?? 'prescription.pdf',
+                           );
+                         } catch (e) {
+                           if (context.mounted) {
+                             ScaffoldMessenger.of(context).showSnackBar(
+                               SnackBar(
+                                 content: Text('Error viewing PDF: $e'),
+                                 backgroundColor: AppColors.dangerRed,
+                                 behavior: SnackBarBehavior.floating,
+                               ),
+                             );
+                           }
+                         }
+                       } else {
+                         await PdfExportService.instance.printPdf(rx: rx, items: items);
+                       }
+                     },
+                   ),
+                   const SizedBox(width: 8),
+                   ElevatedButton.icon(
+                     style: ElevatedButton.styleFrom(
+                       backgroundColor: const Color(0xFF1244A2),
+                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                     ),
+                     icon: const Icon(Icons.download_rounded, size: 16, color: Colors.white),
+                     label: Text(
+                       rx.hasPdf ? 'Download Original PDF' : 'Save / Download PDF',
+                       style: AppFonts.googleSans(fontWeight: FontWeight.w800, color: Colors.white),
+                     ),
+                     onPressed: () async {
+                       Navigator.pop(ctx);
+                       if (rx.hasPdf) {
+                         try {
+                           final bytes = base64Decode(rx.pdfBase64!);
+                           await Printing.sharePdf(
+                             bytes: bytes,
+                             filename: rx.pdfName ?? 'prescription.pdf',
+                           );
+                         } catch (e) {
+                           if (context.mounted) {
+                             ScaffoldMessenger.of(context).showSnackBar(
+                               SnackBar(
+                                 content: Text('Error decoding PDF: $e'),
+                                 backgroundColor: AppColors.dangerRed,
+                                 behavior: SnackBarBehavior.floating,
+                               ),
+                             );
+                           }
+                         }
+                       } else {
+                         await PdfExportService.instance.downloadOrSharePdf(rx: rx, items: items);
+                       }
+                     },
+                   ),
+                 ],
+               ),
+             ],
+           ),
+         ),
+       ),
+     );
+   }
 
   Widget _buildOverviewCard() {
     return BentoCard(

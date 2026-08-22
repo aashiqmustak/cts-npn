@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 
 enum UserRole {
   admin,
@@ -609,6 +610,9 @@ class Prescription {
   final String prescriberName;
   final String? hospitalName;
   final String? hospitalAddress;
+  final String? doctorId;
+  final DateTime? prescribedDate;
+  final String? notes;
 
   const Prescription({
     required this.id,
@@ -627,7 +631,45 @@ class Prescription {
     required this.prescriberName,
     this.hospitalName,
     this.hospitalAddress,
+    this.doctorId,
+    this.prescribedDate,
+    this.notes,
   });
+
+  bool get hasPdf => notes != null && notes!.trim().startsWith('{') && notes!.contains('pdf_base64');
+  
+  String? get pdfBase64 {
+    if (!hasPdf) return null;
+    try {
+      final data = jsonDecode(notes!);
+      return data['pdf_base64'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String? get pdfName {
+    if (!hasPdf) return null;
+    try {
+      final data = jsonDecode(notes!);
+      return data['pdf_name'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String get cleanNotes {
+    if (notes == null) return '';
+    if (hasPdf) {
+      try {
+        final data = jsonDecode(notes!);
+        return data['notes']?.toString() ?? '';
+      } catch (_) {
+        return notes!;
+      }
+    }
+    return notes!;
+  }
 
   factory Prescription.fromJson(Map<String, dynamic> json) {
     return Prescription(
@@ -651,6 +693,11 @@ class Prescription {
       prescriberName: json['prescriber_name'] ?? json['doctors']?['name'] ?? 'Attending Doctor',
       hospitalName: json['hospitals']?['name'],
       hospitalAddress: json['hospitals']?['address'],
+      doctorId: json['doctor_id']?.toString(),
+      prescribedDate: json['prescribed_date'] != null
+          ? DateTime.tryParse(json['prescribed_date'].toString())
+          : null,
+      notes: json['notes']?.toString(),
     );
   }
 }

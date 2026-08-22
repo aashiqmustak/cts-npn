@@ -76,10 +76,14 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
               final userRxList = appState.prescriptions.reversed.where((r) {
                 final pid = r.patientId.toLowerCase();
                 final pName = r.patientName.toLowerCase();
+                if (appState.currentUser.role == UserRole.patient) {
+                  return pid == activePatientId ||
+                      (activePatientId.isNotEmpty && (pid.contains(activePatientId) || activePatientId.contains(pid))) ||
+                      (activePatientName.isNotEmpty && pName.isNotEmpty && pName.contains(activePatientName));
+                }
                 return pid == activePatientId ||
-                    (activePatientId.isNotEmpty && (pid.contains(activePatientId) || activePatientId.contains(pid))) ||
-                    (activePatientName.isNotEmpty && pName.isNotEmpty && pName.contains(activePatientName)) ||
-                    pid == 'pat_00001';
+                    pid == 'pat_00001' ||
+                    (activePatientId.isNotEmpty && (pid.contains(activePatientId) || activePatientId.contains(pid)));
               }).toList();
 
               final userRxCount = userRxList.length;
@@ -120,17 +124,18 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
               final userRxList = appState.prescriptions.reversed.where((r) {
                 final pid = r.patientId.toLowerCase();
                 final pName = r.patientName.toLowerCase();
+                if (appState.currentUser.role == UserRole.patient) {
+                  return pid == activePatientId ||
+                      (activePatientId.isNotEmpty && (pid.contains(activePatientId) || activePatientId.contains(pid))) ||
+                      (activePatientName.isNotEmpty && pName.isNotEmpty && pName.contains(activePatientName));
+                }
                 return pid == activePatientId ||
-                    (activePatientId.isNotEmpty && (pid.contains(activePatientId) || activePatientId.contains(pid))) ||
-                    (activePatientName.isNotEmpty && pName.isNotEmpty && pName.contains(activePatientName)) ||
-                    pid == 'pat_00001';
+                    pid == 'pat_00001' ||
+                    (activePatientId.isNotEmpty && (pid.contains(activePatientId) || activePatientId.contains(pid)));
               }).toList();
 
               for (final rx in userRxList) {
                 var items = appState.prescriptionItems.where((i) => i.prescriptionId == rx.id).toList();
-                if (items.isEmpty && appState.prescriptionItems.isNotEmpty) {
-                  items = appState.prescriptionItems.reversed.take(1).toList();
-                }
 
                 dynamicCards.add(
                   _buildPrescriptionContainerCard(
@@ -319,29 +324,33 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                             ),
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEFF6FF),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFF1244A2).withValues(alpha: 0.4)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.bolt_rounded, size: 12, color: Color(0xFF1244A2)),
-                              const SizedBox(width: 4),
-                              Text(
-                                'PRESCRIBED TODAY',
-                                style: AppFonts.googleSans(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF1244A2),
+                        if (rx.prescribedDate != null &&
+                            rx.prescribedDate!.year == DateTime.now().year &&
+                            rx.prescribedDate!.month == DateTime.now().month &&
+                            rx.prescribedDate!.day == DateTime.now().day)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFF1244A2).withValues(alpha: 0.4)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.bolt_rounded, size: 12, color: Color(0xFF1244A2)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'PRESCRIBED TODAY',
+                                  style: AppFonts.googleSans(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF1244A2),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 2),

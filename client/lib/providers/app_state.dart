@@ -26,6 +26,24 @@ class ClinicalNotification {
   });
 }
 
+class PharmacyConnectionRequest {
+  final String id;
+  final String pharmacyId;
+  final String pharmacyName;
+  final String insuranceCompany;
+  String status; // 'requested', 'accepted', 'rejected'
+  final DateTime requestDate;
+
+  PharmacyConnectionRequest({
+    required this.id,
+    required this.pharmacyId,
+    required this.pharmacyName,
+    required this.insuranceCompany,
+    required this.status,
+    required this.requestDate,
+  });
+}
+
 class AppState extends ChangeNotifier {
   final DataService dataService = DataService();
 
@@ -107,6 +125,7 @@ class AppState extends ChangeNotifier {
       assignedPatientIds: [],
       avatarUrl: '',
       title: 'Clinical Pharmacist',
+      doctorId: 'DOC-201',
     );
     _loadSavedSession();
     refreshData();
@@ -127,9 +146,21 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void updateUser(User user) {
+  Future<void> updateUser(User user) async {
     _currentUser = user;
     _saveSession(user);
+    if (dataService.supabaseService.isInitialized) {
+      await dataService.supabaseService.upsertUserProfile(
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        hospitalName: user.hospitalName,
+        hospitalId: user.hospitalId,
+        doctorId: user.doctorId,
+        role: user.role,
+      );
+    }
     notifyListeners();
   }
 
@@ -191,6 +222,107 @@ class AppState extends ChangeNotifier {
   List<PharmacistDispenseRecord> get dispenseRecords =>
       dataService.dispenseRecords;
   List<Prescription> get prescriptions => dataService.prescriptions;
+
+  // Connected Insurance Payers State
+  final List<Map<String, dynamic>> insuranceCompanies = [
+    {
+      'name': 'SilverScript Choice',
+      'logo': Icons.shield_rounded,
+      'color': Colors.indigo,
+      'plans': [
+        {'id': 'P-001', 'name': 'SilverScript Choice Plan #MED-99201', 'type': 'Medicare Part D Prescription Drug Plan'},
+        {'id': 'P-002', 'name': 'SilverScript Value Rx Plan', 'type': 'Value Prescription Plan'},
+      ]
+    },
+    {
+      'name': 'Aetna Medicare Advantage',
+      'logo': Icons.health_and_safety_rounded,
+      'color': Colors.red,
+      'plans': [
+        {'id': 'P-003', 'name': 'Aetna Medicare Saver Plus (PDP)', 'type': 'Saver Prescription Plan'},
+        {'id': 'P-004', 'name': 'Aetna Rx Essential (PDP)', 'type': 'Essential Prescription Plan'},
+      ]
+    },
+    {
+      'name': 'UnitedHealthcare Rx',
+      'logo': Icons.add_moderator_rounded,
+      'color': Colors.blue,
+      'plans': [
+        {'id': 'P-005', 'name': 'UHC MedicareRx Preferred (PDP)', 'type': 'Preferred Prescription Plan'},
+        {'id': 'P-006', 'name': 'UHC MedicareRx Saver (PDP)', 'type': 'Saver Prescription Plan'},
+      ]
+    },
+    {
+      'name': 'Blue Cross Blue Shield',
+      'logo': Icons.security_rounded,
+      'color': Colors.lightBlue,
+      'plans': [
+        {'id': 'P-007', 'name': 'BCBS Blue Medicare Rx (PDP)', 'type': 'Medicare Prescription Plan'},
+        {'id': 'P-008', 'name': 'BCBS Blue Rx Value (PDP)', 'type': 'Value Prescription Plan'},
+      ]
+    },
+    {
+      'name': 'Cigna Medicare Rx',
+      'logo': Icons.health_and_safety_outlined,
+      'color': Colors.teal,
+      'plans': [
+        {'id': 'P-009', 'name': 'Cigna Secure Rx (PDP)', 'type': 'Secure Prescription Plan'},
+        {'id': 'P-010', 'name': 'Cigna Extra Rx (PDP)', 'type': 'Extra Prescription Plan'},
+      ]
+    },
+  ];
+
+  final List<PharmacyConnectionRequest> _connectionRequests = [
+    PharmacyConnectionRequest(
+      id: 'CONN-001',
+      pharmacyId: 'PHARM-001',
+      pharmacyName: 'MetroHealth In-Network Pharmacy',
+      insuranceCompany: 'SilverScript Choice',
+      status: 'accepted',
+      requestDate: DateTime.now().subtract(const Duration(days: 5)),
+    ),
+    PharmacyConnectionRequest(
+      id: 'CONN-002',
+      pharmacyId: 'PHARM-001',
+      pharmacyName: 'MetroHealth In-Network Pharmacy',
+      insuranceCompany: 'UnitedHealthcare Rx',
+      status: 'requested',
+      requestDate: DateTime.now().subtract(const Duration(days: 1)),
+    ),
+  ];
+
+  List<PharmacyConnectionRequest> get connectionRequests => _connectionRequests;
+
+  void requestConnection(String insuranceCompany) {
+    final exists = _connectionRequests.any((req) => req.insuranceCompany == insuranceCompany);
+    if (!exists) {
+      _connectionRequests.add(
+        PharmacyConnectionRequest(
+          id: 'CONN-${DateTime.now().millisecondsSinceEpoch}',
+          pharmacyId: 'PHARM-001',
+          pharmacyName: 'MetroHealth In-Network Pharmacy',
+          insuranceCompany: insuranceCompany,
+          status: 'requested',
+          requestDate: DateTime.now(),
+        ),
+      );
+      notifyListeners();
+    } else {
+      final index = _connectionRequests.indexWhere((req) => req.insuranceCompany == insuranceCompany);
+      if (index != -1 && _connectionRequests[index].status == 'rejected') {
+        _connectionRequests[index].status = 'requested';
+        notifyListeners();
+      }
+    }
+  }
+
+  void updateConnectionStatus(String requestId, String status) {
+    final index = _connectionRequests.indexWhere((req) => req.id == requestId);
+    if (index != -1) {
+      _connectionRequests[index].status = status;
+      notifyListeners();
+    }
+  }
 
   // Actions
   Future<void> dispenseItem(String itemId) async {
@@ -486,7 +618,7 @@ class AppState extends ChangeNotifier {
       assignedPatientIds: const ['PT-301', 'PT-302'],
       avatarUrl: '',
       title: title,
-      doctorId: newRole == UserRole.doctor ? 'DOC-201' : null,
+      doctorId: (newRole == UserRole.doctor || newRole == UserRole.pharmacist) ? 'DOC-201' : null,
       patientId: newRole == UserRole.patient ? 'PT-301' : null,
       hospitalId: 'HOSP-101',
       hospitalName: 'MetroHealth Medical Center',
@@ -669,6 +801,40 @@ class AppState extends ChangeNotifier {
 
   void updateTierCopay(int tier, double copay, double coinsurance) {
     dataService.updateTierCopay(tier, copay, coinsurance);
+    notifyListeners();
+  }
+
+  Future<void> updatePharmacistDoctor(String? doctorId) async {
+    final updatedUser = User(
+      id: _currentUser.id,
+      name: _currentUser.name,
+      email: _currentUser.email,
+      phone: _currentUser.phone,
+      role: _currentUser.role,
+      assignedPatientIds: _currentUser.assignedPatientIds,
+      avatarUrl: _currentUser.avatarUrl,
+      title: _currentUser.title,
+      hospitalId: _currentUser.hospitalId,
+      hospitalName: _currentUser.hospitalName,
+      doctorId: doctorId,
+      patientId: _currentUser.patientId,
+    );
+    _currentUser = updatedUser;
+    _saveSession(updatedUser);
+
+    if (dataService.supabaseService.isInitialized) {
+      await dataService.supabaseService.upsertUserProfile(
+        id: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
+        phone: updatedUser.phone,
+        hospitalName: updatedUser.hospitalName,
+        hospitalId: updatedUser.hospitalId,
+        doctorId: updatedUser.doctorId,
+        role: updatedUser.role,
+      );
+    }
+
     notifyListeners();
   }
 }

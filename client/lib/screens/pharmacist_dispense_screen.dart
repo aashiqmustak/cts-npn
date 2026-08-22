@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart';
+import 'dart:convert';
 import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
@@ -29,17 +32,29 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final query = _searchController.text.trim().toLowerCase();
+    final pharmacistDoctorId = appState.currentUser.doctorId;
 
-    // Filter patients by search query
+    // Filter prescriptions by doctor ID first (Bypassed: Show all prescriptions directly)
+    final filteredPrescriptions = appState.prescriptions.toList();
+
+    // Filter prescription items to only those belonging to the filtered prescriptions
+    final filteredPrescriptionItems = appState.prescriptionItems.where((item) {
+      return filteredPrescriptions.any((rx) => rx.id == item.prescriptionId);
+    }).toList();
+
+    final pendingCount = filteredPrescriptionItems.where((i) => !i.isDispensed).length;
+    final dispensedCount = filteredPrescriptionItems.where((i) => i.isDispensed).length;
+
+    // Filter patients by search query and ensure they have prescriptions from this doctor
     final matchingPatients = appState.patientRecords.where((p) {
+      final hasRx = filteredPrescriptions.any((rx) => rx.patientId == p.id);
+      if (!hasRx) return false;
+
       if (query.isEmpty) return true;
       return p.name.toLowerCase().contains(query) ||
           p.id.toLowerCase().contains(query) ||
           p.currentProblem.toLowerCase().contains(query);
     }).toList();
-
-    final pendingCount = appState.prescriptionItems.where((i) => !i.isDispensed).length;
-    final dispensedCount = appState.prescriptionItems.where((i) => i.isDispensed).length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
@@ -111,6 +126,90 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
             ),
           ),
 
+          const SizedBox(height: 16),
+
+          // Supervising Doctor Selector
+          BentoCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.badge_rounded,
+                    color: AppColors.primaryTeal,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Supervising Physician:',
+                  style: AppFonts.googleSans(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textDark,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.bgSlate,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.metallicBorder),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: pharmacistDoctorId,
+                        hint: Text(
+                          'Show All Prescriptions (No Doctor Filter)',
+                          style: AppFonts.googleSans(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                        isExpanded: true,
+                        icon: const Icon(Icons.arrow_drop_down_rounded, color: AppColors.primaryTeal),
+                        style: AppFonts.googleSans(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textDark,
+                        ),
+                        items: [
+                          const DropdownMenuItem<String>(
+                            value: null,
+                            child: Text(
+                              'Show All Prescriptions (No Doctor Filter)',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryTeal,
+                              ),
+                            ),
+                          ),
+                          ...appState.doctors.map((d) {
+                            return DropdownMenuItem<String>(
+                              value: d.id,
+                              child: Text('${d.name} (${d.specialty})'),
+                            );
+                          }),
+                        ],
+                        onChanged: (val) {
+                          appState.updatePharmacistDoctor(val);
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           const SizedBox(height: 20),
 
           // 3. Patient Prescriptions Queue
@@ -174,11 +273,11 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                     );
 
                     // Find patient's own prescription items (fix layout rendering lag)
-                    final patientRxs = appState.prescriptions
+                    final patientRxs = filteredPrescriptions
                         .where((rx) => rx.patientId == patient.id)
                         .toList();
 
-                    final patientItems = appState.prescriptionItems
+                    final patientItems = filteredPrescriptionItems
                         .where((item) => patientRxs.any((rx) => rx.id == item.prescriptionId))
                         .toList();
 
@@ -274,6 +373,15 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
     required dynamic doctor,
     required List<dynamic> items,
   }) {
+    final patientRxs = appState.prescriptions.where((rx) => rx.patientId.toLowerCase() == patient.id.toLowerCase()).toList();
+    Prescription? rxWithPdf;
+    for (final rx in patientRxs) {
+      if (rx.hasPdf) {
+        rxWithPdf = rx;
+        break;
+      }
+    }
+
     return BentoCard(
       enableHover: true,
       child: Column(
@@ -344,6 +452,92 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                             ),
                           ),
                         ),
+                        if (rxWithPdf != null) ...[
+                          const SizedBox(width: 8),
+                          InkWell(
+                            onTap: () async {
+                              try {
+                                final bytes = base64Decode(rxWithPdf!.pdfBase64!);
+                                await Printing.layoutPdf(
+                                  onLayout: (PdfPageFormat format) async => bytes,
+                                  name: rxWithPdf.pdfName ?? 'prescription.pdf',
+                                );
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Failed to view PDF: $e'),
+                                    backgroundColor: AppColors.dangerRed,
+                                  ),
+                                );
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryLight,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: AppColors.primaryTeal.withValues(alpha: 0.5)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(Icons.remove_red_eye_rounded, size: 12, color: AppColors.primaryTeal),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'View Rx PDF',
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.primaryTeal,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          InkWell(
+                            onTap: () async {
+                              try {
+                                final bytes = base64Decode(rxWithPdf!.pdfBase64!);
+                                await Printing.sharePdf(
+                                  bytes: bytes,
+                                  filename: rxWithPdf.pdfName ?? 'prescription.pdf',
+                                );
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Failed to download PDF: $e'),
+                                    backgroundColor: AppColors.dangerRed,
+                                  ),
+                                );
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryLight,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: AppColors.primaryTeal.withValues(alpha: 0.5)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(Icons.download_rounded, size: 12, color: AppColors.primaryTeal),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Download PDF',
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.primaryTeal,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 6),

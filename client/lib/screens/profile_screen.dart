@@ -55,6 +55,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   void _showEditProfileDialog(User user, AppState appState) {
     final nameController = TextEditingController(text: _getCleanDisplayName(user.name, user.role));
     final emailController = TextEditingController(text: user.email);
+    String? selectedDoctorId = user.doctorId;
 
     showDialog(
       context: context,
@@ -64,25 +65,52 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           'Edit Profile Details',
           style: AppFonts.googleSans(fontWeight: FontWeight.w800, color: AppColors.textDark),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Full Name',
-                prefixIcon: Icon(Icons.person_rounded, color: Color(0xFF1244A2)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Full Name',
+                  prefixIcon: Icon(Icons.person_rounded, color: Color(0xFF1244A2)),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email Address / User ID',
-                prefixIcon: Icon(Icons.email_rounded, color: Color(0xFF1244A2)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email Address / User ID',
+                  prefixIcon: Icon(Icons.email_rounded, color: Color(0xFF1244A2)),
+                ),
               ),
-            ),
-          ],
+              if (user.role == UserRole.pharmacist) ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: selectedDoctorId,
+                  decoration: const InputDecoration(
+                    labelText: 'Supervising Physician',
+                    prefixIcon: Icon(Icons.badge_rounded, color: Color(0xFF1244A2)),
+                  ),
+                  items: [
+                    const DropdownMenuItem<String>(
+                      value: null,
+                      child: Text('None Assigned (All Doctors)'),
+                    ),
+                    ...appState.doctors.map((d) {
+                      return DropdownMenuItem<String>(
+                        value: d.id,
+                        child: Text('${d.name} (${d.specialty})'),
+                      );
+                    }),
+                  ],
+                  onChanged: (val) {
+                    selectedDoctorId = val;
+                  },
+                ),
+              ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -100,7 +128,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   email: newEmail.isNotEmpty ? newEmail : user.email,
                   role: user.role,
                   hospitalName: user.hospitalName,
+                  hospitalId: user.hospitalId,
                   title: user.title,
+                  doctorId: selectedDoctorId,
                 );
                 appState.updateUser(updatedUser);
               }
@@ -145,22 +175,22 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             LayoutBuilder(
               builder: (context, constraints) {
                 final isWide = constraints.maxWidth > 850;
-                return isWide
-                    ? Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(flex: 3, child: _buildRoleSpecificBento(user)),
-                          const SizedBox(width: 20),
-                          Expanded(flex: 2, child: _buildAccountSettingsBento(user, appState)),
-                        ],
-                      )
-                    : Column(
-                        children: [
-                          _buildRoleSpecificBento(user),
-                          const SizedBox(height: 20),
-                          _buildAccountSettingsBento(user, appState),
-                        ],
-                      );
+                  return isWide
+                      ? Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(flex: 3, child: _buildRoleSpecificBento(user, appState)),
+                            const SizedBox(width: 20),
+                            Expanded(flex: 2, child: _buildAccountSettingsBento(user, appState)),
+                          ],
+                        )
+                      : Column(
+                          children: [
+                            _buildRoleSpecificBento(user, appState),
+                            const SizedBox(height: 20),
+                            _buildAccountSettingsBento(user, appState),
+                          ],
+                        );
               },
             ),
           ],
@@ -328,11 +358,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Widget _buildRoleSpecificBento(User user) {
+  Widget _buildRoleSpecificBento(User user, AppState appState) {
     if (user.role == UserRole.doctor) {
       return _buildDoctorCredentialsBento(user);
     } else if (user.role == UserRole.pharmacist) {
-      return _buildPharmacistCredentialsBento(user);
+      return _buildPharmacistCredentialsBento(user, appState);
     } else if (user.role == UserRole.patient) {
       return _buildPatientHealthProfileBento(user);
     } else if (user.role == UserRole.insuranceAgent) {
@@ -380,7 +410,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   // Pharmacist Credentials Bento
-  Widget _buildPharmacistCredentialsBento(User user) {
+  Widget _buildPharmacistCredentialsBento(User user, AppState appState) {
+    final doc = appState.doctors.firstWhere(
+      (d) => d.id == user.doctorId,
+      orElse: () => const Doctor(id: '', name: 'None Assigned (All Doctors)', specialty: '', email: '', phone: '', hospitalId: ''),
+    );
+
     return BentoCard(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -406,6 +441,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           const Divider(height: 28),
 
           _buildStyledTileRow(Icons.storefront_rounded, 'Pharmacy Location', user.hospitalName ?? 'MetroHealth Pharmacy Hub #402', isHighlight: true),
+          _buildStyledTileRow(Icons.badge_rounded, 'Supervising Physician', doc.name),
           _buildStyledTileRow(Icons.verified_user_rounded, 'PharmD License ID', 'NC State Board of Pharmacy License #PH-99201'),
           _buildStyledTileRow(Icons.assignment_turned_in_rounded, 'Controlled Substance License', 'DEA Dispenser Registration #BD9021820'),
           _buildStyledTileRow(Icons.speed_rounded, 'Dispense SLA Performance', '99.4% On-Time Fulfillment Accuracy Rate'),

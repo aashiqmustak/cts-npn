@@ -68,6 +68,10 @@ class DataService {
       _prescriptions.clear();
       _prescriptions.addAll(rx);
 
+      final rxItems = await supabaseService.fetchPrescriptionItems();
+      _prescriptionItems.clear();
+      _prescriptionItems.addAll(rxItems);
+
       final af = await supabaseService.fetchAdherenceFlags();
       _adherenceFlags.clear();
       _adherenceFlags.addAll(af);
@@ -156,6 +160,7 @@ class DataService {
           lastFillDate: DateTime.now(),
           nextDueDate: DateTime.now(),
           prescriberName: 'Doctor',
+          doctorId: null,
         ),
       );
 
@@ -230,6 +235,18 @@ class DataService {
 
     // 1. Create main Prescription record
     final firstDrugName = items.isNotEmpty ? items.first['medicineName'] : 'Prescription Payload';
+    final doc = _doctors.firstWhere(
+      (d) => d.id == doctorId,
+      orElse: () => Doctor(
+        id: doctorId,
+        name: 'Dr. Tariq Martin',
+        specialty: 'Attending Physician',
+        email: '',
+        phone: '',
+        hospitalId: hospitalId,
+      ),
+    );
+
     final rxRecord = Prescription(
       id: newRxId,
       patientId: patientId,
@@ -244,7 +261,10 @@ class DataService {
       status: 'Active',
       lastFillDate: DateTime.now(),
       nextDueDate: DateTime.now().add(const Duration(days: 30)),
-      prescriberName: 'Dr. Tariq Martin',
+      prescriberName: doc.name,
+      doctorId: doctorId,
+      prescribedDate: DateTime.now(),
+      notes: notes,
     );
     _prescriptions.add(rxRecord);
 

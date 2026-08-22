@@ -47,6 +47,26 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
     'YTD',
   ];
 
+  final Set<String> _expandedTimes = {};
+
+  TimeOfDay _parseTimeOfDay(String timeStr) {
+    try {
+      final clean = timeStr.trim().toUpperCase();
+      final parts = clean.split(' ');
+      final timeParts = parts[0].split(':');
+      int hour = int.parse(timeParts[0]);
+      int minute = timeParts.length > 1 ? int.parse(timeParts[1]) : 0;
+      if (parts.length > 1 && parts[1] == 'PM' && hour < 12) {
+        hour += 12;
+      } else if (parts.length > 1 && parts[1] == 'AM' && hour == 12) {
+        hour = 0;
+      }
+      return TimeOfDay(hour: hour, minute: minute);
+    } catch (_) {
+      return const TimeOfDay(hour: 0, minute: 0);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -140,6 +160,11 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
 
     final logs = appState.patientLogs.where((l) {
       final pid = l.patientId.toLowerCase();
+      if (appState.currentUser.role == UserRole.patient) {
+        return pid == currentPatientId ||
+            currentPatientId.contains(pid) ||
+            pid.contains(currentPatientId);
+      }
       return pid == currentPatientId ||
           pid == 'pat_00001' ||
           currentPatientId.contains(pid) ||
@@ -1360,6 +1385,23 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
   // ---------------------------------------------------------------------
   Widget _buildTodayScheduleCard(
       List<PatientMedicineLog> logs, int takenCount, double progress) {
+    final appState = Provider.of<AppState>(context, listen: false);
+    // Group logs by scheduled time
+    final Map<String, List<PatientMedicineLog>> groupedLogs = {};
+    for (final log in logs) {
+      final time = log.scheduledTime.trim();
+      groupedLogs.putIfAbsent(time, () => []).add(log);
+    }
+    final sortedTimes = groupedLogs.keys.toList()..sort((a, b) {
+      try {
+        final aTime = _parseTimeOfDay(a);
+        final bTime = _parseTimeOfDay(b);
+        return (aTime.hour * 60 + aTime.minute).compareTo(bTime.hour * 60 + bTime.minute);
+      } catch (_) {
+        return a.compareTo(b);
+      }
+    });
+
     return BentoCard(
       title: 'Today’s Medication Schedule',
       subtitle: 'Tap checkbox once taken to log your adherence timestamp',
@@ -1402,88 +1444,233 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
               ),
             )
           else
-            ListView.separated(
+            ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: logs.length,
-              separatorBuilder: (context, index) => const Divider(
-                height: 1,
-                color: AppColors.borderLight,
-              ),
+              itemCount: sortedTimes.length,
               itemBuilder: (context, index) {
-                final log = logs[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Row(
+                final time = sortedTimes[index];
+                final groupItems = groupedLogs[time]!;
+                final isExpanded = _expandedTimes.contains(time);
+                final allTaken = groupItems.every((item) => item.isTaken);
+                final groupTakenCount = groupItems.where((item) => item.isTaken).length;
+
+                IconData timeIcon = Icons.wb_sunny_rounded;
+                Color iconColor = const Color(0xFFFB8500);
+                Color iconBg = const Color(0xFFFFF8E1);
+
+                try {
+                  final tod = _parseTimeOfDay(time);
+                  if (tod.hour >= 18 || tod.hour < 6) {
+                    timeIcon = Icons.nights_stay_rounded;
+                    iconColor = const Color(0xFF7209B7);
+                    iconBg = const Color(0xFFF3E5F5);
+                  } else if (tod.hour >= 12 && tod.hour < 18) {
+                    timeIcon = Icons.wb_cloudy_rounded;
+                    iconColor = const Color(0xFF00B4D8);
+                    iconBg = const Color(0xFFE0F7FA);
+                  }
+                } catch (_) {}
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: allTaken
+                          ? AppColors.successBg
+                          : AppColors.primaryTeal.withValues(alpha: 0.15),
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryTeal.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
                     children: [
-                      Checkbox(
-                        value: log.isTaken,
-                        activeColor: AppColors.primaryTeal,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6)),
-                        onChanged: (val) {
+                      InkWell(
+                        onTap: () {
                           setState(() {
-                            log.isTaken = val ?? false;
+                            if (isExpanded) {
+                              _expandedTimes.remove(time);
+                            } else {
+                              _expandedTimes.add(time);
+                            }
                           });
                         },
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              log.medicineName,
-                              style: AppFonts.googleSans(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14,
-                                decoration: log.isTaken
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                                color: log.isTaken
-                                    ? AppColors.textMuted
-                                    : AppColors.textDark,
+                        borderRadius: BorderRadius.circular(20),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: iconBg,
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Icon(timeIcon, color: iconColor, size: 20),
                               ),
-                            ),
-                            Text(
-                              'Scheduled: ${log.scheduledTime} • ${log.notes}',
-                              style: AppFonts.googleSans(
-                                fontSize: 11.5,
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      time,
+                                      style: AppFonts.googleSans(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 16,
+                                        color: AppColors.textDark,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      groupItems.map((e) => e.medicineName).join(', '),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppFonts.googleSans(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textMuted,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: allTaken ? AppColors.successBg : AppColors.warningBg,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  allTaken 
+                                      ? 'All Taken' 
+                                      : (groupTakenCount > 0 ? '$groupTakenCount/${groupItems.length} Taken' : 'Pending'),
+                                  style: AppFonts.googleSans(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: allTaken ? AppColors.successText : AppColors.warningText,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
                                 color: AppColors.textMuted,
                               ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              '👨‍⚕️ Prescribed by Dr. Tariq Martin, MD • 🏥 Purchased at MetroHealth Pharmacy Hub (#402)',
-                              style: AppFonts.googleSans(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primaryTeal,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: log.isTaken
-                              ? AppColors.successBg
-                              : AppColors.warningBg,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          log.isTaken ? 'Taken' : 'Pending',
-                          style: AppFonts.googleSans(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w700,
-                            color: log.isTaken
-                                ? AppColors.successText
-                                : AppColors.warningText,
+                            ],
                           ),
                         ),
                       ),
+                      if (isExpanded) ...[
+                        const Divider(height: 1, color: AppColors.borderLight),
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            children: groupItems.map((log) {
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: log.isTaken ? AppColors.bgSlate : Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: log.isTaken 
+                                        ? AppColors.metallicBorder 
+                                        : AppColors.primaryTeal.withValues(alpha: 0.1),
+                                    width: 1.0,
+                                  ),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Checkbox(
+                                      value: log.isTaken,
+                                      activeColor: AppColors.primaryTeal,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      onChanged: (val) async {
+                                        setState(() {
+                                          log.isTaken = val ?? false;
+                                        });
+                                        await appState.togglePatientLog(log.id, log.isTaken);
+                                      },
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            log.medicineName,
+                                            style: AppFonts.googleSans(
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 14,
+                                              decoration: log.isTaken ? TextDecoration.lineThrough : null,
+                                              color: log.isTaken ? AppColors.textMuted : AppColors.textDark,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            log.notes ?? '',
+                                            style: AppFonts.googleSans(
+                                              fontSize: 11.5,
+                                              color: AppColors.textMuted,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.medical_services_rounded, size: 12, color: AppColors.primaryTeal),
+                                              const SizedBox(width: 4),
+                                              Expanded(
+                                                child: Text(
+                                                  'Prescribed by Attending Physician',
+                                                  style: AppFonts.googleSans(
+                                                    fontSize: 10.5,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: AppColors.primaryTeal,
+                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: log.isTaken ? AppColors.successBg : AppColors.warningBg,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        log.isTaken ? 'Taken' : 'Pending',
+                                        style: AppFonts.googleSans(
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w800,
+                                          color: log.isTaken ? AppColors.successText : AppColors.warningText,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 );
