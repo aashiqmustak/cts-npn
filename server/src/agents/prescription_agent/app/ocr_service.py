@@ -1,6 +1,7 @@
 import base64
-import logging
+import binascii
 import io
+import logging
 
 logger = logging.getLogger("prescription_agent")
 
@@ -14,9 +15,9 @@ def extract_text_from_file(file_name: str, file_content_base64: str) -> str:
     logger.info("Extracting text from file: %s", file_name)
     try:
         file_bytes = base64.b64decode(file_content_base64)
-    except Exception as e:
+    except (binascii.Error, ValueError) as e:
         logger.error("Failed to decode base64 file content: %s", e)
-        raise ValueError(f"Failed to decode base64: {e}")
+        raise ValueError(f"Failed to decode base64: {e}") from e
 
     ext = file_name.split(".")[-1].lower() if "." in file_name else ""
     extracted_text = ""
@@ -25,12 +26,12 @@ def extract_text_from_file(file_name: str, file_content_base64: str) -> str:
     if ext in ["txt", "hl7", "json", "fhir", "xml", "csv"]:
         try:
             extracted_text = file_bytes.decode("utf-8")
-        except Exception:
+        except UnicodeDecodeError:
             try:
                 extracted_text = file_bytes.decode("latin-1")
-            except Exception as e:
+            except UnicodeDecodeError as e:
                 logger.error("Failed to decode text file bytes: %s", e)
-                raise ValueError(f"Failed to decode text file: {e}")
+                raise ValueError(f"Failed to decode text file: {e}") from e
 
     # 2. PDF Documents
     elif ext == "pdf":
@@ -44,15 +45,15 @@ def extract_text_from_file(file_name: str, file_content_base64: str) -> str:
             if text.strip():
                 logger.info("Successfully extracted text from PDF")
                 extracted_text = text
-        except Exception as e:
+        except (ImportError, ValueError, RuntimeError, OSError) as e:
             logger.warning("PDF extraction using pypdf failed: %s", e)
 
     # 3. Image Documents (PNG, JPG, JPEG)
     elif ext in ["png", "jpg", "jpeg", "gif", "bmp"]:
         try:
+            import cv2
             import easyocr
             import numpy as np
-            import cv2
 
             nparr = np.frombuffer(file_bytes, np.uint8)
             img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -65,7 +66,7 @@ def extract_text_from_file(file_name: str, file_content_base64: str) -> str:
                 if text.strip():
                     logger.info("Successfully extracted text from image via easyocr")
                     extracted_text = text
-        except Exception as e:
+        except (ImportError, ValueError, RuntimeError, OSError) as e:
             logger.warning("Image extraction using easyocr failed: %s", e)
 
     # 4. Smart keyword fallback for demo robustness
