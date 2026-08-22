@@ -38,6 +38,7 @@ from agents.patient_history_agent.app.schemas import (
 from agents.patient_history_agent.app.service import PatientHistoryService
 from agents.prescription_agent.app.agent import PrescriptionAgent
 from agents.prescription_agent.app.models import PrescriptionOutput
+from agents.prescription_agent.app.ocr_service import extract_text_from_file
 from agents.ranking_agent.app.agent import RankingAgent
 from agents.ranking_agent.app.schemas import RankingInput, RankingOutput
 from agents.ranking_agent.app.service import RankingService
@@ -99,6 +100,13 @@ class PrescriptionNormalizePayload(BaseModel):
     prescription_id: str | None = None
 
 
+class PrescriptionUploadOCRPayload(BaseModel):
+    file_name: str
+    file_content_base64: str
+    patient_id: str = "PAT_00001"
+    doctor_id: str = "DOC_001"
+
+
 @get("/health")
 async def rx_health() -> dict[str, str]:
     return {"status": "healthy", "agent": "prescription_agent"}
@@ -116,9 +124,25 @@ async def normalize_prescription(
     )
 
 
+@post("/upload-ocr")
+async def upload_ocr(
+    data: PrescriptionUploadOCRPayload,
+) -> dict[str, Any]:
+    raw_text = extract_text_from_file(data.file_name, data.file_content_base64)
+    normalized_output = prescription_agent.process(
+        patient_id=data.patient_id,
+        prescription_text=raw_text,
+        doctor_id=data.doctor_id,
+    )
+    return {
+        "raw_text": raw_text,
+        "normalized": normalized_output,
+    }
+
+
 prescription_router = Router(
     path="/api/v1/prescription",
-    route_handlers=[rx_health, normalize_prescription],
+    route_handlers=[rx_health, normalize_prescription, upload_ocr],
     tags=["1. Prescription Agent"],
 )
 
