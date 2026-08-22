@@ -241,3 +241,31 @@ CREATE POLICY "Public PA Friction Access" ON pa_friction_events FOR ALL USING (t
 CREATE POLICY "Public Formulary Alternatives Access" ON formulary_alternatives FOR ALL USING (true);
 CREATE POLICY "Public Pharmacist Dispense Records Access" ON pharmacist_dispense_records FOR ALL USING (true);
 CREATE POLICY "Public OTP Codes Access" ON otp_codes FOR ALL USING (true) WITH CHECK (true);
+
+-- 18. AUTOMATED SUPABASE AUTH TRIGGER FOR USER PROFILES
+-- Description: Automatically populates user_profiles table whenever a user signs up via Supabase Auth
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.user_profiles (id, email, name, role, title)
+  VALUES (
+    NEW.id::text,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
+    COALESCE(NEW.raw_user_meta_data->>'role', 'patient'),
+    COALESCE(NEW.raw_user_meta_data->>'title', 'Authorized User')
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    name = EXCLUDED.name,
+    role = EXCLUDED.role;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger on auth.users table
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+

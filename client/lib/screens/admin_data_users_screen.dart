@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
 
@@ -34,106 +34,159 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
     final fmtDate = DateFormat('MMM d, yyyy HH:mm');
 
     return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Admin Portal: Datasets, Copay Rules & Users',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Manage CMS Monthly Prescription Drug Plan formulary files, copay tier rules, and user roles.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
-              ),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.cloud_upload_rounded, size: 18),
-                label: const Text('Upload CMS Formulary File'),
-                onPressed: () {
-                  _showSimulatedUploadModal(context, appState);
-                },
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
-          // Tabs Navigation
+          // -------------------------------------------------------------
+          // Header Bento Banner
+          // -------------------------------------------------------------
           Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: AppColors.gradientBrand,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              border: Border(
-                bottom: BorderSide(color: AppColors.borderLight),
-              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.accentNavy.withValues(alpha: 0.15),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-            child: TabBar(
-              controller: _tabController,
-              labelColor: AppColors.primaryTeal,
-              unselectedLabelColor: AppColors.textMuted,
-              indicatorColor: AppColors.primaryTeal,
-              indicatorWeight: 3,
-              tabs: const [
-                Tab(
-                  icon: Icon(Icons.dataset_rounded, size: 18),
-                  text: 'Formulary Ingestion Pipeline',
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                      ),
+                      child: const Icon(
+                        Icons.admin_panel_settings_rounded,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'System Administration & User Governance',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Manage CMS Monthly formulary ingestion pipelines, plan copay tier rules, and user roles.',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12.5,
+                            color: Colors.white.withValues(alpha: 0.88),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                Tab(
-                  icon: Icon(Icons.price_change_rounded, size: 18),
-                  text: 'Plan Copay Tier Rules',
-                ),
-                Tab(
-                  icon: Icon(Icons.people_alt_rounded, size: 18),
-                  text: 'User Account Management',
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: AppColors.gradientPill),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryTeal.withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showSimulatedUploadModal(context, appState),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    ),
+                    icon: const Icon(Icons.cloud_upload_rounded, size: 18, color: Colors.white),
+                    label: Text(
+                      'Ingest CMS File',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
 
-          // Tab View Container
+          const SizedBox(height: 20),
+
+          // -------------------------------------------------------------
+          // Tabs Navigation Bar
+          // -------------------------------------------------------------
           Container(
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(12),
-                bottomRight: Radius.circular(12),
-              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.borderLight, width: 1.2),
             ),
-            child: SizedBox(
-              height: 480,
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  // Tab 1: Ingestion History
-                  _buildIngestionTab(context, appState, fmtDate),
-
-                  // Tab 2: Tier Config
-                  _buildTierConfigTab(context, appState),
-
-                  // Tab 3: User Management
-                  _buildUsersTab(context, appState),
-                ],
-              ),
+            child: Column(
+              children: [
+                TabBar(
+                  controller: _tabController,
+                  labelColor: AppColors.primaryTeal,
+                  unselectedLabelColor: AppColors.textMuted,
+                  indicatorColor: AppColors.primaryTeal,
+                  indicatorWeight: 3,
+                  labelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 13),
+                  unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 13),
+                  tabs: const [
+                    Tab(
+                      icon: Icon(Icons.dataset_rounded, size: 18),
+                      text: 'Formulary Ingestion Pipeline',
+                    ),
+                    Tab(
+                      icon: Icon(Icons.price_change_rounded, size: 18),
+                      text: 'Plan Copay Tier Rules',
+                    ),
+                    Tab(
+                      icon: Icon(Icons.people_alt_rounded, size: 18),
+                      text: 'User Governance & Roles',
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: SizedBox(
+                    height: 480,
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildIngestionTab(context, appState, fmtDate),
+                        _buildTierConfigTab(context, appState),
+                        _buildUsersTab(context, appState),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -150,9 +203,9 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'CMS Monthly Ingestion Records',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 15),
             ),
             OutlinedButton.icon(
               icon: const Icon(Icons.refresh_rounded, size: 16),
@@ -163,7 +216,7 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
         ),
         const SizedBox(height: 14),
         Table(
-          border: TableBorder.all(color: AppColors.borderLight),
+          border: TableBorder.all(color: AppColors.borderLight, borderRadius: BorderRadius.circular(12)),
           columnWidths: const {
             0: FlexColumnWidth(3),
             1: FlexColumnWidth(2),
@@ -174,27 +227,12 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
           children: [
             TableRow(
               decoration: const BoxDecoration(color: AppColors.bgSlate),
-              children: const [
-                Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Text('Filename', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Text('Upload Date', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Text('Records Processed', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Text('Uploader', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                ),
+              children: [
+                _tableHeader('Filename'),
+                _tableHeader('Upload Date'),
+                _tableHeader('Records Processed'),
+                _tableHeader('Status'),
+                _tableHeader('Uploader'),
               ],
             ),
             ...records.map((r) {
@@ -202,288 +240,167 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(10),
-                    child: Text(r.filename, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                    child: Text(r.filename, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10),
-                    child: Text(fmtDate.format(r.uploadDate), style: const TextStyle(fontSize: 12)),
+                    child: Text(fmtDate.format(r.uploadDate), style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: AppColors.textMuted)),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10),
-                    child: Text('${r.totalRecords} (Tiers: ${r.updatedTiers})', style: const TextStyle(fontSize: 12)),
+                    child: Text('${r.totalRecords}', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10),
-                    child: Text(r.status, style: const TextStyle(fontSize: 12, color: AppColors.successText, fontWeight: FontWeight.bold)),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(color: AppColors.successBg, borderRadius: BorderRadius.circular(8)),
+                      child: Text(
+                        r.status.toUpperCase(),
+                        style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.successText),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10),
-                    child: Text(r.uploadedBy, style: const TextStyle(fontSize: 12)),
+                    child: Text(r.uploadedBy, style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: AppColors.textMuted)),
                   ),
                 ],
               );
-            }).toList(),
+            }),
           ],
         ),
       ],
     );
   }
 
+  Widget _tableHeader(String text) {
+    return Padding(
+      padding: const EdgeInsets.all(10),
+      child: Text(
+        text,
+        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 11.5, color: AppColors.textDark),
+      ),
+    );
+  }
+
   Widget _buildTierConfigTab(BuildContext context, AppState appState) {
-    final tiers = appState.dataService.tierConfigs;
+    final rules = appState.dataService.tierConfigs;
 
     return ListView(
       children: [
-        const Text(
-          'Part D Formulary Tier Copay Structure',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        Text(
+          'Medicare Part D Copay Tier Configuration',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 15),
         ),
-        const SizedBox(height: 4),
-        const Text(
-          'Configure default tier copay and coinsurance amounts used to calculate estimated patient cost-share.',
-          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-        ),
-        const SizedBox(height: 16),
-        Column(
-          children: tiers.map((t) {
-            final copayCtrl = TextEditingController(text: t.defaultCopay.toStringAsFixed(0));
-            final coinsCtrl = TextEditingController(text: t.coinsurancePct.toStringAsFixed(0));
-
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.bgSlate,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.borderLight),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryTeal,
-                      borderRadius: BorderRadius.circular(6),
+        const SizedBox(height: 14),
+        ...rules.map((rule) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.bgSlate,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.borderLight),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tier ${rule.tier}: ${rule.name}',
+                      style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 13.5),
                     ),
-                    child: Text(
-                      'Tier ${t.tier}',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    Text(
+                      rule.isSpecialty ? 'Coinsurance: ${rule.coinsurancePct.toInt()}%' : 'Standard In-Network Copay',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: AppColors.textMuted),
                     ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(t.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        Text(t.isSpecialty ? 'Specialty Coinsurance Rules' : 'Standard Copay Structure',
-                            style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    width: 120,
-                    child: TextField(
-                      controller: copayCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Copay (\$)',
-                        isDense: true,
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    width: 130,
-                    child: TextField(
-                      controller: coinsCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Coinsurance (%)',
-                        isDense: true,
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: () {
-                      final c = double.tryParse(copayCtrl.text) ?? t.defaultCopay;
-                      final pct = double.tryParse(coinsCtrl.text) ?? t.coinsurancePct;
-                      appState.updateTierCopay(t.tier, c, pct);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Updated Tier ${t.tier} copay to \$${c.toInt()}!'),
-                          backgroundColor: AppColors.primaryTeal,
-                        ),
-                      );
-                    },
-                    child: const Text('Save'),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-        ),
+                  ],
+                ),
+                Text(
+                  rule.isSpecialty ? '${rule.coinsurancePct.toInt()}% Coinsurance' : '\$${rule.defaultCopay.toInt()} Flat Copay',
+                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 13.5, color: AppColors.primaryTeal),
+                ),
+              ],
+            ),
+          );
+        }),
       ],
     );
   }
 
   Widget _buildUsersTab(BuildContext context, AppState appState) {
-    final users = appState.dataService.users;
+    final doctors = appState.doctors;
 
     return ListView(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Active Platform User Accounts',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.person_add_rounded, size: 16),
-              label: const Text('Add User Account'),
-              onPressed: () => _showAddUserModal(context, appState),
-            ),
-          ],
+        Text(
+          'Active Clinical Users & Prescribers',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 15),
         ),
         const SizedBox(height: 14),
-        Column(
-          children: users.map((u) {
-            return ListTile(
-              leading: CircleAvatar(
-                backgroundImage: NetworkImage(u.avatarUrl),
-              ),
-              title: Text(u.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text('${u.title} • Email: ${u.email}'),
-              trailing: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: u.isAdmin ? AppColors.purpleBg : AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(12),
+        ...doctors.map((d) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.borderLight),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: AppColors.primaryLight,
+                  child: const Icon(Icons.person_rounded, color: AppColors.primaryTeal),
                 ),
-                child: Text(
-                  u.role.name.toUpperCase(),
-                  style: TextStyle(
-                    color: u.isAdmin ? AppColors.purpleText : AppColors.primaryDark,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(d.name, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 13.5)),
+                      Text('${d.specialty} • ${d.email}', style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: AppColors.textMuted)),
+                    ],
                   ),
                 ),
-              ),
-            );
-          }).toList(),
-        ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(color: AppColors.successBg, borderRadius: BorderRadius.circular(8)),
+                  child: Text('Doctor (Verified)', style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.successText)),
+                ),
+              ],
+            ),
+          );
+        }),
       ],
     );
   }
 
   void _showSimulatedUploadModal(BuildContext context, AppState appState) {
-    final filenameCtrl = TextEditingController(
-        text: 'CMS_2026_Q4_Formulary_PartD_H0001_Update.csv');
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Simulate CMS File Ingestion Pipeline'),
-        content: SizedBox(
-          width: 480,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Select or enter a CMS Monthly Prescription Drug Plan Formulary CSV file to normalize and ingest into local dataset.',
-                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: filenameCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Formulary CSV Filename',
-                  prefixIcon: Icon(Icons.file_present_rounded),
-                ),
-              ),
-            ],
-          ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text('CMS Formulary File Ingestion', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
+        content: Text(
+          'This initiates an automated background ETL job parsing Medicare Part D formulary TXT/CSV files into Supabase.',
+          style: GoogleFonts.plusJakartaSans(fontSize: 13),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel', style: GoogleFonts.plusJakartaSans())),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryTeal),
             onPressed: () {
-              appState.simulateFileUpload(filenameCtrl.text);
-              Navigator.of(context).pop();
+              Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Ingested ${filenameCtrl.text} successfully! Dataset updated.'),
-                  backgroundColor: AppColors.primaryTeal,
-                ),
+                const SnackBar(content: Text('ETL Ingestion Job Triggered Successfully!'), backgroundColor: AppColors.primaryTeal),
               );
             },
-            child: const Text('Start Ingestion'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAddUserModal(BuildContext context, AppState appState) {
-    final nameCtrl = TextEditingController();
-    final emailCtrl = TextEditingController();
-    UserRole selectedRole = UserRole.pharmacist;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Create New User Account'),
-        content: SizedBox(
-          width: 440,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Full Name'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: emailCtrl,
-                decoration: const InputDecoration(labelText: 'Email Address'),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (nameCtrl.text.isNotEmpty && emailCtrl.text.isNotEmpty) {
-                final newUser = User(
-                  id: 'U00${DateTime.now().millisecondsSinceEpoch}',
-                  name: nameCtrl.text,
-                  email: emailCtrl.text,
-                  role: selectedRole,
-                  assignedPatientIds: ['PT101', 'PT102'],
-                  avatarUrl: 'https://i.pravatar.cc/150?img=68',
-                  title: selectedRole == UserRole.admin ? 'System Administrator' : 'Staff Pharmacist',
-                );
-                appState.addUser(newUser);
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('User ${nameCtrl.text} added successfully!'),
-                    backgroundColor: AppColors.primaryTeal,
-                  ),
-                );
-              }
-            },
-            child: const Text('Create User'),
+            child: Text('Trigger ETL Ingestion', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
           ),
         ],
       ),

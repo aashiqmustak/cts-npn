@@ -1,6 +1,30 @@
-import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 import '../services/data_service.dart';
+
+class ClinicalNotification {
+  final String id;
+  final String title;
+  final String subtitle;
+  final String time;
+  final IconData icon;
+  final Color color;
+  bool isRead;
+  bool isDismissed;
+
+  ClinicalNotification({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.time,
+    required this.icon,
+    required this.color,
+    this.isRead = false,
+    this.isDismissed = false,
+  });
+}
 
 class AppState extends ChangeNotifier {
   final DataService dataService = DataService();
@@ -28,18 +52,103 @@ class AppState extends ChangeNotifier {
 
   String _frictionSearchQuery = '';
   BarrierType? _selectedBarrierFilter;
+  final List<ClinicalNotification> _userNotifications = [
+    ClinicalNotification(
+      id: 'N-INIT-1',
+      title: 'Prior Auth Approved',
+      subtitle: 'Amantadine 100mg PA #88201 approved by Medicare Part D.',
+      time: '12m ago',
+      icon: Icons.verified_rounded,
+      color: const Color(0xFF10B981),
+    ),
+    ClinicalNotification(
+      id: 'N-INIT-2',
+      title: 'Pharmacy Fill Ready',
+      subtitle: 'Lipitor 20mg fill available at CVS Pharmacy Hub #402.',
+      time: '45m ago',
+      icon: Icons.local_pharmacy_rounded,
+      color: const Color(0xFF1244A2),
+    ),
+  ];
+
+  List<ClinicalNotification> get notifications =>
+      _userNotifications.where((n) => !n.isDismissed).toList();
+
+  int get unreadNotificationsCount =>
+      _userNotifications.where((n) => !n.isDismissed && !n.isRead).length;
+
+  void addNotification(ClinicalNotification notification) {
+    _userNotifications.insert(0, notification);
+    notifyListeners();
+  }
+
+  void dismissNotification(String id) {
+    final idx = _userNotifications.indexWhere((n) => n.id == id);
+    if (idx != -1) {
+      _userNotifications[idx].isDismissed = true;
+      _userNotifications[idx].isRead = true;
+      notifyListeners();
+    }
+  }
+
+  void markAllNotificationsRead() {
+    for (final n in _userNotifications) {
+      n.isRead = true;
+    }
+    notifyListeners();
+  }
 
   AppState() {
     _currentUser = const User(
       id: 'U_INIT',
       name: 'User Account',
-      email: 'user@alternea.org',
+      email: '',
       role: UserRole.pharmacist,
       assignedPatientIds: [],
-      avatarUrl: 'https://i.pravatar.cc/150?img=12',
+      avatarUrl: '',
       title: 'Clinical Pharmacist',
     );
+    _loadSavedSession();
     refreshData();
+  }
+
+  Future<void> _loadSavedSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final sessionJson = prefs.getString('user_session');
+      if (sessionJson != null && sessionJson.isNotEmpty) {
+        final map = jsonDecode(sessionJson) as Map<String, dynamic>;
+        _currentUser = User.fromJson(map);
+        _isLoggedIn = true;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error restoring user session: $e');
+    }
+  }
+
+  void updateUser(User user) {
+    _currentUser = user;
+    _saveSession(user);
+    notifyListeners();
+  }
+
+  Future<void> _saveSession(User user) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_session', jsonEncode(user.toJson()));
+    } catch (e) {
+      debugPrint('Error saving user session: $e');
+    }
+  }
+
+  Future<void> _clearSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('user_session');
+    } catch (e) {
+      debugPrint('Error clearing user session: $e');
+    }
   }
 
   Future<void> refreshData() async {
@@ -79,7 +188,8 @@ class AppState extends ChangeNotifier {
   List<PatientRecord> get patientRecords => dataService.patientRecords;
   List<PrescriptionItem> get prescriptionItems => dataService.prescriptionItems;
   List<PatientMedicineLog> get patientLogs => dataService.patientLogs;
-  List<PharmacistDispenseRecord> get dispenseRecords => dataService.dispenseRecords;
+  List<PharmacistDispenseRecord> get dispenseRecords =>
+      dataService.dispenseRecords;
   List<Prescription> get prescriptions => dataService.prescriptions;
 
   // Actions
@@ -108,6 +218,18 @@ class AppState extends ChangeNotifier {
       notes: notes,
       items: items,
     );
+
+    final firstDrugName = items.isNotEmpty ? items.first['medicineName'] : 'e-Prescription Payload';
+    addNotification(
+      ClinicalNotification(
+        id: 'NOTIF-${DateTime.now().millisecondsSinceEpoch}',
+        title: '⚡ New e-Prescription Issued',
+        subtitle: 'Dr. Tariq Martin issued e-Rx for $firstDrugName ($diagnosis). Available in Medicine Cabinet.',
+        time: 'Just now',
+        icon: Icons.edit_note_rounded,
+        color: const Color(0xFF1244A2),
+      ),
+    );
     notifyListeners();
   }
 
@@ -121,12 +243,153 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Map<String, dynamic> checkUserIdentifier(String identifier) {
+    final clean = identifier.trim().toLowerCase();
+    if (clean.isEmpty) return {'exists': false};
+
+    final match = dataService.users.firstWhere(
+      (u) =>
+          u.id.toLowerCase() == clean ||
+          u.email.toLowerCase() == clean ||
+          (u.phone != null && u.phone!.toLowerCase().contains(clean)) ||
+          (u.patientId != null && u.patientId!.toLowerCase() == clean) ||
+          (u.doctorId != null && u.doctorId!.toLowerCase() == clean),
+      orElse: () => const User(
+        id: '',
+        name: '',
+        email: '',
+        role: UserRole.patient,
+        assignedPatientIds: [],
+        avatarUrl: '',
+        title: '',
+      ),
+    );
+
+    if (match.id.isNotEmpty) {
+      return {
+        'exists': true,
+        'user': match,
+        'name': match.name,
+        'role': match.role.label,
+        'email': match.email,
+        'phone': match.phone,
+      };
+    }
+
+    return {'exists': false};
+  }
+
   // Auth Actions
   void login(User user) {
     _currentUser = user;
     _isLoggedIn = true;
     _currentNavIndex = 0;
+    _saveSession(user);
     notifyListeners();
+  }
+
+  Future<bool> sendOtp(String email) async {
+    if (email.isNotEmpty) {
+      await dataService.supabaseService.sendOtpCode(email);
+    }
+    return true;
+  }
+
+  Future<bool> verifyOtpAndLogin({
+    required String email,
+    required String otp,
+    bool isPatient = false,
+  }) async {
+    final isValid = await dataService.supabaseService.verifyOtpCode(
+      email: email,
+      otp: otp,
+    );
+
+    if (!isValid) {
+      return false;
+    }
+
+    if (dataService.supabaseService.isInitialized) {
+      try {
+        final profile = await dataService.supabaseService.fetchUserProfile(email);
+        if (profile != null) {
+          login(profile);
+          return true;
+        }
+      } catch (_) {}
+    }
+
+    final inputClean = email.trim();
+    final lower = inputClean.toLowerCase();
+    final isPhoneOrMrn = isPatient ||
+        !lower.contains('@') ||
+        lower.startsWith('pat') ||
+        RegExp(r'^[0-9\+\-\s\(\)]+$').hasMatch(lower);
+
+    final existingUser = dataService.users.firstWhere(
+      (u) =>
+          u.email.toLowerCase() == lower ||
+          (u.phone != null && u.phone!.contains(lower)),
+      orElse: () {
+        final targetRole = isPhoneOrMrn ? UserRole.patient : UserRole.doctor;
+        final displayName = isPhoneOrMrn
+            ? 'Patient (MRN: ${inputClean.isEmpty ? 'PT-301' : inputClean})'
+            : (inputClean.isEmpty ? 'Authorized Practitioner' : inputClean.split('@')[0]);
+
+        return User(
+          id: 'U_${DateTime.now().millisecondsSinceEpoch}',
+          name: displayName,
+          email: lower.contains('@') ? lower : 'patient_${DateTime.now().millisecondsSinceEpoch}@alternea.health',
+          phone: isPhoneOrMrn ? inputClean : null,
+          role: targetRole,
+          assignedPatientIds: const ['PT-301', 'PT-302'],
+          avatarUrl: '',
+          title: _getRoleTitle(targetRole),
+          patientId: isPhoneOrMrn ? 'PT-301' : null,
+          doctorId: targetRole == UserRole.doctor ? 'DOC-201' : null,
+          hospitalId: 'HOSP-101',
+          hospitalName: 'MetroHealth Medical Center',
+        );
+      },
+    );
+    login(existingUser);
+    return true;
+  }
+
+  Future<bool> registerAccount({
+    required String name,
+    required String email,
+    required String password,
+    required UserRole role,
+  }) async {
+    if (dataService.supabaseService.isInitialized && password.isNotEmpty) {
+      try {
+        final authRes = await dataService.supabaseService.signUp(
+          email: email,
+          password: password,
+          name: name,
+          role: role,
+        );
+        if (authRes?.user != null) {
+          final profile = User(
+            id: authRes!.user!.id,
+            name: name,
+            email: email,
+            role: role,
+            assignedPatientIds: const ['PT-301', 'PT-302'],
+            avatarUrl: '',
+            title: _getRoleTitle(role),
+          );
+          login(profile);
+          return true;
+        }
+      } catch (e) {
+        // Fall back to local creation if Supabase signUp fails or already exists
+      }
+    }
+
+    register(name: name, email: email, role: role);
+    return true;
   }
 
   void register({
@@ -139,8 +402,8 @@ class AppState extends ChangeNotifier {
       name: name,
       email: email,
       role: role,
-      assignedPatientIds: ['PT-301', 'PT-302'],
-      avatarUrl: 'https://i.pravatar.cc/150?img=32',
+      assignedPatientIds: const ['PT-301', 'PT-302'],
+      avatarUrl: '',
       title: _getRoleTitle(role),
     );
     dataService.addUser(newUser);
@@ -165,8 +428,33 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  void switchRole(UserRole newRole) {
+    String name = newRole.label;
+    String email = '';
+    String title = _getRoleTitle(newRole);
+
+    _currentUser = User(
+      id: 'U_${newRole.name.toUpperCase()}',
+      name: name,
+      email: email,
+      role: newRole,
+      assignedPatientIds: const ['PT-301', 'PT-302'],
+      avatarUrl: '',
+      title: title,
+      doctorId: newRole == UserRole.doctor ? 'DOC-201' : null,
+      patientId: newRole == UserRole.patient ? 'PT-301' : null,
+      hospitalId: 'HOSP-101',
+      hospitalName: 'MetroHealth Medical Center',
+    );
+    _currentNavIndex = 0;
+    _selectedPrescriptionId = null;
+    _saveSession(_currentUser);
+    notifyListeners();
+  }
+
   void logout() {
     _isLoggedIn = false;
+    _clearSession();
     notifyListeners();
   }
 
@@ -224,7 +512,8 @@ class AppState extends ChangeNotifier {
     return dataService.drugs.where((drug) {
       if (_formularySearchQuery.isNotEmpty) {
         final query = _formularySearchQuery.toLowerCase();
-        final matches = drug.name.toLowerCase().contains(query) ||
+        final matches =
+            drug.name.toLowerCase().contains(query) ||
             drug.ndc.contains(query) ||
             drug.drugClass.toLowerCase().contains(query);
         if (!matches) return false;
@@ -238,9 +527,15 @@ class AppState extends ChangeNotifier {
         return false;
       }
       if (_selectedRestrictionFilter != null) {
-        if (_selectedRestrictionFilter == 'PA' && !drug.requiresPa) return false;
-        if (_selectedRestrictionFilter == 'ST' && !drug.stepTherapy) return false;
-        if (_selectedRestrictionFilter == 'QL' && !drug.quantityLimit) return false;
+        if (_selectedRestrictionFilter == 'PA' && !drug.requiresPa) {
+          return false;
+        }
+        if (_selectedRestrictionFilter == 'ST' && !drug.stepTherapy) {
+          return false;
+        }
+        if (_selectedRestrictionFilter == 'QL' && !drug.quantityLimit) {
+          return false;
+        }
       }
       return true;
     }).toList();
@@ -289,7 +584,8 @@ class AppState extends ChangeNotifier {
       }
       if (_frictionSearchQuery.isNotEmpty) {
         final query = _frictionSearchQuery.toLowerCase();
-        final matches = event.patientName.toLowerCase().contains(query) ||
+        final matches =
+            event.patientName.toLowerCase().contains(query) ||
             event.drugName.toLowerCase().contains(query) ||
             (event.suggestedAltName?.toLowerCase().contains(query) ?? false);
         if (!matches) return false;
@@ -303,7 +599,10 @@ class AppState extends ChangeNotifier {
   }
 
   void updateOutreachStatus(
-      String flagId, OutreachStatus status, String? notes) {
+    String flagId,
+    OutreachStatus status,
+    String? notes,
+  ) {
     dataService.updateOutreachStatus(flagId, status, notes);
     notifyListeners();
   }

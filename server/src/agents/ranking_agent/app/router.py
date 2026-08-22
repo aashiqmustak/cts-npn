@@ -10,26 +10,37 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import ValidationError
 
 try:
-    from .agent import ClinicalEligibilityAgent
-    from .schemas import ClinicalSafetyInput, ClinicalSafetyOutput
+    from .agent import RankingAgent
+    from .schemas import RankingInput, RankingOutput
 except ImportError:  # pragma: no cover - allows standalone script execution
-    from agent import ClinicalEligibilityAgent
-    from schemas import ClinicalSafetyInput, ClinicalSafetyOutput
+    from agent import RankingAgent
+    from schemas import RankingInput, RankingOutput
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/clinical-agent", tags=["Clinical Agent"])
-agent = ClinicalEligibilityAgent()
+
+router = APIRouter(
+    prefix="/ranking-agent",
+    tags=["Ranking & Clinical Safety Agent"],
+)
+agent = RankingAgent()
 
 
 @router.get("/health")
-async def clinical_agent_health() -> dict[str, str]:
-    return {"status": "healthy", "agent": "clinical-eligibility"}
+async def ranking_agent_health() -> dict[str, str]:
+    return {"status": "healthy", "agent": "ranking-agent"}
 
 
-@router.post("/evaluate", response_model=ClinicalSafetyOutput)
-async def evaluate_clinical_safety(
-    request: ClinicalSafetyInput,
-) -> ClinicalSafetyOutput:
+@router.post(
+    "/rank",
+    response_model=RankingOutput,
+    summary="Rank candidate alternate drugs and select top-1 recommendation",
+)
+@router.post(
+    "/evaluate",
+    response_model=RankingOutput,
+    summary="Evaluate and rank clinical alternatives (backwards compatible)",
+)
+async def evaluate_and_rank_drugs(request: RankingInput) -> RankingOutput:
     try:
         return agent.process_request(request)
     except ValidationError as exc:
@@ -43,8 +54,8 @@ async def evaluate_clinical_safety(
             detail=str(exc),
         ) from exc
     except Exception as exc:  # pragma: no cover - defensive API guard
-        logger.exception("Unexpected clinical eligibility error")
+        logger.exception("Unexpected ranking error")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal clinical agent error",
+            detail=f"Internal ranking agent error: {exc}",
         ) from exc
