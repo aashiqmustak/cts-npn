@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/google_logo.dart';
 
 class AuthScreen extends StatefulWidget {
   final ValueChanged<UserRole>? onRoleChanged;
@@ -70,6 +71,7 @@ class _AuthScreenState extends State<AuthScreen> {
   void _handleRoleTap(UserRole role) {
     setState(() {
       _selectedRole = role;
+      _isPatientLoginMode = (role == UserRole.patient);
       _signInEmailController.text = role.defaultEmail;
     });
     widget.onRoleChanged?.call(role);
@@ -902,10 +904,8 @@ class _AuthScreenState extends State<AuthScreen> {
               final val = _signInEmailController.text.trim();
               if (val.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(_isPatientLoginMode
-                        ? 'Please enter your User ID, Phone, or Patient MRN'
-                        : 'Please enter your User ID or Email address'),
+                  const SnackBar(
+                    content: Text('Please enter your User ID or Email address'),
                   ),
                 );
                 return;
@@ -930,7 +930,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
                   'OR',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF94A3B8),
@@ -943,85 +943,12 @@ class _AuthScreenState extends State<AuthScreen> {
 
           const SizedBox(height: 20),
 
-          // Social Auth Buttons Row (Google & Apple)
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Google Sign-In initiated...'),
-                      ),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    side: const BorderSide(color: Color(0xFFCBD5E1)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.g_mobiledata_rounded,
-                        size: 24,
-                        color: Color(0xFFEA4335),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Continue with Google',
-                        style: GoogleFonts.inter(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0F172A),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Apple Sign-In initiated...'),
-                      ),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    side: const BorderSide(color: Color(0xFFCBD5E1)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.apple_rounded,
-                        size: 18,
-                        color: Color(0xFF0F172A),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Continue with Apple',
-                        style: GoogleFonts.inter(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0F172A),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+          // Google Sign-In with actual 4-color Google logo strictly for patients
+          GoogleSignInButton(
+            text: 'Sign in with Google (Patients)',
+            onPressed: () async {
+              await appState.signInWithGooglePatient();
+            },
           ),
 
           const SizedBox(height: 24),
@@ -1031,7 +958,7 @@ class _AuthScreenState extends State<AuthScreen> {
             children: [
               Text(
                 "Don't have an Account? ",
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 13,
                   color: const Color(0xFF64748B),
                 ),
@@ -1044,7 +971,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 },
                 child: Text(
                   'Register',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF1244A2),
@@ -1257,6 +1184,34 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
 
         const SizedBox(height: 14),
+
+        if (_selectedRole == UserRole.patient) ...[
+          GoogleSignInButton(
+            text: 'Sign up with Google (Patient)',
+            onPressed: () async {
+              await appState.signInWithGooglePatient();
+            },
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  'OR MANUAL REGISTRATION',
+                  style: AppFonts.googleSans(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF94A3B8),
+                  ),
+                ),
+              ),
+              const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
+            ],
+          ),
+          const SizedBox(height: 14),
+        ],
 
         _GlowBorderFormField(
           controller: _regNameController,
