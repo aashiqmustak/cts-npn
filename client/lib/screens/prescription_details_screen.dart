@@ -190,7 +190,7 @@ class _PrescriptionDetailsScreenState
         border: Border.all(color: AppColors.borderLight),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 18,
             offset: const Offset(0, 6),
           ),
@@ -204,7 +204,7 @@ class _PrescriptionDetailsScreenState
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppColors.primaryTeal.withOpacity(0.18),
+                  AppColors.primaryTeal.withValues(alpha: 0.18),
                   AppColors.primaryLight,
                 ],
                 begin: Alignment.topLeft,
@@ -373,7 +373,7 @@ class _PrescriptionDetailsScreenState
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.06),
+                            color: Colors.black.withValues(alpha: 0.06),
                             blurRadius: 10,
                             offset: const Offset(0, 3),
                           ),
@@ -410,7 +410,7 @@ class _PrescriptionDetailsScreenState
         border: Border.all(color: AppColors.borderLight),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 18,
             offset: const Offset(0, 6),
           ),
@@ -596,7 +596,7 @@ class _PrescriptionDetailsScreenState
         gradient: LinearGradient(
           colors: [
             const Color(0xFFEFF6FF),
-            const Color(0xFFEFF6FF).withOpacity(0.6),
+            const Color(0xFFEFF6FF).withValues(alpha: 0.6),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -610,7 +610,7 @@ class _PrescriptionDetailsScreenState
           Container(
             padding: const EdgeInsets.all(9),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.format_quote_rounded,
@@ -659,7 +659,7 @@ class _PrescriptionDetailsScreenState
         border: Border.all(color: AppColors.borderLight),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -742,7 +742,7 @@ class _PrescriptionDetailsScreenState
         border: Border.all(color: AppColors.borderLight),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -784,7 +784,7 @@ class _PrescriptionDetailsScreenState
         border: Border.all(color: AppColors.borderLight),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -849,7 +849,7 @@ class _PrescriptionDetailsScreenState
                     width: 2,
                     margin: const EdgeInsets.symmetric(vertical: 2),
                     color: isDone
-                        ? AppColors.primaryTeal.withOpacity(0.3)
+                        ? AppColors.primaryTeal.withValues(alpha: 0.3)
                         : AppColors.borderLight,
                   ),
                 ),
@@ -892,7 +892,7 @@ class _PrescriptionDetailsScreenState
         border: Border.all(color: AppColors.borderLight),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -913,20 +913,31 @@ class _PrescriptionDetailsScreenState
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(2.5),
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primaryTeal.withOpacity(0.5),
-                      AppColors.primaryTeal.withOpacity(0.1),
-                    ],
+                  gradient: const LinearGradient(
+                    colors: AppColors.gradientPill,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryTeal.withValues(alpha: 0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-                child: const CircleAvatar(
-                  radius: 22,
-                  backgroundImage:
-                      NetworkImage('https://i.pravatar.cc/150?img=60'),
+                alignment: Alignment.center,
+                child: const Text(
+                  'RV',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
                 ),
               ),
               const SizedBox(width: 14),

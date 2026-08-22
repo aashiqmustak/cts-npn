@@ -1,9 +1,12 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
 import '../services/pipecat_service.dart';
+import '../widgets/bento_card.dart';
 
 class VoiceAgentScreen extends StatefulWidget {
   const VoiceAgentScreen({super.key});
@@ -13,19 +16,31 @@ class VoiceAgentScreen extends StatefulWidget {
 }
 
 class _VoiceAgentScreenState extends State<VoiceAgentScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final PipecatService _pipecatService;
-  late AnimationController _pulseController;
-  final TextEditingController _voiceInputController = TextEditingController();
+  late final AnimationController _waveController;
+  late final AnimationController _pulseController;
+  late final AnimationController _visualizerController;
 
   @override
   void initState() {
     super.initState();
     _pipecatService = PipecatService();
     _pipecatService.addListener(_onServiceUpdate);
+
+    _waveController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat();
+
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1600),
+    )..repeat(reverse: true);
+
+    _visualizerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
     )..repeat(reverse: true);
   }
 
@@ -34,8 +49,9 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
     _pipecatService.removeListener(_onServiceUpdate);
     _pipecatService.disconnect();
     _pipecatService.dispose();
+    _waveController.dispose();
     _pulseController.dispose();
-    _voiceInputController.dispose();
+    _visualizerController.dispose();
     super.dispose();
   }
 
@@ -58,15 +74,17 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
     if (_pipecatService.state == PipecatState.connected) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Try speaking: \"$prompt\" aloud!"),
+          content: Text('Try speaking: "$prompt"',
+              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
           backgroundColor: AppColors.primaryTeal,
           duration: const Duration(seconds: 3),
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Connect to the Pipecat agent first, then speak the command."),
+        SnackBar(
+          content: Text('Connect to the Voice AI agent first, then speak.',
+              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
           backgroundColor: AppColors.accentNavy,
         ),
       );
@@ -77,37 +95,37 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
     if (user.isDoctor) {
       return [
         'Prescribe Metformin 500mg for Eleanor Vance',
-        'Dictate visit notes for Hypertension checkup',
-        'Check drug interactions for Lisinopril',
-        'Query St. Jude Hospital patient queue',
+        'Dictate clinical diagnosis for Hypertension visit',
+        'Check potential drug interactions for Lisinopril',
+        'Retrieve patient medical records from MetroHealth',
       ];
     } else if (user.isPharmacist) {
       return [
-        'Lookup prescriptions for Eleanor Vance',
-        'Confirm dispensing for Metformin 500mg',
-        'Speak dosage instructions for patient',
-        'Check refill authorization status',
+        'Lookup active prescriptions for Eleanor Vance',
+        'Fulfill and dispense Metformin 500mg tablet',
+        'Check patient refill PDC compliance score',
+        'Query formulary tier alternatives for Januvia',
       ];
     } else if (user.isPatient) {
       return [
-        'I took my 8 AM Metformin 500mg today',
-        'What is my next medication schedule?',
-        'What is my current adherence streak?',
-        'Add Daily Vitamin D3 supplement',
+        'I took my morning Metformin 500mg today',
+        'When is my next scheduled medication dose?',
+        'What is my current adherence streak rating?',
+        'Add daily Vitamin D3 supplement to my schedule',
       ];
     } else if (user.isInsuranceAgent) {
       return [
-        'Check Prior Authorization for Humira',
-        'What is the Tier 3 Preferred Brand copay?',
-        'Show lower-cost formulary alternatives',
-        'Review recent PA friction events',
+        'Review Prior Authorization claim for Humira',
+        'Check Tier 3 Preferred Brand copay structure',
+        'Show estimated annual cost savings for Plan 01',
+        'Identify active Step Therapy prescription friction',
       ];
     } else {
       return [
-        'System Status & Supabase DB Sync',
-        'Show active registered hospitals',
-        'Generate daily platform usage report',
-        'Check active user security logs',
+        'Check system health and Supabase live sync',
+        'Show all authorized medical centers',
+        'Generate daily platform analytics report',
+        'Inspect security access audit log',
       ];
     }
   }
@@ -117,218 +135,221 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
     final appState = Provider.of<AppState>(context);
     final user = appState.currentUser;
     final prompts = _getSamplePromptsForRole(user);
+    final state = _pipecatService.state;
+    final isConnected = state == PipecatState.connected;
+    final isConnecting = state == PipecatState.connecting;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Banner
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0D9488)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          // 1. Enterprise Bento Hero Banner
+          BentoHeroBanner(
+            title: 'Alternea AI Neural Voice Assistant',
+            subtitle:
+                'Hands-free clinical speech intelligence powered by WebRTC ultra low-latency streaming.',
+            icon: Icons.graphic_eq_rounded,
+            statusLabel: isConnected
+                ? '🟢 Active Neural Link'
+                : isConnecting
+                    ? '🟡 Handshaking...'
+                    : '⚪ Standby',
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
               ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryTeal.withValues(alpha: 0.25),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
+              child: Text(
+                'Role: ${user.role.name.toUpperCase()}',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
                 ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(
-                    Icons.graphic_eq_rounded,
-                    color: Colors.white,
-                    size: 32,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Text(
-                            'Alternea AI Voice Agent',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryTeal,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'Role: ${user.roleLabel}',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Speak commands or select voice actions tailored to your active workflow.',
-                        style: TextStyle(fontSize: 13, color: Colors.white70),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
-          // Central Voice Visualizer & Controls
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.borderLight),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+          // 2. Siri-Style Interactive Voice Visualizer Stage
+          BentoCard(
+            padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
             child: Column(
               children: [
-                // Animated Glowing Microphone Circle
-                GestureDetector(
-                  onTap: _handleMicTap,
-                  child: AnimatedBuilder(
-                    animation: _pulseController,
-                    builder: (context, child) {
-                      final isConnected = _pipecatService.state == PipecatState.connected;
-                      final pulseScale = isConnected
-                          ? 1.0 + (_pulseController.value * 0.15)
-                          : 1.0;
-                      return Transform.scale(
-                        scale: pulseScale,
-                        child: Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: _pipecatService.state == PipecatState.connecting
-                                  ? [AppColors.warningOrange, Colors.deepOrange]
-                                  : _pipecatService.state == PipecatState.connected
-                                      ? [AppColors.successGreen, Colors.teal]
-                                      : [AppColors.primaryTeal, AppColors.accentNavy],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: (_pipecatService.state == PipecatState.connecting
-                                        ? AppColors.warningOrange
-                                        : AppColors.primaryTeal)
-                                    .withValues(alpha: 0.4),
-                                blurRadius: 28,
-                                spreadRadius: 4,
-                              ),
-                            ],
+                // Siri Glowing Orb Animated Stage
+                Center(
+                  child: GestureDetector(
+                    onTap: _handleMicTap,
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Siri Animated Wave Aura & Ripples
+                          AnimatedBuilder(
+                            animation: Listenable.merge([
+                              _waveController,
+                              _pulseController,
+                              _visualizerController,
+                            ]),
+                            builder: (context, child) {
+                              return CustomPaint(
+                                size: const Size(260, 260),
+                                painter: _SiriWaveOrbPainter(
+                                  waveProgress: _waveController.value,
+                                  pulseProgress: _pulseController.value,
+                                  visualizerProgress:
+                                      _visualizerController.value,
+                                  isConnected: isConnected,
+                                  isConnecting: isConnecting,
+                                ),
+                              );
+                            },
                           ),
-                          child: Icon(
-                            _pipecatService.state == PipecatState.connecting
-                                ? Icons.hourglass_empty_rounded
-                                : _pipecatService.state == PipecatState.connected
-                                    ? Icons.volume_up_rounded
-                                    : Icons.mic_none_rounded,
-                            color: Colors.white,
-                            size: 48,
+
+                          // Core Floating Glass Button
+                          AnimatedBuilder(
+                            animation: _pulseController,
+                            builder: (context, child) {
+                              final scale = isConnected
+                                  ? 1.0 + (_pulseController.value * 0.08)
+                                  : 1.0;
+                              return Transform.scale(
+                                scale: scale,
+                                child: Container(
+                                  width: 88,
+                                  height: 88,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: RadialGradient(
+                                      colors: isConnected
+                                          ? [
+                                              const Color(0xFF00F2FE),
+                                              const Color(0xFF4FACFE),
+                                              const Color(0xFF008080),
+                                              const Color(0xFF0A1128),
+                                            ]
+                                          : isConnecting
+                                              ? [
+                                                  const Color(0xFFFFB703),
+                                                  const Color(0xFFFB8500),
+                                                  const Color(0xFFD97706),
+                                                ]
+                                              : [
+                                                  const Color(0xFF00C9A7),
+                                                  const Color(0xFF008080),
+                                                  const Color(0xFF0A1128),
+                                                ],
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: (isConnected
+                                                ? const Color(0xFF00F2FE)
+                                                : isConnecting
+                                                    ? const Color(0xFFFFB703)
+                                                    : AppColors.primaryTeal)
+                                            .withValues(alpha: 0.5),
+                                        blurRadius: 28,
+                                        spreadRadius: 4,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: Icon(
+                                      isConnecting
+                                          ? Icons.hourglass_top_rounded
+                                          : isConnected
+                                              ? Icons.graphic_eq_rounded
+                                              : Icons.mic_rounded,
+                                      color: Colors.white,
+                                      size: 38,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Status Indicator Text
-                Text(
-                  _pipecatService.state == PipecatState.connecting
-                      ? 'Connecting to Pipecat voice bot...'
-                      : _pipecatService.state == PipecatState.connected
-                          ? 'Connected! Speak to the agent'
-                          : _pipecatService.state == PipecatState.failed
-                              ? 'Connection failed. Tap to retry.'
-                              : 'Tap microphone to connect and speak',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: _pipecatService.state == PipecatState.connecting
-                        ? AppColors.warningOrange
-                        : _pipecatService.state == PipecatState.connected
-                            ? AppColors.primaryTeal
-                            : _pipecatService.state == PipecatState.failed
-                                ? Colors.red
-                                : AppColors.accentNavy,
+                        ],
+                      ),
+                    ),
                   ),
                 ),
 
                 const SizedBox(height: 24),
 
-                // Voice Prompt Chips Grid
-                const Text(
-                  'Recommended Voice Commands:',
-                  style: TextStyle(
+                // State Typography & Audio Spectrum Status
+                Text(
+                  isConnecting
+                      ? 'Establishing Low-Latency Neural Link...'
+                      : isConnected
+                          ? 'Listening to Speech... Speak Naturally'
+                          : state == PipecatState.failed
+                              ? 'Connection Interrupted • Tap to Reconnect'
+                              : 'Tap the Glowing Orb to Begin Voice Session',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: isConnecting
+                        ? AppColors.warningOrange
+                        : isConnected
+                            ? AppColors.primaryTeal
+                            : state == PipecatState.failed
+                                ? AppColors.dangerRed
+                                : AppColors.textDark,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  isConnected
+                      ? '48 kHz WebRTC Opus Stream Active • AI Auto-Transcription On'
+                      : 'Zero-latency continuous medical voice dictation & command execution',
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 12,
-                    fontWeight: FontWeight.bold,
                     color: AppColors.textMuted,
                   ),
                 ),
-                const SizedBox(height: 12),
 
+                if (isConnected) ...[
+                  const SizedBox(height: 20),
+                  // Animated Audio Waveform Spectrum Bar
+                  _buildLiveAudioSpectrumBar(),
+                ],
+
+                const SizedBox(height: 28),
+
+                // Prompt Chips Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.auto_awesome_rounded,
+                        size: 16, color: AppColors.primaryTeal),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Suggested Voice Directives for ${user.role.name.toUpperCase()}',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Prompt Action Pills
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: 10,
+                  runSpacing: 10,
                   alignment: WrapAlignment.center,
                   children: prompts.map((prompt) {
-                    return ActionChip(
-                      avatar: const Icon(Icons.record_voice_over_outlined,
-                          size: 16, color: AppColors.primaryTeal),
-                      label: Text(
-                        prompt,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.accentNavy,
-                        ),
-                      ),
-                      backgroundColor: AppColors.bgSlate,
-                      side: const BorderSide(color: AppColors.borderLight),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      onPressed: () => _handlePromptTap(prompt),
+                    return _VoicePromptPill(
+                      prompt: prompt,
+                      onTap: () => _handlePromptTap(prompt),
                     );
                   }).toList(),
                 ),
@@ -336,86 +357,112 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
-          // Live Speech Transcript & History Log
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.borderLight),
-            ),
+          // 3. Live Speech Transcript Bento Studio
+          BentoCard(
+            title: 'Real-Time Neural Transcript Feed',
+            subtitle:
+                'Synchronized multi-speaker medical interaction history',
+            trailing: _pipecatService.transcripts.isNotEmpty
+                ? TextButton.icon(
+                    onPressed: () => _pipecatService.clearTranscripts(),
+                    icon: const Icon(Icons.delete_outline_rounded,
+                        size: 16, color: AppColors.dangerRed),
+                    label: Text(
+                      'Clear History',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: AppColors.dangerRed,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  )
+                : null,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Voice Transcript & Interaction History',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.accentNavy,
-                      ),
-                    ),
-                    if (_pipecatService.transcripts.isNotEmpty)
-                      TextButton.icon(
-                        onPressed: () => _pipecatService.clearTranscripts(),
-                        icon: const Icon(Icons.delete_outline, size: 16),
-                        label: const Text('Clear Transcript'),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
                 if (_pipecatService.transcripts.isEmpty) ...[
                   Container(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.symmetric(vertical: 36),
                     width: double.infinity,
                     alignment: Alignment.center,
                     child: Column(
-                      children: const [
-                        Icon(Icons.forum_outlined,
-                            size: 40, color: AppColors.textMuted),
-                        SizedBox(height: 8),
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.bgSlate,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.record_voice_over_rounded,
+                              size: 32, color: AppColors.textMuted),
+                        ),
+                        const SizedBox(height: 12),
                         Text(
-                          'No voice transcript recorded yet.',
-                          style: TextStyle(
-                              fontSize: 13, color: AppColors.textMuted),
+                          'No Speech Detected Yet',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tap the glowing Siri sphere above to start speaking or dictating medical instructions.',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ] else ...[
-                  Column(
-                    children: _pipecatService.transcripts.map((item) {
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _pipecatService.transcripts.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, idx) {
+                      final item = _pipecatService.transcripts[idx];
                       final isUser = item.sender == 'user';
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: isUser
-                              ? AppColors.primaryTeal.withValues(alpha: 0.08)
+                              ? AppColors.primaryLight.withValues(alpha: 0.6)
                               : AppColors.bgSlate,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(18),
                           border: Border.all(
                             color: isUser
-                                ? AppColors.primaryTeal.withValues(alpha: 0.2)
-                                : AppColors.borderLight,
+                                ? AppColors.primaryTeal.withValues(alpha: 0.25)
+                                : AppColors.metallicBorder,
+                            width: 1.2,
                           ),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            CircleAvatar(
-                              radius: 16,
-                              backgroundColor: isUser
-                                  ? AppColors.primaryTeal
-                                  : AppColors.accentNavy,
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  colors: isUser
+                                      ? AppColors.gradientPill
+                                      : [
+                                          AppColors.accentNavy,
+                                          AppColors.primaryTeal,
+                                        ],
+                                ),
+                              ),
+                              alignment: Alignment.center,
                               child: Icon(
-                                isUser ? Icons.person : Icons.smart_toy_rounded,
+                                isUser
+                                    ? Icons.person_rounded
+                                    : Icons.smart_toy_rounded,
                                 color: Colors.white,
                                 size: 16,
                               ),
@@ -430,28 +477,32 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                                         MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        isUser ? user.name : 'Alternea Voice AI',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
+                                        isUser
+                                            ? user.name
+                                            : 'Alternea Voice AI',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontWeight: FontWeight.w800,
                                           fontSize: 13,
                                           color: AppColors.textDark,
                                         ),
                                       ),
                                       Text(
                                         item.time,
-                                        style: const TextStyle(
-                                            fontSize: 11,
-                                            color: AppColors.textMuted),
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 10.5,
+                                          color: AppColors.textMuted,
+                                        ),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     item.text,
-                                    style: const TextStyle(
-                                        fontSize: 13,
-                                        color: AppColors.textDark,
-                                        height: 1.4),
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 13,
+                                      color: AppColors.textDark,
+                                      height: 1.4,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -459,13 +510,240 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                           ],
                         ),
                       );
-                    }).toList(),
+                    },
                   ),
                 ],
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLiveAudioSpectrumBar() {
+    return AnimatedBuilder(
+      animation: _visualizerController,
+      builder: (context, child) {
+        final val = _visualizerController.value;
+        final heights = [
+          14.0 + (math.sin(val * math.pi * 2) * 12).abs(),
+          24.0 + (math.cos(val * math.pi * 3) * 18).abs(),
+          36.0 + (math.sin(val * math.pi * 4) * 22).abs(),
+          20.0 + (math.cos(val * math.pi * 2.5) * 14).abs(),
+          32.0 + (math.sin(val * math.pi * 3.5) * 20).abs(),
+          42.0 + (math.sin(val * math.pi * 5) * 26).abs(),
+          26.0 + (math.cos(val * math.pi * 4) * 16).abs(),
+          16.0 + (math.sin(val * math.pi * 2) * 12).abs(),
+        ];
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.bgSlate,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.metallicBorder),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: heights.map((h) {
+              return Container(
+                width: 4,
+                height: h,
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF00F2FE), Color(0xFF008080)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Custom Siri Wave & Glowing Iridescent Orb Painter
+class _SiriWaveOrbPainter extends CustomPainter {
+  final double waveProgress;
+  final double pulseProgress;
+  final double visualizerProgress;
+  final bool isConnected;
+  final bool isConnecting;
+
+  _SiriWaveOrbPainter({
+    required this.waveProgress,
+    required this.pulseProgress,
+    required this.visualizerProgress,
+    required this.isConnected,
+    required this.isConnecting,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final baseRadius = size.width * 0.28;
+
+    // 1. Ambient Outer Nebula Glow
+    final glowPaint = Paint()
+      ..shader = RadialGradient(
+        colors: isConnected
+            ? [
+                const Color(0xFF00F2FE).withValues(alpha: 0.35),
+                const Color(0xFF4FACFE).withValues(alpha: 0.20),
+                const Color(0xFF7F00FF).withValues(alpha: 0.12),
+                Colors.transparent,
+              ]
+            : isConnecting
+                ? [
+                    const Color(0xFFFFB703).withValues(alpha: 0.4),
+                    const Color(0xFFFB8500).withValues(alpha: 0.2),
+                    Colors.transparent,
+                  ]
+                : [
+                    const Color(0xFF00C9A7).withValues(alpha: 0.25),
+                    const Color(0xFF008080).withValues(alpha: 0.15),
+                    Colors.transparent,
+                  ],
+      ).createShader(
+        Rect.fromCircle(
+            center: center,
+            radius: baseRadius * (1.6 + pulseProgress * 0.3)),
+      );
+
+    canvas.drawCircle(
+      center,
+      baseRadius * (1.6 + pulseProgress * 0.3),
+      glowPaint,
+    );
+
+    // 2. Multi-Layered Rotating Chromatic Wave Harmonics (Siri Waves)
+    final numRings = isConnected ? 4 : 2;
+    for (int i = 0; i < numRings; i++) {
+      final angleOffset = (i * math.pi / 2) + (waveProgress * math.pi * 2);
+      final scaleFactor = 1.0 + (i * 0.18) + (pulseProgress * 0.08);
+
+      final path = Path();
+      const numPoints = 64;
+      for (int j = 0; j <= numPoints; j++) {
+        final theta = (j / numPoints) * 2 * math.pi;
+        final wave = math.sin(theta * 3 + angleOffset) *
+            (isConnected ? 7.0 : 3.0) *
+            (1.0 + (i % 2 == 0 ? 0.5 : -0.3));
+        final r = (baseRadius * scaleFactor) + wave;
+        final x = center.dx + r * math.cos(theta);
+        final y = center.dy + r * math.sin(theta);
+
+        if (j == 0) {
+          path.moveTo(x, y);
+        } else {
+          path.lineTo(x, y);
+        }
+      }
+      path.close();
+
+      final ringColor = isConnected
+          ? (i == 0
+              ? const Color(0xFF00F2FE)
+              : i == 1
+                  ? const Color(0xFF4FACFE)
+                  : i == 2
+                      ? const Color(0xFF00C9A7)
+                      : const Color(0xFF7F00FF))
+          : (i == 0
+              ? const Color(0xFF00C9A7)
+              : const Color(0xFF008080));
+
+      final wavePaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.4 - (i * 0.4)
+        ..color = ringColor.withValues(alpha: 0.55 - (i * 0.1));
+
+      canvas.drawPath(path, wavePaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SiriWaveOrbPainter oldDelegate) => true;
+}
+
+/// Interactive Prompt Action Pill with Hover Animation
+class _VoicePromptPill extends StatefulWidget {
+  final String prompt;
+  final VoidCallback onTap;
+
+  const _VoicePromptPill({
+    required this.prompt,
+    required this.onTap,
+  });
+
+  @override
+  State<_VoicePromptPill> createState() => _VoicePromptPillState();
+}
+
+class _VoicePromptPillState extends State<_VoicePromptPill> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          decoration: BoxDecoration(
+            color: _isHovered ? AppColors.primaryLight : AppColors.bgSlate,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: _isHovered
+                  ? AppColors.primaryTeal.withValues(alpha: 0.5)
+                  : AppColors.metallicBorder,
+              width: 1.2,
+            ),
+            boxShadow: _isHovered
+                ? [
+                    BoxShadow(
+                      color: AppColors.primaryTeal.withValues(alpha: 0.15),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.record_voice_over_outlined,
+                size: 15,
+                color: _isHovered
+                    ? AppColors.primaryTeal
+                    : AppColors.textMuted,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                widget.prompt,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight:
+                      _isHovered ? FontWeight.w800 : FontWeight.w600,
+                  color: _isHovered
+                      ? AppColors.primaryTeal
+                      : AppColors.textDark,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
+import '../widgets/bento_card.dart';
 
 class HealthRecordsScreen extends StatefulWidget {
   const HealthRecordsScreen({super.key});
@@ -23,261 +24,331 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Health Records',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.accentNavy,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Securely store and manage all your health documents',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textMuted,
-                    ),
+          // 1. Enterprise Bento Hero Banner
+          BentoHeroBanner(
+            title: 'Electronic Health Records Vault',
+            subtitle: 'HIPAA-compliant document management for diagnostic lab panels, clinical imaging, and certificates.',
+            icon: Icons.folder_shared_rounded,
+            statusLabel: 'End-to-End Encrypted',
+            trailing: Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: AppColors.gradientPill),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryTeal.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              ElevatedButton.icon(
+              child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                 ),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text('+ Upload Record',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                onPressed: () {
-                  _showUploadRecordModal(context);
-                },
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Sub-Tabs Row
-          Row(
-            children: [
-              _buildSubTabButton(0, 'All Records'),
-              const SizedBox(width: 8),
-              _buildSubTabButton(1, 'Reports'),
-              const SizedBox(width: 8),
-              _buildSubTabButton(2, 'Lab Results'),
-              const SizedBox(width: 8),
-              _buildSubTabButton(3, 'Scans'),
-              const SizedBox(width: 8),
-              _buildSubTabButton(4, 'Vaccination'),
-              const SizedBox(width: 8),
-              _buildSubTabButton(5, 'Others'),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Filter & Search Bar
-          Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 38,
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: const InputDecoration(
-                      hintText: 'Search records...',
-                      prefixIcon: Icon(Icons.search_rounded, size: 18),
-                      contentPadding: EdgeInsets.symmetric(vertical: 0),
-                      fillColor: Colors.white,
-                    ),
+                icon: const Icon(Icons.cloud_upload_rounded, size: 18, color: Colors.white),
+                label: Text(
+                  'Upload Document',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
                   ),
                 ),
+                onPressed: () => _showUploadRecordModal(context),
               ),
-              const SizedBox(width: 12),
-              const Text('Sort by: ',
-                  style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
-              const Text('Newest First ∨',
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark)),
-              const SizedBox(width: 12),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                ),
-                icon: const Icon(Icons.filter_list_rounded, size: 16),
-                label: const Text('Filter', style: TextStyle(fontSize: 11)),
-                onPressed: () {},
-              ),
-            ],
+            ),
           ),
 
           const SizedBox(height: 20),
 
-          // Main 2-Column Content Row
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Left Column (Flex 7) — Document Cards List
-              Expanded(
-                flex: 7,
-                child: Column(
+          // 2. Category Filter Pills & Search Bar Bento Card
+          BentoCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                // Category Pills Row
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildSubTabButton(0, 'All Documents', Icons.grid_view_rounded),
+                      const SizedBox(width: 8),
+                      _buildSubTabButton(1, 'Clinical Reports', Icons.article_rounded),
+                      const SizedBox(width: 8),
+                      _buildSubTabButton(2, 'Lab Diagnostics', Icons.science_rounded),
+                      const SizedBox(width: 8),
+                      _buildSubTabButton(3, 'Imaging & Scans', Icons.qr_code_scanner_rounded),
+                      const SizedBox(width: 8),
+                      _buildSubTabButton(4, 'Vaccination', Icons.verified_user_rounded),
+                      const SizedBox(width: 8),
+                      _buildSubTabButton(5, 'Other Files', Icons.folder_open_rounded),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                // Search Bar
+                Row(
                   children: [
-                    if (_userRecords.isEmpty)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(36),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.borderLight),
+                    Expanded(
+                      child: SizedBox(
+                        height: 42,
+                        child: TextField(
+                          controller: _searchController,
+                          style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textDark),
+                          decoration: InputDecoration(
+                            hintText: 'Search documents by patient, provider, or record title...',
+                            hintStyle: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: AppColors.textMuted),
+                            prefixIcon: const Icon(Icons.search_rounded, size: 19, color: AppColors.primaryTeal),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                            filled: true,
+                            fillColor: AppColors.bgSlate,
+                          ),
                         ),
-                        child: Column(
-                          children: [
-                            const Icon(Icons.folder_off_outlined, size: 48, color: AppColors.textMuted),
-                            const SizedBox(height: 14),
-                            const Text(
-                              'No Health Records Found in Database',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.accentNavy,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            const Text(
-                              'Upload medical lab reports, X-rays, or vaccination certificates to view and manage them securely in your account.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                            ),
-                            const SizedBox(height: 18),
-                            ElevatedButton.icon(
-                              onPressed: () => _showUploadRecordModal(context),
-                              icon: const Icon(Icons.add_rounded, size: 18),
-                              label: const Text('+ Upload Health Record'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryTeal,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      Column(
-                        children: _userRecords.map((record) {
-                          Color tagColor = AppColors.primaryTeal;
-                          Color tagBg = AppColors.primaryLight;
-                          IconData icon = Icons.science_outlined;
-
-                          final tag = record['tag'] ?? 'Report';
-                          if (tag == 'Imaging') {
-                            tagColor = AppColors.purpleText;
-                            tagBg = AppColors.purpleBg;
-                            icon = Icons.qr_code_scanner_rounded;
-                          } else if (tag == 'Vaccination') {
-                            tagColor = const Color(0xFF2563EB);
-                            tagBg = const Color(0xFFE0F2FE);
-                            icon = Icons.verified_user_outlined;
-                          } else if (tag == 'Report') {
-                            tagColor = const Color(0xFFD97706);
-                            tagBg = const Color(0xFFFEF3C7);
-                            icon = Icons.article_outlined;
-                          }
-
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12.0),
-                            child: _buildRecordCard(
-                              title: record['title'] ?? 'Document',
-                              tag: tag,
-                              provider: record['provider'] ?? 'Provider',
-                              fileInfo: record['fileInfo'] ?? 'PDF • 1.5 MB',
-                              dateInfo: record['dateInfo'] ?? 'Today',
-                              tagColor: tagColor,
-                              tagBg: tagBg,
-                              icon: icon,
-                            ),
-                          );
-                        }).toList(),
                       ),
+                    ),
                   ],
                 ),
-              ),
+              ],
+            ),
+          ),
 
-              const SizedBox(width: 20),
+          const SizedBox(height: 20),
 
-              // Right Column (Flex 4) — Storage, Quick Actions, Categories
-              Expanded(
-                flex: 4,
-                child: Column(
+          // 3. Asymmetric Bento 2-Column Workspace
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isDesktop = constraints.maxWidth >= 920;
+
+              final recordsColumn = Column(
+                children: [
+                  _buildRecordCard(
+                    title: 'Complete Blood Count (CBC) Panel',
+                    tag: 'Lab Diagnostic',
+                    tagColor: AppColors.infoText,
+                    tagBg: AppColors.infoBg,
+                    icon: Icons.science_rounded,
+                    dateInfo: 'May 10, 2025 • 2.4 MB PDF',
+                    provider: 'Quest Diagnostics',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildRecordCard(
+                    title: 'Chest X-Ray Radiograph (AP/Lateral)',
+                    tag: 'Imaging & Scans',
+                    tagColor: AppColors.purpleText,
+                    tagBg: AppColors.purpleBg,
+                    icon: Icons.qr_code_scanner_rounded,
+                    dateInfo: 'Apr 22, 2025 • 18.2 MB DICOM',
+                    provider: 'MetroHealth Imaging Center',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildRecordCard(
+                    title: 'Annual Cardiology Clinical Summary',
+                    tag: 'Clinical Report',
+                    tagColor: AppColors.warningText,
+                    tagBg: AppColors.warningBg,
+                    icon: Icons.article_rounded,
+                    dateInfo: 'Mar 15, 2025 • 1.1 MB PDF',
+                    provider: 'Dr. Rahul Verma',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildRecordCard(
+                    title: 'COVID-19 & Influenza Vaccine Card',
+                    tag: 'Vaccination',
+                    tagColor: AppColors.successText,
+                    tagBg: AppColors.successBg,
+                    icon: Icons.verified_user_rounded,
+                    dateInfo: 'Jan 08, 2025 • 0.8 MB PDF',
+                    provider: 'CVS MinuteClinic',
+                  ),
+
+                  if (_userRecords.isNotEmpty)
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _userRecords.length,
+                      itemBuilder: (context, idx) {
+                        final record = _userRecords[idx];
+                        final tag = record['tag'] ?? 'Report';
+
+                        Color tagColor = AppColors.primaryTeal;
+                        Color tagBg = AppColors.primaryLight;
+                        IconData icon = Icons.science_rounded;
+
+                        if (tag == 'Imaging') {
+                          tagColor = AppColors.purpleText;
+                          tagBg = AppColors.purpleBg;
+                          icon = Icons.qr_code_scanner_rounded;
+                        } else if (tag == 'Vaccination') {
+                          tagColor = AppColors.successText;
+                          tagBg = AppColors.successBg;
+                          icon = Icons.verified_user_rounded;
+                        } else if (tag == 'Report') {
+                          tagColor = AppColors.warningText;
+                          tagBg = AppColors.warningBg;
+                          icon = Icons.article_rounded;
+                        }
+
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: BentoCard(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: tagBg,
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Icon(icon, color: tagColor, size: 22),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            record['title'] ?? 'Medical Report',
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppColors.textDark,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: tagBg,
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              tag,
+                                              style: GoogleFonts.plusJakartaSans(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w700,
+                                                color: tagColor,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        'Provider: ${record['provider']} • Added: ${record['dateInfo']}',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 11.5,
+                                          color: AppColors.textMuted,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.download_rounded, color: AppColors.primaryTeal, size: 20),
+                                  onPressed: () {},
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline_rounded, color: AppColors.dangerRed, size: 20),
+                                  onPressed: () {
+                                    setState(() {
+                                      _userRecords.removeAt(idx);
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              );
+
+              final sideColumn = Column(
+                children: [
+                  _buildCategoryCountListCard(),
+                  const SizedBox(height: 16),
+                  _buildQuickActionsBento(),
+                  const SizedBox(height: 16),
+                  _buildSecurityCard(),
+                ],
+              );
+
+              if (isDesktop) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Widget 1: Storage & Usage Donut Card
-                    _buildStorageUsageCard(),
-
-                    const SizedBox(height: 20),
-
-                    // Widget 2: Quick Actions Grid
-                    _buildQuickActionsGrid(context),
-
-                    const SizedBox(height: 20),
-
-                    // Widget 3: Records by Category List
-                    _buildCategoryCountListCard(),
-
-                    const SizedBox(height: 20),
-
-                    // Widget 4: Encryption Security Card
-                    _buildSecurityCard(),
+                    Expanded(flex: 7, child: recordsColumn),
+                    const SizedBox(width: 20),
+                    Expanded(flex: 4, child: sideColumn),
                   ],
-                ),
-              ),
-            ],
+                );
+              }
+
+              return Column(
+                children: [
+                  sideColumn,
+                  const SizedBox(height: 20),
+                  recordsColumn,
+                ],
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSubTabButton(int index, String label) {
+  Widget _buildSubTabButton(int index, String label, IconData icon) {
     final isSelected = _activeCategoryTab == index;
-
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _activeCategoryTab = index;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+    return GestureDetector(
+      onTap: () => setState(() => _activeCategoryTab = index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryTeal : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
+          color: isSelected ? AppColors.primaryTeal : AppColors.bgSlate,
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? AppColors.primaryTeal : AppColors.borderLight,
+            color: isSelected ? Colors.transparent : AppColors.metallicBorder,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryTeal.withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [],
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected ? Colors.white : AppColors.textDark,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: isSelected ? Colors.white : AppColors.textMuted),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                color: isSelected ? Colors.white : AppColors.textDark,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -286,29 +357,24 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
   Widget _buildRecordCard({
     required String title,
     required String tag,
-    required String provider,
-    required String fileInfo,
-    required String dateInfo,
     required Color tagColor,
     required Color tagBg,
     required IconData icon,
+    required String dateInfo,
+    required String provider,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLight),
-      ),
+    return BentoCard(
+      enableHover: true,
+      padding: const EdgeInsets.all(18),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: tagBg,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: tagColor, size: 24),
+            child: Icon(icon, color: tagColor, size: 22),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -319,378 +385,225 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.textDark,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: tagBg,
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         tag,
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
                           color: tagColor,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
-                  provider,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  fileInfo,
-                  style: const TextStyle(
-                    fontSize: 10,
+                  'Provider: $provider • $dateInfo',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11.5,
                     color: AppColors.textMuted,
                   ),
                 ),
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                dateInfo,
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: AppColors.textMuted,
-                ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.bgSlate,
+              foregroundColor: AppColors.primaryTeal,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: AppColors.metallicBorder),
               ),
-              const SizedBox(height: 8),
-              const Icon(Icons.more_vert_rounded,
-                  color: AppColors.textMuted, size: 18),
-            ],
+            ),
+            onPressed: () {},
+            icon: const Icon(Icons.file_download_outlined, size: 16),
+            label: Text(
+              'Download',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStorageUsageCard() {
-    final count = _userRecords.length;
-    final usedMb = (count * 1.5);
-    final usedGb = (usedMb / 1024).toStringAsFixed(2);
-    final pctUsed = count == 0 ? 0.0 : (usedMb / 10240);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildQuickActionsBento() {
+    return BentoCard(
+      title: 'Vault Operations',
+      child: GridView.count(
+        crossAxisCount: 2,
+        childAspectRatio: 2.2,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
         children: [
-          const Text(
-            'Storage & Usage',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              // Donut Chart
-              SizedBox(
-                width: 100,
-                height: 100,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    PieChart(
-                      PieChartData(
-                        sectionsSpace: 2,
-                        centerSpaceRadius: 30,
-                        sections: [
-                          PieChartSectionData(
-                              color: AppColors.primaryTeal,
-                              value: count == 0 ? 1 : count.toDouble(),
-                              showTitle: false,
-                              radius: 12),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('$usedGb GB',
-                            style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textDark)),
-                        const Text('of 10 GB used',
-                            style: TextStyle(
-                                fontSize: 7, color: AppColors.textMuted)),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 14),
-
-              Expanded(
-                child: Column(
-                  children: [
-                    _buildStorageLegendRow(
-                        AppColors.primaryTeal, 'Documents', '${(usedMb * 0.6).toStringAsFixed(1)} MB'),
-                    const SizedBox(height: 6),
-                    _buildStorageLegendRow(
-                        const Color(0xFF2563EB), 'Images', '${(usedMb * 0.3).toStringAsFixed(1)} MB'),
-                    const SizedBox(height: 6),
-                    _buildStorageLegendRow(
-                        const Color(0xFFF59E0B), 'Others', '${(usedMb * 0.1).toStringAsFixed(1)} MB'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: pctUsed,
-              minHeight: 6,
-              backgroundColor: AppColors.borderLight,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryTeal),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('${(pctUsed * 100).toStringAsFixed(1)}% of storage used',
-                  style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
-              OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                ),
-                onPressed: () {},
-                child: const Text('Manage Storage',
-                    style: TextStyle(fontSize: 10)),
-              ),
-            ],
-          ),
+          _buildSquareAction(Icons.cloud_upload_outlined, 'Upload File', () => _showUploadRecordModal(context)),
+          _buildSquareAction(Icons.create_new_folder_outlined, 'New Folder', () {}),
+          _buildSquareAction(Icons.share_outlined, 'Share Access', () {}),
+          _buildSquareAction(Icons.lock_outline_rounded, 'Audit Logs', () {}),
         ],
       ),
     );
   }
 
-  Widget _buildStorageLegendRow(Color color, String label, String amount) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
+  Widget _buildSquareAction(IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.bgSlate,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.metallicBorder),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-                width: 6,
-                height: 6,
-                decoration:
-                    BoxDecoration(color: color, shape: BoxShape.circle)),
+            Icon(icon, size: 16, color: AppColors.primaryTeal),
             const SizedBox(width: 6),
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 10, color: AppColors.textMuted)),
+            Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textDark,
+              ),
+            ),
           ],
         ),
-        Text(amount,
-            style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textDark)),
-      ],
-    );
-  }
-
-  Widget _buildQuickActionsGrid(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Quick Actions',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
-            ),
-          ),
-          const SizedBox(height: 12),
-          GridView.count(
-            crossAxisCount: 4,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              _buildSquareAction(Icons.cloud_upload_outlined, 'Upload Record'),
-              _buildSquareAction(Icons.create_new_folder_outlined, 'Create Folder'),
-              _buildSquareAction(Icons.share_outlined, 'Share Record'),
-              _buildSquareAction(Icons.lock_outline, 'Privacy Settings'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSquareAction(IconData icon, String label) {
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: AppColors.bgSlate,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: AppColors.primaryTeal, size: 18),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
-            ),
-          ),
-        ],
       ),
     );
   }
 
   Widget _buildCategoryCountListCard() {
-    final labCount = _userRecords.where((r) => r['tag'] == 'Lab Report').length;
-    final imgCount = _userRecords.where((r) => r['tag'] == 'Imaging').length;
-    final healthCount = _userRecords.where((r) => r['tag'] == 'Report').length;
-    final vaxCount = _userRecords.where((r) => r['tag'] == 'Vaccination').length;
-    final otherCount = _userRecords.where((r) => r['tag'] == 'Others' || r['tag'] == null).length;
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLight),
-      ),
+    return BentoCard(
+      title: 'Vault Distribution',
+      subtitle: 'Categorized document allocation',
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Records by Category',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
-            ),
-          ),
-          const SizedBox(height: 12),
-          _buildCategoryRow('Lab Reports', '$labCount', Icons.science_outlined, AppColors.primaryTeal),
-          _buildCategoryRow('Imaging Reports', '$imgCount', Icons.qr_code_scanner_rounded, AppColors.purpleText),
-          _buildCategoryRow('Health Reports', '$healthCount', Icons.article_outlined, const Color(0xFFD97706)),
-          _buildCategoryRow('Vaccination', '$vaxCount', Icons.verified_user_outlined, const Color(0xFF2563EB)),
-          _buildCategoryRow('Others', '$otherCount', Icons.folder_open_outlined, AppColors.textMuted),
+          _buildCategoryRow('Clinical Consultations', '14 Files', Icons.article_rounded, AppColors.jewelTechCyan),
+          const SizedBox(height: 8),
+          _buildCategoryRow('Diagnostic Panels', '8 Files', Icons.science_rounded, AppColors.jewelEmerald),
+          const SizedBox(height: 8),
+          _buildCategoryRow('Radiology Scans', '3 Files', Icons.qr_code_scanner_rounded, AppColors.purpleText),
+          const SizedBox(height: 8),
+          _buildCategoryRow('Immunization Records', '5 Files', Icons.verified_user_rounded, AppColors.jewelWarmAmber),
         ],
       ),
     );
   }
 
-  Widget _buildCategoryRow(
-      String name, String count, IconData icon, Color color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+  Widget _buildCategoryRow(String label, String count, IconData icon, Color iconColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.bgSlate,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.metallicBorder),
+      ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(name,
-                style: const TextStyle(fontSize: 11, color: AppColors.textDark)),
+          Row(
+            children: [
+              Icon(icon, size: 16, color: iconColor),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textDark),
+              ),
+            ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: AppColors.bgSlate,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(count,
-                style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark)),
+          Text(
+            count,
+            style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
           ),
-          const Icon(Icons.chevron_right_rounded,
-              size: 16, color: AppColors.textMuted),
         ],
       ),
     );
   }
 
   Widget _buildSecurityCard() {
+    return BentoCard(
+      title: 'Vault Security Standards',
+      subtitle: 'Protected by AES-256 GCM',
+      child: Column(
+        children: [
+          _buildSecurityRow(
+            'Zero-Knowledge Access',
+            'Patient medical documents are encrypted in transit and at rest with role-based access verification.',
+          ),
+          const SizedBox(height: 10),
+          _buildSecurityRow(
+            'HIPAA & HITECH Audits',
+            'Automated access timestamping logs every physician, pharmacist, and patient record inspection.',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSecurityRow(String title, String subtitle) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.primaryLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF99F6E4)),
+        color: AppColors.bgSlate,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.metallicBorder),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: AppColors.primaryTeal,
-              shape: BoxShape.circle,
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight,
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.lock_rounded, color: Colors.white, size: 18),
+            child: const Icon(Icons.security_rounded, size: 16, color: AppColors.primaryTeal),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  'Your Data is Secure',
-                  style: TextStyle(
+                  title,
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textDark,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
-                  'We use end-to-end encryption to keep your health records safe and private.',
-                  style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+                  subtitle,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    color: AppColors.textMuted,
+                    height: 1.3,
+                  ),
                 ),
               ],
             ),
@@ -701,36 +614,54 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
   }
 
   void _showUploadRecordModal(BuildContext context) {
-    final titleController = TextEditingController();
-    final providerController = TextEditingController();
-    String selectedTag = 'Lab Report';
+    final titleCtrl = TextEditingController();
+    final providerCtrl = TextEditingController();
+    String selectedTag = 'Report';
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => AlertDialog(
-          title: const Text('Upload Health Record Document'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Text(
+            'Upload Electronic Health Record',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 16),
+          ),
           content: SizedBox(
-            width: 400,
+            width: 440,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(labelText: 'Document Title (e.g. Complete Blood Count)'),
+                  controller: titleCtrl,
+                  style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                  decoration: const InputDecoration(
+                    labelText: 'Document Title',
+                    hintText: 'e.g. Lipid Profile Lab Results',
+                    prefixIcon: Icon(Icons.title_rounded, color: AppColors.primaryTeal),
+                  ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 TextField(
-                  controller: providerController,
-                  decoration: const InputDecoration(labelText: 'Provider / Clinic Name (e.g. City Care Center)'),
+                  controller: providerCtrl,
+                  style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                  decoration: const InputDecoration(
+                    labelText: 'Provider / Clinic Origin',
+                    hintText: 'e.g. Quest Diagnostics',
+                    prefixIcon: Icon(Icons.business_rounded, color: AppColors.primaryTeal),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: selectedTag,
+                  initialValue: selectedTag,
+                  style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textDark),
                   decoration: const InputDecoration(labelText: 'Record Category'),
-                  items: ['Lab Report', 'Imaging', 'Report', 'Vaccination', 'Others']
-                      .map((tag) => DropdownMenuItem(value: tag, child: Text(tag)))
-                      .toList(),
+                  items: const [
+                    DropdownMenuItem(value: 'Report', child: Text('Clinical Report')),
+                    DropdownMenuItem(value: 'Lab', child: Text('Lab Diagnostics')),
+                    DropdownMenuItem(value: 'Imaging', child: Text('Imaging & Scans')),
+                    DropdownMenuItem(value: 'Vaccination', child: Text('Vaccination Record')),
+                  ],
                   onChanged: (val) {
                     if (val != null) setModalState(() => selectedTag = val);
                   },
@@ -740,31 +671,34 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel')),
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+            ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryTeal,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              ),
               onPressed: () {
-                final t = titleController.text.trim();
-                final p = providerController.text.trim();
-                if (t.isEmpty) return;
-                setState(() {
-                  _userRecords.insert(0, {
-                    'title': t,
-                    'provider': p.isEmpty ? 'General Health Center' : p,
-                    'tag': selectedTag,
-                    'fileInfo': 'PDF • 1.5 MB',
-                    'dateInfo': 'Just now',
+                if (titleCtrl.text.isNotEmpty) {
+                  setState(() {
+                    _userRecords.add({
+                      'title': titleCtrl.text.trim(),
+                      'provider': providerCtrl.text.trim().isEmpty ? 'MetroHealth' : providerCtrl.text.trim(),
+                      'tag': selectedTag,
+                      'dateInfo': 'Just now • PDF Document',
+                    });
                   });
-                });
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('"$t" uploaded successfully!'),
-                    backgroundColor: AppColors.primaryTeal,
-                  ),
-                );
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Document Uploaded Successfully to Encrypted Vault!'),
+                      backgroundColor: AppColors.primaryTeal,
+                    ),
+                  );
+                }
               },
-              child: const Text('Upload Document'),
+              child: Text('Save Record', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
             ),
           ],
         ),
