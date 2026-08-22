@@ -1,0 +1,32 @@
+{
+  "ServiceName": "cts-npn-ml-service",
+  "SourceConfiguration": {
+    "ImageRepository": {
+      "ImageIdentifier": "YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/cts-npn-ml:latest",
+      "ImageConfiguration": {
+        "Port": "8080",
+        "RuntimeEnvironmentVariables": {
+          "ADHERENCE_MODEL_PATH": "/app/ml-model/adherence/adherence_model.pkl",
+          "ABANDONMENT_MODEL_PATH": "/app/ml-model/abundant/abandonment_best_model_improved.pkl"
+        }
+      },
+      "ImageRepositoryType": "ECR"
+    },
+    "AutoDeploymentsEnabled": true,
+    "AuthenticationConfiguration": {
+      "AccessRoleArn": "arn:aws:iam::YOUR_AWS_ACCOUNT_ID:role/service-role/AppRunnerECRAccessRole"
+    }
+  },
+  "InstanceConfiguration": {
+    "Cpu": "1 vCPU",
+    "Memory": "2 GB"
+  },
+  "HealthCheckConfiguration": {
+    "Protocol": "HTTP",
+    "Path": "/health",
+    "Interval": 10,
+    "Timeout": 5,
+    "HealthyThreshold": 1,
+    "UnhealthyThreshold": 5
+  }
+}
