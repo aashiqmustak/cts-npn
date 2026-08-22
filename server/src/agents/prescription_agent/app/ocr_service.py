@@ -4,6 +4,7 @@ import io
 
 logger = logging.getLogger("prescription_agent")
 
+
 def extract_text_from_file(file_name: str, file_content_base64: str) -> str:
     """
     Decodes a base64 encoded file and extracts its text.
@@ -17,24 +18,25 @@ def extract_text_from_file(file_name: str, file_content_base64: str) -> str:
         logger.error("Failed to decode base64 file content: %s", e)
         raise ValueError(f"Failed to decode base64: {e}")
 
-    ext = file_name.split('.')[-1].lower() if '.' in file_name else ""
+    ext = file_name.split(".")[-1].lower() if "." in file_name else ""
     extracted_text = ""
-    
+
     # 1. Plain text / HL7 / FHIR / JSON
-    if ext in ['txt', 'hl7', 'json', 'fhir', 'xml', 'csv']:
+    if ext in ["txt", "hl7", "json", "fhir", "xml", "csv"]:
         try:
-            extracted_text = file_bytes.decode('utf-8')
+            extracted_text = file_bytes.decode("utf-8")
         except Exception:
             try:
-                extracted_text = file_bytes.decode('latin-1')
+                extracted_text = file_bytes.decode("latin-1")
             except Exception as e:
                 logger.error("Failed to decode text file bytes: %s", e)
                 raise ValueError(f"Failed to decode text file: {e}")
 
     # 2. PDF Documents
-    elif ext == 'pdf':
+    elif ext == "pdf":
         try:
             import pypdf
+
             reader = pypdf.PdfReader(io.BytesIO(file_bytes))
             text = ""
             for page in reader.pages:
@@ -46,18 +48,18 @@ def extract_text_from_file(file_name: str, file_content_base64: str) -> str:
             logger.warning("PDF extraction using pypdf failed: %s", e)
 
     # 3. Image Documents (PNG, JPG, JPEG)
-    elif ext in ['png', 'jpg', 'jpeg', 'gif', 'bmp']:
+    elif ext in ["png", "jpg", "jpeg", "gif", "bmp"]:
         try:
             import easyocr
             import numpy as np
             import cv2
-            
+
             nparr = np.frombuffer(file_bytes, np.uint8)
             img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            
+
             if img is not None:
                 logger.info("Running easyocr reader...")
-                reader = easyocr.Reader(['en'], gpu=False) # CPU mode
+                reader = easyocr.Reader(["en"], gpu=False)  # CPU mode
                 results = reader.readtext(img)
                 text = " ".join([res[1] for res in results])
                 if text.strip():
@@ -70,7 +72,13 @@ def extract_text_from_file(file_name: str, file_content_base64: str) -> str:
     name_lower = file_name.lower()
     text_lower = extracted_text.lower()
 
-    if 'rx_00181' in name_lower or 'epilepsy' in text_lower or 'seizure' in text_lower or 'levetiracetam' in name_lower or 'levetiracetam' in text_lower:
+    if (
+        "rx_00181" in name_lower
+        or "epilepsy" in text_lower
+        or "seizure" in text_lower
+        or "levetiracetam" in name_lower
+        or "levetiracetam" in text_lower
+    ):
         logger.info("Using smart Levetiracetam fallback for file: %s", file_name)
         return """
         Patient ID: PAT_00001
@@ -84,7 +92,12 @@ def extract_text_from_file(file_name: str, file_content_base64: str) -> str:
         Notes: Take as directed by physician.
         """
 
-    if 'metformin' in name_lower or 'diabetes' in name_lower or 'metformin' in text_lower or 'diabetes' in text_lower:
+    if (
+        "metformin" in name_lower
+        or "diabetes" in name_lower
+        or "metformin" in text_lower
+        or "diabetes" in text_lower
+    ):
         logger.info("Using smart Metformin fallback for file: %s", file_name)
         return """
         Patient ID: PAT_00001
@@ -98,7 +111,12 @@ def extract_text_from_file(file_name: str, file_content_base64: str) -> str:
         Notes: Take with meals. Monitor blood glucose levels.
         """
 
-    if 'lisinopril' in name_lower or 'hypertension' in name_lower or 'lisinopril' in text_lower or 'hypertension' in text_lower:
+    if (
+        "lisinopril" in name_lower
+        or "hypertension" in name_lower
+        or "lisinopril" in text_lower
+        or "hypertension" in text_lower
+    ):
         logger.info("Using smart Lisinopril fallback for file: %s", file_name)
         return """
         Patient ID: PAT_00002
@@ -112,7 +130,12 @@ def extract_text_from_file(file_name: str, file_content_base64: str) -> str:
         Notes: Check blood pressure daily.
         """
 
-    if 'atorvastatin' in name_lower or 'cholesterol' in name_lower or 'atorvastatin' in text_lower or 'cholesterol' in text_lower:
+    if (
+        "atorvastatin" in name_lower
+        or "cholesterol" in name_lower
+        or "atorvastatin" in text_lower
+        or "cholesterol" in text_lower
+    ):
         logger.info("Using smart Atorvastatin fallback for file: %s", file_name)
         return """
         Patient ID: PAT_00003
