@@ -16,6 +16,8 @@ class PharmacistDispenseScreen extends StatefulWidget {
 
 class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
   final _searchController = TextEditingController();
+  int _currentPage = 1;
+  static const int _itemsPerPage = 10;
 
   @override
   void dispose() {
@@ -72,7 +74,9 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                     height: 42,
                     child: TextField(
                       controller: _searchController,
-                      onChanged: (_) => setState(() {}),
+                      onChanged: (_) => setState(() {
+                        _currentPage = 1;
+                      }),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -94,7 +98,9 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                                 icon: const Icon(Icons.clear_rounded, size: 18),
                                 onPressed: () {
                                   _searchController.clear();
-                                  setState(() {});
+                                  setState(() {
+                                    _currentPage = 1;
+                                  });
                                 },
                               )
                             : null,
@@ -110,58 +116,94 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
           const SizedBox(height: 20),
 
           // 3. Patient Prescriptions Queue
-          if (matchingPatients.isEmpty) ...[
-            _buildEmptyState(),
-          ] else ...[
-            Column(
-              children: matchingPatients.map((patient) {
-                // Find hospital info
-                final hospital = appState.hospitals.firstWhere(
-                  (h) => h.id == patient.hospitalId,
-                  orElse: () => appState.hospitals.isNotEmpty
-                      ? appState.hospitals.first
-                      : Hospital(
-                          id: patient.hospitalId ?? 'HOSP-101',
-                          name: 'MetroHealth Medical Center',
-                          address: '100 Hospital Way, Medical Plaza',
-                          city: 'New York',
-                          state: 'NY',
-                          zip: '10001',
-                          phone: '(212) 555-0100',
-                        ),
-                );
+          Builder(
+            builder: (context) {
+              final totalPatients = matchingPatients.length;
+              final totalPages = (totalPatients / _itemsPerPage).ceil();
 
-                // Find doctor info
-                final doctor = appState.doctors.firstWhere(
-                  (d) => d.id == patient.assignedDoctorId,
-                  orElse: () => appState.doctors.isNotEmpty
-                      ? appState.doctors.first
-                      : Doctor(
-                          id: patient.assignedDoctorId ?? 'DOC-201',
-                          name: 'Dr. Rahul Verma',
-                          specialty: 'Internal Medicine / Cardiology',
-                          email: '',
-                          phone: '(555) 019-2834',
-                          hospitalId: patient.hospitalId ?? 'HOSP-101',
-                        ),
-                );
+              // Ensure current page is valid
+              int activePage = _currentPage;
+              if (activePage > totalPages && totalPages > 0) {
+                activePage = totalPages;
+              }
+              if (activePage < 1) {
+                activePage = 1;
+              }
 
-                final items = appState.prescriptionItems;
+              final startIndex = (activePage - 1) * _itemsPerPage;
+              final endIndex = startIndex + _itemsPerPage;
+              final paginatedPatients = matchingPatients.sublist(
+                startIndex,
+                endIndex > totalPatients ? totalPatients : endIndex,
+              );
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: _buildPatientBentoCard(
-                    context: context,
-                    appState: appState,
-                    patient: patient,
-                    hospital: hospital,
-                    doctor: doctor,
-                    items: items,
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
+              if (matchingPatients.isEmpty) {
+                return _buildEmptyState();
+              }
+
+              return Column(
+                children: [
+                  ...paginatedPatients.map((patient) {
+                    // Find hospital info
+                    final hospital = appState.hospitals.firstWhere(
+                      (h) => h.id == patient.hospitalId,
+                      orElse: () => appState.hospitals.isNotEmpty
+                          ? appState.hospitals.first
+                          : Hospital(
+                              id: patient.hospitalId ?? 'HOSP-101',
+                              name: 'MetroHealth Medical Center',
+                              address: '100 Hospital Way, Medical Plaza',
+                              city: 'New York',
+                              state: 'NY',
+                              zip: '10001',
+                              phone: '(212) 555-0100',
+                            ),
+                    );
+
+                    // Find doctor info
+                    final doctor = appState.doctors.firstWhere(
+                      (d) => d.id == patient.assignedDoctorId,
+                      orElse: () => appState.doctors.isNotEmpty
+                          ? appState.doctors.first
+                          : Doctor(
+                              id: patient.assignedDoctorId ?? 'DOC-201',
+                              name: 'Dr. Rahul Verma',
+                              specialty: 'Internal Medicine / Cardiology',
+                              email: '',
+                              phone: '(555) 019-2834',
+                              hospitalId: patient.hospitalId ?? 'HOSP-101',
+                            ),
+                    );
+
+                    // Find patient's own prescription items (fix layout rendering lag)
+                    final patientRxs = appState.prescriptions
+                        .where((rx) => rx.patientId == patient.id)
+                        .toList();
+
+                    final patientItems = appState.prescriptionItems
+                        .where((item) => patientRxs.any((rx) => rx.id == item.prescriptionId))
+                        .toList();
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: _buildPatientBentoCard(
+                        context: context,
+                        appState: appState,
+                        patient: patient,
+                        hospital: hospital,
+                        doctor: doctor,
+                        items: patientItems,
+                      ),
+                    );
+                  }),
+                  if (totalPages > 1) ...[
+                    const SizedBox(height: 10),
+                    _buildPaginationControls(totalPages, activePage),
+                  ],
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
@@ -649,5 +691,112 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildPaginationControls(int totalPages, int activePage) {
+    return BentoCard(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Showing page $activePage of $totalPages',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textMuted,
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left_rounded),
+                color: AppColors.primaryTeal,
+                disabledColor: AppColors.textMuted.withValues(alpha: 0.4),
+                onPressed: activePage > 1
+                    ? () {
+                        setState(() {
+                          _currentPage = activePage - 1;
+                        });
+                      }
+                    : null,
+              ),
+              const SizedBox(width: 8),
+              ..._buildPageButtons(totalPages, activePage),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.chevron_right_rounded),
+                color: AppColors.primaryTeal,
+                disabledColor: AppColors.textMuted.withValues(alpha: 0.4),
+                onPressed: activePage < totalPages
+                    ? () {
+                        setState(() {
+                          _currentPage = activePage + 1;
+                        });
+                      }
+                    : null,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildPageButtons(int totalPages, int activePage) {
+    List<Widget> buttons = [];
+    int startPage = activePage - 2;
+    int endPage = activePage + 2;
+
+    if (startPage < 1) {
+      endPage += (1 - startPage);
+      startPage = 1;
+    }
+    if (endPage > totalPages) {
+      startPage -= (endPage - totalPages);
+      if (startPage < 1) startPage = 1;
+      endPage = totalPages;
+    }
+
+    for (int page = startPage; page <= endPage; page++) {
+      if (page < 1 || page > totalPages) continue;
+      final isSelected = page == activePage;
+      buttons.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: SizedBox(
+            width: 32,
+            height: 32,
+            child: TextButton(
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                backgroundColor: isSelected ? AppColors.primaryTeal : Colors.transparent,
+                foregroundColor: isSelected ? Colors.white : AppColors.textDark,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: isSelected
+                      ? BorderSide.none
+                      : const BorderSide(color: AppColors.metallicBorder),
+                ),
+              ),
+              onPressed: () {
+                setState(() {
+                  _currentPage = page;
+                });
+              },
+              child: Text(
+                '$page',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return buttons;
   }
 }

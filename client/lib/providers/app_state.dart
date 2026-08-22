@@ -328,24 +328,39 @@ class AppState extends ChangeNotifier {
 
     final existingUser = dataService.users.firstWhere(
       (u) =>
+          u.id.toLowerCase() == lower ||
           u.email.toLowerCase() == lower ||
-          (u.phone != null && u.phone!.contains(lower)),
+          (u.phone != null && u.phone!.toLowerCase().contains(lower)) ||
+          (u.patientId != null && u.patientId!.toLowerCase() == lower) ||
+          (u.doctorId != null && u.doctorId!.toLowerCase() == lower),
       orElse: () {
-        final targetRole = isPhoneOrMrn ? UserRole.patient : UserRole.doctor;
-        final displayName = isPhoneOrMrn
+        UserRole targetRole = isPhoneOrMrn ? UserRole.patient : UserRole.doctor;
+        if (lower.contains('pharmacist') || lower.contains('pharm')) {
+          targetRole = UserRole.pharmacist;
+        } else if (lower.contains('doctor') || lower.contains('doc')) {
+          targetRole = UserRole.doctor;
+        } else if (lower.contains('admin')) {
+          targetRole = UserRole.admin;
+        } else if (lower.contains('insurance') || lower.contains('ins')) {
+          targetRole = UserRole.insuranceAgent;
+        }
+
+        final displayName = targetRole == UserRole.patient
             ? 'Patient (MRN: ${inputClean.isEmpty ? 'PT-301' : inputClean})'
-            : (inputClean.isEmpty ? 'Authorized Practitioner' : inputClean.split('@')[0]);
+            : (targetRole == UserRole.pharmacist
+                ? 'Pharmacist (ID: $inputClean)'
+                : (inputClean.isEmpty ? 'Authorized Practitioner' : inputClean.split('@')[0]));
 
         return User(
           id: 'U_${DateTime.now().millisecondsSinceEpoch}',
           name: displayName,
-          email: lower.contains('@') ? lower : 'patient_${DateTime.now().millisecondsSinceEpoch}@alternea.health',
+          email: lower.contains('@') ? lower : 'user_${DateTime.now().millisecondsSinceEpoch}@alternea.health',
           phone: isPhoneOrMrn ? inputClean : null,
           role: targetRole,
           assignedPatientIds: const ['PT-301', 'PT-302'],
           avatarUrl: '',
           title: _getRoleTitle(targetRole),
-          patientId: isPhoneOrMrn ? 'PT-301' : null,
+          patientId: targetRole == UserRole.patient ? 'PT-301' : null,
           doctorId: targetRole == UserRole.doctor ? 'DOC-201' : null,
           hospitalId: 'HOSP-101',
           hospitalName: 'MetroHealth Medical Center',
