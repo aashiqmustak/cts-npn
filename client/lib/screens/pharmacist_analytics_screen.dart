@@ -189,7 +189,7 @@ class _PharmacistAnalyticsScreenState
                                 ),
                                 child: Text(
                                   tf,
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: AppFonts.googleSans(
                                     fontSize: 11,
                                     fontWeight: isSel
                                         ? FontWeight.w800
@@ -211,7 +211,7 @@ class _PharmacistAnalyticsScreenState
                             size: 14, color: Colors.white),
                         label: Text(
                           'Replay',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: AppFonts.googleSans(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
                             fontSize: 11,
@@ -436,7 +436,7 @@ class _PharmacistAnalyticsScreenState
                 ),
                 child: Text(
                   trendText,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: iconColor,
@@ -448,7 +448,7 @@ class _PharmacistAnalyticsScreenState
           const SizedBox(height: 10),
           Text(
             label,
-            style: GoogleFonts.plusJakartaSans(
+            style: AppFonts.googleSans(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
               color: AppColors.textMuted,
@@ -468,7 +468,7 @@ class _PharmacistAnalyticsScreenState
               }
               return Text(
                 displayVal,
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 19,
                   fontWeight: FontWeight.w900,
                   color: AppColors.textDark,
@@ -591,7 +591,7 @@ class _PharmacistAnalyticsScreenState
                         final idx = spot.barIndex.clamp(0, 2);
                         return LineTooltipItem(
                           '${names[idx]}: ${spot.y.toInt()} Units\n',
-                          GoogleFonts.plusJakartaSans(
+                          AppFonts.googleSans(
                             color: colors[idx],
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
@@ -613,7 +613,7 @@ class _PharmacistAnalyticsScreenState
                       reservedSize: 36,
                       getTitlesWidget: (val, meta) => Text(
                         '${val.toInt()}',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: AppFonts.googleSans(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textMuted,
@@ -642,7 +642,7 @@ class _PharmacistAnalyticsScreenState
                             padding: const EdgeInsets.only(top: 6.0),
                             child: Text(
                               months[idx],
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textDark,
@@ -759,7 +759,7 @@ class _PharmacistAnalyticsScreenState
               const SizedBox(width: 6),
               Text(
                 label,
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 10.5,
                   fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
                   color: isActive ? color : AppColors.textMuted,
@@ -938,7 +938,7 @@ class _PharmacistAnalyticsScreenState
           ),
           child: Text(
             pct,
-            style: GoogleFonts.plusJakartaSans(
+            style: AppFonts.googleSans(
               color: Colors.white,
               fontSize: 11,
               fontWeight: FontWeight.w800,
@@ -991,7 +991,7 @@ class _PharmacistAnalyticsScreenState
                   const SizedBox(width: 6),
                   Text(
                     tierName,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppFonts.googleSans(
                       fontSize: 10.5,
                       fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                       color: isSelected ? color : AppColors.textDark,
@@ -1001,7 +1001,7 @@ class _PharmacistAnalyticsScreenState
               ),
               Text(
                 '$share ($units)',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textMuted,
@@ -1046,7 +1046,7 @@ class _PharmacistAnalyticsScreenState
             const SizedBox(width: 4),
             Text(
               'Curved Spline Active',
-              style: GoogleFonts.plusJakartaSans(
+              style: AppFonts.googleSans(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w800,
                 color: AppColors.primaryTeal,
@@ -1102,7 +1102,7 @@ class _PharmacistAnalyticsScreenState
             const SizedBox(width: 4),
             Text(
               '4 Pipeline Stages Active',
-              style: GoogleFonts.plusJakartaSans(
+              style: AppFonts.googleSans(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w800,
                 color: AppColors.primaryTeal,
@@ -1259,7 +1259,7 @@ class _PharmacyFlowDiagramPainter extends CustomPainter {
       final titlePainter = TextPainter(
         text: TextSpan(
           text: stage['title'] as String,
-          style: GoogleFonts.plusJakartaSans(
+          style: AppFonts.googleSans(
             fontSize: isHover ? 12 : 11,
             fontWeight: isHover ? FontWeight.w900 : FontWeight.w700,
             color: isHover ? color : AppColors.textDark,
@@ -1277,7 +1277,7 @@ class _PharmacyFlowDiagramPainter extends CustomPainter {
       final statPainter = TextPainter(
         text: TextSpan(
           text: stage['stat'] as String,
-          style: GoogleFonts.plusJakartaSans(
+          style: AppFonts.googleSans(
             fontSize: 10,
             fontWeight: FontWeight.w700,
             color: isHover ? color : AppColors.textMuted,
@@ -1399,7 +1399,7 @@ class _PharmacySplineWaveGraphState
                           children: [
                             Text(
                               '${widget.monthLabels[_hoveredIndex!]} 2026',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 color: Colors.white70,
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w600,
@@ -1408,7 +1408,7 @@ class _PharmacySplineWaveGraphState
                             const SizedBox(height: 2),
                             Text(
                               '${widget.dataPoints[_hoveredIndex!].toStringAsFixed(1)} Days Lag',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 color: const Color(0xFF00E5FF),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
@@ -1432,7 +1432,7 @@ class _PharmacySplineWaveGraphState
                     final isHov = _hoveredIndex == entry.key;
                     return Text(
                       entry.value,
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppFonts.googleSans(
                         fontSize: 11,
                         fontWeight:
                             isHov ? FontWeight.w900 : FontWeight.w700,

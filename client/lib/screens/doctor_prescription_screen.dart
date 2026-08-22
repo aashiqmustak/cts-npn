@@ -340,7 +340,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
           backgroundColor: AppColors.primaryTeal,
           content: Text(
             'e-Prescription Issued Successfully! Broadcast to in-network Dispense Queue.',
-            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+            style: AppFonts.googleSans(fontWeight: FontWeight.w600),
           ),
         ),
       );
@@ -394,7 +394,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
               Expanded(
                 child: Text(
                   'Add New Patient Client to Roster',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: AppColors.textDark,
@@ -409,7 +409,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
             children: [
               Text(
                 'Patient ID/Name "$initialQuery" is not in your current caseload. Register this patient as your active client?',
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 12.5,
                   color: AppColors.textMuted,
                 ),
@@ -417,7 +417,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
               const SizedBox(height: 16),
               TextField(
                 controller: nameCtrl,
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textDark,
@@ -435,7 +435,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
               TextField(
                 controller: ageCtrl,
                 keyboardType: TextInputType.number,
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textDark,
@@ -452,7 +452,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
               const SizedBox(height: 10),
               TextField(
                 controller: problemCtrl,
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textDark,
@@ -473,7 +473,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
               onPressed: () => Navigator.pop(ctx),
               child: Text(
                 'Cancel',
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontWeight: FontWeight.w700,
                   color: AppColors.textMuted,
                 ),
@@ -497,7 +497,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
               ),
               label: Text(
                 'Add & Select Client',
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                 ),
@@ -601,7 +601,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                   const SizedBox(width: 6),
                   Text(
                     'Dr. Verified Session',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppFonts.googleSans(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
@@ -706,7 +706,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
             const SizedBox(width: 4),
             Text(
               'Verified Location',
-              style: GoogleFonts.inter(
+              style: AppFonts.googleSans(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF10B981),
@@ -736,7 +736,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                 children: [
                   Text(
                     'AUTHORIZED MEDICAL CENTER',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.googleSans(
                       fontSize: 9.5,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textMuted,
@@ -746,7 +746,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                   const SizedBox(height: 2),
                   Text(
                     assignedHospitalName,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.googleSans(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textDark,
@@ -804,7 +804,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
             ),
             label: Text(
               '+ Register Custom ID',
-              style: GoogleFonts.plusJakartaSans(
+              style: AppFonts.googleSans(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -835,7 +835,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
             ),
             label: Text(
               _createNewPatient ? 'Select Existing' : '+ New Patient',
-              style: GoogleFonts.plusJakartaSans(
+              style: AppFonts.googleSans(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
                 color: AppColors.primaryTeal,
@@ -869,7 +869,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                   flex: 3,
                   child: TextField(
                     controller: _patientNameController,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppFonts.googleSans(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textDark,
@@ -891,7 +891,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                   child: TextField(
                     controller: _patientAgeController,
                     keyboardType: TextInputType.number,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppFonts.googleSans(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textDark,
@@ -907,7 +907,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
             const SizedBox(height: 8),
             TextField(
               controller: _currentProblemController,
-              style: GoogleFonts.plusJakartaSans(
+              style: AppFonts.googleSans(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textDark,
@@ -927,7 +927,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
 
           TextField(
             controller: _diagnosisController,
-            style: GoogleFonts.plusJakartaSans(
+            style: AppFonts.googleSans(
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
               color: AppColors.textDark,
@@ -947,7 +947,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
           TextField(
             controller: _notesController,
             maxLines: 2,
-            style: GoogleFonts.plusJakartaSans(
+            style: AppFonts.googleSans(
               fontSize: 12.5,
               fontWeight: FontWeight.w500,
               color: AppColors.textDark,
@@ -992,7 +992,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
           // Quick Drug Chips
           Text(
             'Quick Prescribe Presets:',
-            style: GoogleFonts.plusJakartaSans(
+            style: AppFonts.googleSans(
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
               color: AppColors.textDark,
@@ -1020,7 +1020,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                               ? AppColors.primaryTeal
                               : AppColors.metallicBorder,
                     ),
-                    labelStyle: GoogleFonts.plusJakartaSans(
+                    labelStyle: AppFonts.googleSans(
                       fontSize: 11,
                       fontWeight:
                           isSelected ? FontWeight.w800 : FontWeight.w600,
@@ -1078,7 +1078,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                     controller: controller,
                     focusNode: focusNode,
                     onEditingComplete: onEditingComplete,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppFonts.googleSans(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textDark,
@@ -1124,11 +1124,11 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                               ),
                               title: Text(
                                 drug,
-                                style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
+                                style: AppFonts.googleSans(fontSize: 12.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
                               ),
                               subtitle: Text(
                                 'Formulary Database Verified Drug',
-                                style: GoogleFonts.inter(fontSize: 10.5, color: AppColors.textMuted),
+                                style: AppFonts.googleSans(fontSize: 10.5, color: AppColors.textMuted),
                               ),
                               onTap: () => onSelected(drug),
                             );
@@ -1149,7 +1149,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
               Expanded(
                 child: TextField(
                   controller: _dosageController,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textDark,
@@ -1167,7 +1167,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                       ? _frequencyController.text
                       : _frequencies.first,
                   isExpanded: true,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textDark,
@@ -1199,7 +1199,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
             children: [
               Text(
                 'Supply Duration:',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textDark,
@@ -1227,7 +1227,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                                     ? AppColors.primaryTeal
                                     : AppColors.metallicBorder,
                           ),
-                          labelStyle: GoogleFonts.plusJakartaSans(
+                          labelStyle: AppFonts.googleSans(
                             fontSize: 11,
                             fontWeight:
                                 isSel ? FontWeight.w800 : FontWeight.w600,
@@ -1270,7 +1270,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
               icon: const Icon(Icons.add_circle_rounded, size: 16),
               label: Text(
                 'Add Medicine to Regimen',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                 ),
@@ -1304,7 +1304,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
             const SizedBox(width: 4),
             Text(
               '0 Interactions',
-              style: GoogleFonts.plusJakartaSans(
+              style: AppFonts.googleSans(
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
                 color: AppColors.successText,
@@ -1330,7 +1330,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                   const SizedBox(height: 6),
                   Text(
                     'No medications added yet.',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppFonts.googleSans(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textDark,
@@ -1338,7 +1338,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                   ),
                   Text(
                     'Select preset drugs or enter a custom prescription above.',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppFonts.googleSans(
                       fontSize: 11,
                       color: AppColors.textMuted,
                     ),
@@ -1385,7 +1385,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                           children: [
                             Text(
                               item['medicineName'],
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 12.5,
                                 color: AppColors.textDark,
@@ -1393,7 +1393,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                             ),
                             Text(
                               '${item['dosage']} • ${item['frequency']} • ${item['durationDays']} Days Supply',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 fontSize: 10.5,
                                 color: AppColors.textMuted,
                               ),
@@ -1463,7 +1463,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                       children: [
                         Text(
                           'Digitally Signed by Physician',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: AppFonts.googleSans(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
                             fontSize: 12.5,
@@ -1471,7 +1471,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                         ),
                         Text(
                           'SHA-256 Verified Payload • DEA Compliant',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: AppFonts.googleSans(
                             color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 10.5,
                           ),
@@ -1500,7 +1500,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                   ),
                   label: Text(
                     'Sign & Issue e-Rx',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppFonts.googleSans(
                       fontSize: 12,
                       fontWeight: FontWeight.w900,
                       color: AppColors.primaryDark,
@@ -1632,7 +1632,7 @@ class _SearchablePatientDropdownState
                                 ),
                                 child: Text(
                                   'ID: ${selectedPatient.id}',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.googleSans(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w900,
                                     color: Colors.white,
@@ -1643,7 +1643,7 @@ class _SearchablePatientDropdownState
                               Expanded(
                                 child: Text(
                                   '${selectedPatient.name} (${selectedPatient.currentProblem})',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.googleSans(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.textDark,
@@ -1655,7 +1655,7 @@ class _SearchablePatientDropdownState
                           )
                           : Text(
                             '-- Select Patient ID & Name from Roster --',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.googleSans(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
                               color: AppColors.textMuted,
@@ -1700,14 +1700,14 @@ class _SearchablePatientDropdownState
                   controller: _searchCtrl,
                   focusNode: _searchFocusNode,
                   onChanged: (_) => setState(() {}),
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textDark,
                   ),
                   decoration: InputDecoration(
                     hintText: 'Search inside dropdown by Patient ID or Name...',
-                    hintStyle: GoogleFonts.inter(
+                    hintStyle: AppFonts.googleSans(
                       fontSize: 11.5,
                       color: AppColors.textMuted,
                     ),
@@ -1815,7 +1815,7 @@ class _SearchablePatientDropdownState
                                   ),
                                   child: Text(
                                     '★ CLIENT: ${p.id}',
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.googleSans(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w900,
                                       color: Colors.white,
@@ -1826,7 +1826,7 @@ class _SearchablePatientDropdownState
                                 Expanded(
                                   child: Text(
                                     '${p.name} (Age: ${p.age}) — ${p.currentProblem}',
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.googleSans(
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w800,
                                       color: const Color(0xFF1244A2),
@@ -1876,7 +1876,7 @@ class _SearchablePatientDropdownState
                                 ),
                                 child: Text(
                                   'ID: ${p.id}',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.googleSans(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
                                     color: Colors.white,
@@ -1887,7 +1887,7 @@ class _SearchablePatientDropdownState
                               Expanded(
                                 child: Text(
                                   '${p.name} (Age: ${p.age}) — ${p.currentProblem}',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.googleSans(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w500,
                                     color: AppColors.textDark,

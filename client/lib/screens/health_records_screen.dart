@@ -56,7 +56,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                 icon: const Icon(Icons.cloud_upload_rounded, size: 18, color: Colors.white),
                 label: Text(
                   'Upload Document',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -104,10 +104,10 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                         height: 42,
                         child: TextField(
                           controller: _searchController,
-                          style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textDark),
+                          style: AppFonts.googleSans(fontSize: 13, color: AppColors.textDark),
                           decoration: InputDecoration(
                             hintText: 'Search documents by patient, provider, or record title...',
-                            hintStyle: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: AppColors.textMuted),
+                            hintStyle: AppFonts.googleSans(fontSize: 12.5, color: AppColors.textMuted),
                             prefixIcon: const Icon(Icons.search_rounded, size: 19, color: AppColors.primaryTeal),
                             contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                             filled: true,
@@ -221,7 +221,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                                         children: [
                                           Text(
                                             record['title'] ?? 'Medical Report',
-                                            style: GoogleFonts.plusJakartaSans(
+                                            style: AppFonts.googleSans(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w700,
                                               color: AppColors.textDark,
@@ -236,7 +236,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                                             ),
                                             child: Text(
                                               tag,
-                                              style: GoogleFonts.plusJakartaSans(
+                                              style: AppFonts.googleSans(
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.w700,
                                                 color: tagColor,
@@ -248,7 +248,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                                       const SizedBox(height: 3),
                                       Text(
                                         'Provider: ${record['provider']} • Added: ${record['dateInfo']}',
-                                        style: GoogleFonts.plusJakartaSans(
+                                        style: AppFonts.googleSans(
                                           fontSize: 11.5,
                                           color: AppColors.textMuted,
                                         ),
@@ -342,7 +342,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
             const SizedBox(width: 6),
             Text(
               label,
-              style: GoogleFonts.plusJakartaSans(
+              style: AppFonts.googleSans(
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                 color: isSelected ? Colors.white : AppColors.textDark,
@@ -385,7 +385,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppFonts.googleSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
                         color: AppColors.textDark,
@@ -400,7 +400,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                       ),
                       child: Text(
                         tag,
-                        style: GoogleFonts.plusJakartaSans(
+                        style: AppFonts.googleSans(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
                           color: tagColor,
@@ -412,7 +412,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                 const SizedBox(height: 3),
                 Text(
                   'Provider: $provider • $dateInfo',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 11.5,
                     color: AppColors.textMuted,
                   ),
@@ -435,7 +435,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
             icon: const Icon(Icons.file_download_outlined, size: 16),
             label: Text(
               'Download',
-              style: GoogleFonts.plusJakartaSans(
+              style: AppFonts.googleSans(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
@@ -484,7 +484,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
             const SizedBox(width: 6),
             Text(
               label,
-              style: GoogleFonts.plusJakartaSans(
+              style: AppFonts.googleSans(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textDark,
@@ -531,13 +531,13 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textDark),
               ),
             ],
           ),
           Text(
             count,
-            style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
+            style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
           ),
         ],
       ),
@@ -590,7 +590,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
                     color: AppColors.textDark,
@@ -599,7 +599,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 11,
                     color: AppColors.textMuted,
                     height: 1.3,
@@ -625,7 +625,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           title: Text(
             'Upload Electronic Health Record',
-            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 16),
+            style: AppFonts.googleSans(fontWeight: FontWeight.w800, fontSize: 16),
           ),
           content: SizedBox(
             width: 440,
@@ -634,7 +634,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
               children: [
                 TextField(
                   controller: titleCtrl,
-                  style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                  style: AppFonts.googleSans(fontSize: 13),
                   decoration: const InputDecoration(
                     labelText: 'Document Title',
                     hintText: 'e.g. Lipid Profile Lab Results',
@@ -644,7 +644,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: providerCtrl,
-                  style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                  style: AppFonts.googleSans(fontSize: 13),
                   decoration: const InputDecoration(
                     labelText: 'Provider / Clinic Origin',
                     hintText: 'e.g. Quest Diagnostics',
@@ -655,7 +655,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                 DropdownButtonFormField<String>(
                   value: selectedTag,
                   isExpanded: true,
-                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textDark),
+                  style: AppFonts.googleSans(fontSize: 13, color: AppColors.textDark),
                   decoration: const InputDecoration(labelText: 'Record Category'),
                   items: const [
                     DropdownMenuItem(value: 'Report', child: Text('Clinical Report', overflow: TextOverflow.ellipsis, maxLines: 1)),
@@ -673,7 +673,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+              child: Text('Cancel', style: AppFonts.googleSans(fontWeight: FontWeight.w600)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -699,7 +699,7 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                   );
                 }
               },
-              child: Text('Save Record', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+              child: Text('Save Record', style: AppFonts.googleSans(fontWeight: FontWeight.w700)),
             ),
           ],
         ),

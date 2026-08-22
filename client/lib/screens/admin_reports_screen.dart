@@ -193,7 +193,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
                                 ),
                                 child: Text(
                                   tf,
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: AppFonts.googleSans(
                                     fontSize: 11,
                                     fontWeight: isSel
                                         ? FontWeight.w800
@@ -215,7 +215,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
                             size: 14, color: Colors.white),
                         label: Text(
                           'Replay',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: AppFonts.googleSans(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
                             fontSize: 11,
@@ -441,7 +441,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
                 ),
                 child: Text(
                   trendText,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: iconColor,
@@ -453,7 +453,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
           const SizedBox(height: 10),
           Text(
             label,
-            style: GoogleFonts.plusJakartaSans(
+            style: AppFonts.googleSans(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
               color: AppColors.textMuted,
@@ -477,7 +477,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
               }
               return Text(
                 displayVal,
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 19,
                   fontWeight: FontWeight.w900,
                   color: AppColors.textDark,
@@ -547,7 +547,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
                       ];
                       return BarTooltipItem(
                         '${titles[group.x.toInt()]}\n',
-                        GoogleFonts.plusJakartaSans(
+                        AppFonts.googleSans(
                           color: Colors.white70,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -555,7 +555,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
                         children: [
                           TextSpan(
                             text: '\$${rod.toY.toStringAsFixed(1)}k Savings',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: AppFonts.googleSans(
                               color: const Color(0xFF00E676),
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
@@ -621,7 +621,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
                       interval: 5,
                       getTitlesWidget: (val, meta) => Text(
                         '\$${val.toInt()}k',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: AppFonts.googleSans(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textMuted,
@@ -645,7 +645,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
                             padding: const EdgeInsets.only(top: 6.0),
                             child: Text(
                               titles[idx],
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 fontSize: 11,
                                 fontWeight: _touchedBarIndex == idx
                                     ? FontWeight.w900
@@ -795,7 +795,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
                   children: [
                     Text(
                       '87.4%',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppFonts.googleSans(
                         fontSize: 17,
                         fontWeight: FontWeight.w900,
                         color: AppColors.textDark,
@@ -803,7 +803,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
                     ),
                     Text(
                       'PDC Mean',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppFonts.googleSans(
                         fontSize: 9.5,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textMuted,
@@ -862,7 +862,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
       color: color,
       title: isSelected ? '$label\nSelected' : label,
       radius: radius,
-      titleStyle: GoogleFonts.plusJakartaSans(
+      titleStyle: AppFonts.googleSans(
         color: Colors.white,
         fontSize: isSelected ? 11 : 10.5,
         fontWeight: FontWeight.w800,
@@ -913,7 +913,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
               const SizedBox(width: 6),
               Text(
                 '$label: $percent',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 10.5,
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                   color: isSelected ? color : AppColors.textDark,
@@ -958,7 +958,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
             const SizedBox(width: 4),
             Text(
               'Continuous Wave Motion',
-              style: GoogleFonts.plusJakartaSans(
+              style: AppFonts.googleSans(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w800,
                 color: AppColors.primaryTeal,
@@ -1098,7 +1098,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
                         final idx = spot.barIndex.clamp(0, 2);
                         return LineTooltipItem(
                           '${names[idx]}: ${spot.y.toInt()} Claims\n',
-                          GoogleFonts.plusJakartaSans(
+                          AppFonts.googleSans(
                             color: colors[idx],
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
@@ -1119,7 +1119,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
                       interval: 60,
                       getTitlesWidget: (val, meta) => Text(
                         '${val.toInt()}',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: AppFonts.googleSans(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textMuted,
@@ -1148,7 +1148,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
                             padding: const EdgeInsets.only(top: 6.0),
                             child: Text(
                               months[idx],
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textDark,
@@ -1244,7 +1244,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen>
               const SizedBox(width: 6),
               Text(
                 label,
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 10.5,
                   fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
                   color: isActive ? color : AppColors.textMuted,
@@ -1450,7 +1450,7 @@ class _InteractiveFluidWaveGraphState
                           children: [
                             Text(
                               '${widget.monthLabels[_hoveredIndex!]} 2026',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 color: Colors.white70,
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w600,
@@ -1459,7 +1459,7 @@ class _InteractiveFluidWaveGraphState
                             const SizedBox(height: 2),
                             Text(
                               '${widget.dataPoints[_hoveredIndex!].toStringAsFixed(0)} Days Delay',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 color: const Color(0xFF00E5FF),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
@@ -1483,7 +1483,7 @@ class _InteractiveFluidWaveGraphState
                     final isHov = _hoveredIndex == entry.key;
                     return Text(
                       entry.value,
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppFonts.googleSans(
                         fontSize: 11,
                         fontWeight:
                             isHov ? FontWeight.w900 : FontWeight.w700,

@@ -82,7 +82,7 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
                       children: [
                         Text(
                           'System Administration & User Governance',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: AppFonts.googleSans(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
@@ -92,7 +92,7 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
                         const SizedBox(height: 4),
                         Text(
                           'Manage CMS Monthly formulary ingestion pipelines, plan copay tier rules, and user roles.',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: AppFonts.googleSans(
                             fontSize: 12.5,
                             color: Colors.white.withValues(alpha: 0.88),
                           ),
@@ -124,7 +124,7 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
                     icon: const Icon(Icons.cloud_upload_rounded, size: 18, color: Colors.white),
                     label: Text(
                       'Ingest CMS File',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppFonts.googleSans(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
@@ -155,8 +155,8 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
                   unselectedLabelColor: AppColors.textMuted,
                   indicatorColor: AppColors.primaryTeal,
                   indicatorWeight: 3,
-                  labelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 13),
-                  unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 13),
+                  labelStyle: AppFonts.googleSans(fontWeight: FontWeight.w800, fontSize: 13),
+                  unselectedLabelStyle: AppFonts.googleSans(fontWeight: FontWeight.w600, fontSize: 13),
                   tabs: const [
                     Tab(
                       icon: Icon(Icons.dataset_rounded, size: 18),
@@ -205,7 +205,7 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
           children: [
             Text(
               'CMS Monthly Ingestion Records',
-              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 15),
+              style: AppFonts.googleSans(fontWeight: FontWeight.w800, fontSize: 15),
             ),
             OutlinedButton.icon(
               icon: const Icon(Icons.refresh_rounded, size: 16),
@@ -240,15 +240,15 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(10),
-                    child: Text(r.filename, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
+                    child: Text(r.filename, style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w700)),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10),
-                    child: Text(fmtDate.format(r.uploadDate), style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: AppColors.textMuted)),
+                    child: Text(fmtDate.format(r.uploadDate), style: AppFonts.googleSans(fontSize: 11.5, color: AppColors.textMuted)),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10),
-                    child: Text('${r.totalRecords}', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
+                    child: Text('${r.totalRecords}', style: AppFonts.googleSans(fontSize: 12)),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10),
@@ -257,14 +257,14 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
                       decoration: BoxDecoration(color: AppColors.successBg, borderRadius: BorderRadius.circular(8)),
                       child: Text(
                         r.status.toUpperCase(),
-                        style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.successText),
+                        style: AppFonts.googleSans(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.successText),
                         textAlign: TextAlign.center,
                       ),
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10),
-                    child: Text(r.uploadedBy, style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: AppColors.textMuted)),
+                    child: Text(r.uploadedBy, style: AppFonts.googleSans(fontSize: 11.5, color: AppColors.textMuted)),
                   ),
                 ],
               );
@@ -280,7 +280,7 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
       padding: const EdgeInsets.all(10),
       child: Text(
         text,
-        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 11.5, color: AppColors.textDark),
+        style: AppFonts.googleSans(fontWeight: FontWeight.w800, fontSize: 11.5, color: AppColors.textDark),
       ),
     );
   }
@@ -292,7 +292,7 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
       children: [
         Text(
           'Medicare Part D Copay Tier Configuration',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 15),
+          style: AppFonts.googleSans(fontWeight: FontWeight.w800, fontSize: 15),
         ),
         const SizedBox(height: 14),
         ...rules.map((rule) {
@@ -312,17 +312,17 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
                   children: [
                     Text(
                       'Tier ${rule.tier}: ${rule.name}',
-                      style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 13.5),
+                      style: AppFonts.googleSans(fontWeight: FontWeight.w800, fontSize: 13.5),
                     ),
                     Text(
                       rule.isSpecialty ? 'Coinsurance: ${rule.coinsurancePct.toInt()}%' : 'Standard In-Network Copay',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: AppColors.textMuted),
+                      style: AppFonts.googleSans(fontSize: 11.5, color: AppColors.textMuted),
                     ),
                   ],
                 ),
                 Text(
                   rule.isSpecialty ? '${rule.coinsurancePct.toInt()}% Coinsurance' : '\$${rule.defaultCopay.toInt()} Flat Copay',
-                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 13.5, color: AppColors.primaryTeal),
+                  style: AppFonts.googleSans(fontWeight: FontWeight.w800, fontSize: 13.5, color: AppColors.primaryTeal),
                 ),
               ],
             ),
@@ -339,7 +339,7 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
       children: [
         Text(
           'Active Clinical Users & Prescribers',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 15),
+          style: AppFonts.googleSans(fontWeight: FontWeight.w800, fontSize: 15),
         ),
         const SizedBox(height: 14),
         ...doctors.map((d) {
@@ -362,15 +362,15 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(d.name, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 13.5)),
-                      Text('${d.specialty} • ${d.email}', style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: AppColors.textMuted)),
+                      Text(d.name, style: AppFonts.googleSans(fontWeight: FontWeight.w800, fontSize: 13.5)),
+                      Text('${d.specialty} • ${d.email}', style: AppFonts.googleSans(fontSize: 11.5, color: AppColors.textMuted)),
                     ],
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(color: AppColors.successBg, borderRadius: BorderRadius.circular(8)),
-                  child: Text('Doctor (Verified)', style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.successText)),
+                  child: Text('Doctor (Verified)', style: AppFonts.googleSans(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.successText)),
                 ),
               ],
             ),
@@ -385,13 +385,13 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text('CMS Formulary File Ingestion', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
+        title: Text('CMS Formulary File Ingestion', style: AppFonts.googleSans(fontWeight: FontWeight.w800)),
         content: Text(
           'This initiates an automated background ETL job parsing Medicare Part D formulary TXT/CSV files into Supabase.',
-          style: GoogleFonts.plusJakartaSans(fontSize: 13),
+          style: AppFonts.googleSans(fontSize: 13),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel', style: GoogleFonts.plusJakartaSans())),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel', style: AppFonts.googleSans())),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryTeal),
             onPressed: () {
@@ -400,7 +400,7 @@ class _AdminDataUsersScreenState extends State<AdminDataUsersScreen>
                 const SnackBar(content: Text('ETL Ingestion Job Triggered Successfully!'), backgroundColor: AppColors.primaryTeal),
               );
             },
-            child: Text('Trigger ETL Ingestion', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
+            child: Text('Trigger ETL Ingestion', style: AppFonts.googleSans(fontWeight: FontWeight.w800)),
           ),
         ],
       ),

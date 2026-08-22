@@ -14,8 +14,8 @@ class PdfExportService {
     required Prescription rx,
     required List<PrescriptionItem> items,
   }) async {
-    final fontRegular = await PdfGoogleFonts.interRegular();
-    final fontBold = await PdfGoogleFonts.interBold();
+    final fontRegular = await PdfGoogleFonts.openSansRegular();
+    final fontBold = await PdfGoogleFonts.openSansBold();
 
     pw.MemoryImage? logoImage;
     try {

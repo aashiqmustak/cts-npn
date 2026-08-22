@@ -1,3 +1,4 @@
+import '../theme/app_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -98,7 +99,7 @@ class _EmbeddedGoogleMapViewState extends State<EmbeddedGoogleMapView> {
                   Expanded(
                     child: Text(
                       '📍 Live Location Pin Drop: ${widget.facilityName} (${widget.distance})',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.googleSans(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
@@ -116,7 +117,7 @@ class _EmbeddedGoogleMapViewState extends State<EmbeddedGoogleMapView> {
                       ),
                       child: Text(
                         'Full Screen ↗',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.googleSans(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
@@ -188,7 +189,7 @@ class _EmbeddedGoogleMapViewState extends State<EmbeddedGoogleMapView> {
                   children: [
                     Text(
                       widget.facilityName,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.googleSans(
                         fontSize: 13,
                         fontWeight: FontWeight.w900,
                         color: Colors.white,
@@ -197,7 +198,7 @@ class _EmbeddedGoogleMapViewState extends State<EmbeddedGoogleMapView> {
                     const SizedBox(height: 2),
                     Text(
                       '${widget.address} • ${widget.distance} (${widget.driveTime})',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.googleSans(
                         fontSize: 11,
                         color: const Color(0xFF94A3B8),
                       ),
@@ -217,7 +218,7 @@ class _EmbeddedGoogleMapViewState extends State<EmbeddedGoogleMapView> {
                 icon: const Icon(Icons.navigation_rounded, size: 16),
                 label: Text(
                   'Launch Google Maps GPS',
-                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800),
+                  style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w800),
                 ),
               ),
             ],

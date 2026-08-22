@@ -104,7 +104,7 @@ class _BentoCardState extends State<BentoCard> {
                             children: [
                               Text(
                                 widget.title!,
-                                style: GoogleFonts.inter(
+                                style: AppFonts.googleSans(
                                   fontSize: 17.5,
                                   fontWeight: FontWeight.w800,
                                   color: AppColors.textDark,
@@ -115,7 +115,7 @@ class _BentoCardState extends State<BentoCard> {
                                 const SizedBox(height: 3),
                                 Text(
                                   widget.subtitle!,
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.googleSans(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                     color: AppColors.textMuted,
@@ -224,7 +224,7 @@ class BentoHeroBanner extends StatelessWidget {
                         Flexible(
                           child: Text(
                             title,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.googleSans(
                               fontSize: isWide ? 20 : 17,
                               fontWeight: FontWeight.w800,
                               color: Colors.white,
@@ -245,7 +245,7 @@ class BentoHeroBanner extends StatelessWidget {
                             ),
                             child: Text(
                               statusLabel!,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.googleSans(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.electricMint,
@@ -258,7 +258,7 @@ class BentoHeroBanner extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.googleSans(
                         fontSize: 12,
                         color: Colors.white.withValues(alpha: 0.88),
                         height: 1.35,
@@ -403,7 +403,7 @@ class _BentoMetricTileState extends State<BentoMetricTile> {
                         ),
                         child: Text(
                           widget.trendText!,
-                          style: GoogleFonts.inter(
+                          style: AppFonts.googleSans(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,
                             color: AppColors.primaryTeal,
@@ -421,7 +421,7 @@ class _BentoMetricTileState extends State<BentoMetricTile> {
                 const SizedBox(height: 16),
                 Text(
                   widget.value,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
                     color: AppColors.textDark,
@@ -431,7 +431,7 @@ class _BentoMetricTileState extends State<BentoMetricTile> {
                 const SizedBox(height: 3),
                 Text(
                   widget.label,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textMuted,

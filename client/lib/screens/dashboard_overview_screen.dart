@@ -180,7 +180,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                                 ),
                                 child: Text(
                                   tf,
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: AppFonts.googleSans(
                                     fontSize: 11,
                                     fontWeight: isSel
                                         ? FontWeight.w800
@@ -202,7 +202,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                             size: 14, color: Colors.white),
                         label: Text(
                           'Replay',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: AppFonts.googleSans(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
                             fontSize: 11,
@@ -426,7 +426,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                 ),
                 child: Text(
                   trendText,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: iconColor,
@@ -438,7 +438,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
           const SizedBox(height: 10),
           Text(
             label,
-            style: GoogleFonts.plusJakartaSans(
+            style: AppFonts.googleSans(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
               color: AppColors.textMuted,
@@ -458,7 +458,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
               }
               return Text(
                 displayVal,
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 19,
                   fontWeight: FontWeight.w900,
                   color: AppColors.textDark,
@@ -555,7 +555,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                         if (spot.barIndex == 0) {
                           return LineTooltipItem(
                             'Volume: ${spot.y.toInt()} e-Rx\n',
-                            GoogleFonts.plusJakartaSans(
+                            AppFonts.googleSans(
                               color: const Color(0xFF00E676),
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
@@ -565,7 +565,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                           final days = spot.y / 20.0;
                           return LineTooltipItem(
                             'PA Speed: ${days.toStringAsFixed(1)} Days\n',
-                            GoogleFonts.plusJakartaSans(
+                            AppFonts.googleSans(
                               color: const Color(0xFF00E5FF),
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
@@ -582,7 +582,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                   rightTitles: AxisTitles(
                     axisNameWidget: Text(
                       'PA Days',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppFonts.googleSans(
                           fontSize: 9.5,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF00B4D8)),
@@ -593,7 +593,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                       reservedSize: 36,
                       getTitlesWidget: (val, meta) => Text(
                         '${(val / 20).toInt()}d',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: AppFonts.googleSans(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF00B4D8),
@@ -604,7 +604,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                   leftTitles: AxisTitles(
                     axisNameWidget: Text(
                       'e-Rx Count',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppFonts.googleSans(
                           fontSize: 9.5,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF00E676)),
@@ -615,7 +615,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                       reservedSize: 36,
                       getTitlesWidget: (val, meta) => Text(
                         '${val.toInt()}',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: AppFonts.googleSans(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textMuted,
@@ -644,7 +644,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                             padding: const EdgeInsets.only(top: 6.0),
                             child: Text(
                               months[idx],
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textDark,
@@ -703,7 +703,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
         const SizedBox(width: 5),
         Text(
           label,
-          style: GoogleFonts.plusJakartaSans(
+          style: AppFonts.googleSans(
             fontSize: 10.5,
             fontWeight: FontWeight.w700,
             color: AppColors.textDark,
@@ -763,7 +763,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                         color: AppColors.borderLight.withValues(alpha: 0.4),
                         width: 0.8),
                     tickCount: 3,
-                    ticksTextStyle: GoogleFonts.plusJakartaSans(
+                    ticksTextStyle: AppFonts.googleSans(
                         fontSize: 8, color: AppColors.textMuted),
                     getTitle: (index, angle) {
                       return RadarChartTitle(
@@ -772,7 +772,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                         positionPercentageOffset: 0.15,
                       );
                     },
-                    titleTextStyle: GoogleFonts.plusJakartaSans(
+                    titleTextStyle: AppFonts.googleSans(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textDark,
@@ -856,7 +856,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
             const SizedBox(width: 4),
             Text(
               '14 Mesh Nodes Synchronized',
-              style: GoogleFonts.plusJakartaSans(
+              style: AppFonts.googleSans(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w800,
                 color: AppColors.primaryTeal,
@@ -1011,7 +1011,7 @@ class _DoctorScatterMatrixWidgetState
                           children: [
                             Text(
                               'Patient Age: ${_dots[_hoveredDotIndex!].age} Years',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 color: Colors.white70,
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w600,
@@ -1020,7 +1020,7 @@ class _DoctorScatterMatrixWidgetState
                             const SizedBox(height: 2),
                             Text(
                               'PDC: ${_dots[_hoveredDotIndex!].pdc}% (${_dots[_hoveredDotIndex!].status})',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 color: _dots[_hoveredDotIndex!].color,
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w800,
@@ -1104,7 +1104,7 @@ class _DoctorScatterPainter extends CustomPainter {
       final tp = TextPainter(
         text: TextSpan(
           text: '$p%',
-          style: GoogleFonts.plusJakartaSans(
+          style: AppFonts.googleSans(
               fontSize: 9.5, color: AppColors.textMuted),
         ),
         textDirection: ui.TextDirection.ltr,
@@ -1125,7 +1125,7 @@ class _DoctorScatterPainter extends CustomPainter {
       final tp = TextPainter(
         text: TextSpan(
           text: '${age}y',
-          style: GoogleFonts.plusJakartaSans(
+          style: AppFonts.googleSans(
               fontSize: 10, color: AppColors.textDark, fontWeight: FontWeight.w600),
         ),
         textDirection: ui.TextDirection.ltr,
@@ -1229,7 +1229,7 @@ class _DoctorNetworkNodeMeshWidgetState
                     ),
                     child: Text(
                       _getNodeLabel(_hoveredNodeIndex!),
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppFonts.googleSans(
                         color: const Color(0xFF00E5FF),
                         fontSize: 11.5,
                         fontWeight: FontWeight.w800,

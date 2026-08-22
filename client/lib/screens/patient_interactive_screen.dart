@@ -127,7 +127,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
         backgroundColor: AppColors.primaryTeal,
         content: Text(
           'Medicine added to your daily schedule!',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+          style: AppFonts.googleSans(fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -256,7 +256,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
                                 ),
                                 child: Text(
                                   tf,
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: AppFonts.googleSans(
                                     fontSize: 11,
                                     fontWeight: isSel
                                         ? FontWeight.w800
@@ -278,7 +278,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
                             size: 14, color: Colors.white),
                         label: Text(
                           'Replay',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: AppFonts.googleSans(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
                             fontSize: 11,
@@ -521,7 +521,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
                 ),
                 child: Text(
                   trendText,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: iconColor,
@@ -533,7 +533,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
           const SizedBox(height: 10),
           Text(
             label,
-            style: GoogleFonts.plusJakartaSans(
+            style: AppFonts.googleSans(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
               color: AppColors.textMuted,
@@ -553,7 +553,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
               }
               return Text(
                 displayVal,
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 19,
                   fontWeight: FontWeight.w900,
                   color: AppColors.textDark,
@@ -626,7 +626,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
                       ];
                       return BarTooltipItem(
                         '${days[group.x.toInt()]}\n',
-                        GoogleFonts.plusJakartaSans(
+                        AppFonts.googleSans(
                           color: Colors.white70,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -634,7 +634,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
                         children: [
                           TextSpan(
                             text: '${rod.toY.toInt()} / 3 Doses Taken',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: AppFonts.googleSans(
                               color: const Color(0xFF00E676),
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
@@ -724,7 +724,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
                       interval: 1,
                       getTitlesWidget: (val, meta) => Text(
                         '${val.toInt()}',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: AppFonts.googleSans(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textMuted,
@@ -743,7 +743,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
                             padding: const EdgeInsets.only(top: 6.0),
                             child: Text(
                               days[idx],
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 fontSize: 11,
                                 fontWeight: _touchedBarIndex == idx
                                     ? FontWeight.w900
@@ -893,7 +893,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
                   children: [
                     Text(
                       '94.2%',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppFonts.googleSans(
                         fontSize: 17,
                         fontWeight: FontWeight.w900,
                         color: AppColors.textDark,
@@ -901,7 +901,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
                     ),
                     Text(
                       'Compliance',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppFonts.googleSans(
                         fontSize: 9.5,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textMuted,
@@ -960,7 +960,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
       color: color,
       title: isSelected ? '$label\nSelected' : label,
       radius: radius,
-      titleStyle: GoogleFonts.plusJakartaSans(
+      titleStyle: AppFonts.googleSans(
         color: Colors.white,
         fontSize: isSelected ? 11 : 10.5,
         fontWeight: FontWeight.w800,
@@ -1011,7 +1011,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
               const SizedBox(width: 5),
               Text(
                 '$label: $percent',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 10,
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                   color: isSelected ? color : AppColors.textDark,
@@ -1056,7 +1056,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
             const SizedBox(width: 4),
             Text(
               'Biometric Sync Active',
-              style: GoogleFonts.plusJakartaSans(
+              style: AppFonts.googleSans(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w800,
                 color: AppColors.primaryTeal,
@@ -1196,7 +1196,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
                         final idx = spot.barIndex.clamp(0, 2);
                         return LineTooltipItem(
                           '${names[idx]}: ${spot.y.toInt()} Logs\n',
-                          GoogleFonts.plusJakartaSans(
+                          AppFonts.googleSans(
                             color: colors[idx],
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
@@ -1217,7 +1217,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
                       interval: 20,
                       getTitlesWidget: (val, meta) => Text(
                         '${val.toInt()}',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: AppFonts.googleSans(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textMuted,
@@ -1246,7 +1246,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
                             padding: const EdgeInsets.only(top: 6.0),
                             child: Text(
                               months[idx],
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textDark,
@@ -1342,7 +1342,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
               const SizedBox(width: 6),
               Text(
                 label,
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 10.5,
                   fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
                   color: isActive ? color : AppColors.textMuted,
@@ -1371,7 +1371,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
         ),
         child: Text(
           '$takenCount / ${logs.length} Taken',
-          style: GoogleFonts.plusJakartaSans(
+          style: AppFonts.googleSans(
             fontSize: 11,
             fontWeight: FontWeight.w700,
             color: AppColors.primaryTeal,
@@ -1397,7 +1397,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
               child: Center(
                 child: Text(
                   'No medications scheduled for today.',
-                  style: GoogleFonts.plusJakartaSans(color: AppColors.textMuted),
+                  style: AppFonts.googleSans(color: AppColors.textMuted),
                 ),
               ),
             )
@@ -1434,7 +1434,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
                           children: [
                             Text(
                               log.medicineName,
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 14,
                                 decoration: log.isTaken
@@ -1447,7 +1447,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
                             ),
                             Text(
                               'Scheduled: ${log.scheduledTime} • ${log.notes}',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.googleSans(
                                 fontSize: 11.5,
                                 color: AppColors.textMuted,
                               ),
@@ -1455,7 +1455,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
                             const SizedBox(height: 3),
                             Text(
                               '👨‍⚕️ Prescribed by Dr. Tariq Martin, MD • 🏥 Purchased at MetroHealth Pharmacy Hub (#402)',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.googleSans(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.primaryTeal,
@@ -1475,7 +1475,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
                         ),
                         child: Text(
                           log.isTaken ? 'Taken' : 'Pending',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: AppFonts.googleSans(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,
                             color: log.isTaken
@@ -1503,7 +1503,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
             flex: 3,
             child: TextField(
               controller: _customMedController,
-              style: GoogleFonts.plusJakartaSans(fontSize: 13),
+              style: AppFonts.googleSans(fontSize: 13),
               decoration: const InputDecoration(
                 hintText:
                     'Medicine / Supplement Name (e.g. Vitamin D3 1000 IU)',
@@ -1517,7 +1517,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
             flex: 2,
             child: TextField(
               controller: _timeController,
-              style: GoogleFonts.plusJakartaSans(fontSize: 13),
+              style: AppFonts.googleSans(fontSize: 13),
               decoration: const InputDecoration(
                 hintText: 'Time (e.g. 08:00 AM)',
                 prefixIcon: Icon(Icons.access_time_rounded,
@@ -1529,7 +1529,7 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
           ElevatedButton(
             onPressed: () => _addCustomMedicine(appState),
             child: Text('Add to Schedule',
-                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+                style: AppFonts.googleSans(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -1727,7 +1727,7 @@ class _PatientFluidWaveGraphState extends State<_PatientFluidWaveGraph> {
                           children: [
                             Text(
                               '${widget.monthLabels[_hoveredIndex!]} 2026',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 color: Colors.white70,
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w600,
@@ -1736,7 +1736,7 @@ class _PatientFluidWaveGraphState extends State<_PatientFluidWaveGraph> {
                             const SizedBox(height: 2),
                             Text(
                               '${widget.dataPoints[_hoveredIndex!].toStringAsFixed(1)} mg/dL Mean',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 color: const Color(0xFF00E5FF),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
@@ -1760,7 +1760,7 @@ class _PatientFluidWaveGraphState extends State<_PatientFluidWaveGraph> {
                     final isHov = _hoveredIndex == entry.key;
                     return Text(
                       entry.value,
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppFonts.googleSans(
                         fontSize: 11,
                         fontWeight:
                             isHov ? FontWeight.w900 : FontWeight.w700,
