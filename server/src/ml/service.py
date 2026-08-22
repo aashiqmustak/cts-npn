@@ -1,7 +1,9 @@
 import logging
+import os
 import pathlib
 from typing import Any
 
+import httpx
 import joblib
 import pandas as pd
 
@@ -26,9 +28,19 @@ def _find_file(filename: str, subfolder: str) -> pathlib.Path | None:
 
 
 class MLPredictorService:
-    """Service wrapper for ML models predicting patient adherence & prescription abandonment."""
+    """Service wrapper for ML models predicting patient adherence & prescription abandonment.
 
-    def __init__(self):
+    Supports remote AWS EC2 hosted Litestar ML microservice with automatic local/deterministic fallback.
+    """
+
+    def __init__(self, base_url: str | None = None, request_timeout: float = 5.0):
+        # AWS ML Inference Endpoint (defaults to hosted EC2 service)
+        self.base_url = (
+            base_url or os.getenv("ML_SERVICE_URL", "http://3.238.40.150:8080")
+        ).rstrip("/")
+        self.request_timeout = request_timeout
+
+        # Local model fallbacks
         self.adherence_model = None
         self.adherence_features = []
 
@@ -38,6 +50,36 @@ class MLPredictorService:
 
         self._load_adherence_model()
         self._load_abandonment_model()
+
+    def check_remote_health(self) -> dict[str, Any]:
+        """Queries the remote AWS ML inference endpoint /health."""
+        if not self.base_url:
+            return {"connected": False, "reason": "No ML_SERVICE_URL configured"}
+        try:
+            with httpx.Client(timeout=3.0) as client:
+                res = client.get(f"{self.base_url}/health")
+                if res.status_code == 200:
+                    data = res.json()
+                    return {
+                        "connected": True,
+                        "url": self.base_url,
+                        "status": data.get("status", "healthy"),
+                        "models_loaded": data.get("models_loaded", {}),
+                        "version": data.get("version", "1.0.0"),
+                    }
+                return {
+                    "connected": False,
+                    "url": self.base_url,
+                    "status_code": res.status_code,
+                    "error": res.text,
+                }
+        except Exception as exc:  # noqa: BLE001
+            logger.debug(f"Remote ML health check failed ({self.base_url}): {exc}")
+            return {
+                "connected": False,
+                "url": self.base_url,
+                "error": str(exc),
+            }
 
     def _load_adherence_model(self) -> None:
         path = _find_file("adherence_model.pkl", "adherence")
@@ -49,11 +91,13 @@ class MLPredictorService:
                     self.adherence_features = data.get("features", [])
                 else:
                     self.adherence_model = data
-                logger.info(f"Loaded adherence model from {path}")
+                logger.info(f"Loaded local adherence model from {path}")
             except Exception as exc:  # noqa: BLE001
-                logger.warning(f"Error loading adherence model: {exc}")
+                logger.warning(f"Error loading local adherence model: {exc}")
         else:
-            logger.warning("Adherence model file not found.")
+            logger.info(
+                "Local adherence model file not present (using AWS remote ML service)."
+            )
 
     def _load_abandonment_model(self) -> None:
         path = _find_file("abandonment_best_model_improved.pkl", "abundant")
@@ -68,11 +112,13 @@ class MLPredictorService:
                     )
                 else:
                     self.abandonment_model = data
-                logger.info(f"Loaded abandonment model from {path}")
+                logger.info(f"Loaded local abandonment model from {path}")
             except Exception as exc:  # noqa: BLE001
-                logger.warning(f"Error loading abandonment model: {exc}")
+                logger.warning(f"Error loading local abandonment model: {exc}")
         else:
-            logger.warning("Abandonment model file not found.")
+            logger.info(
+                "Local abandonment model file not present (using AWS remote ML service)."
+            )
 
     def predict_adherence(
         self, inp: AdherencePredictionInput
@@ -89,6 +135,65 @@ class MLPredictorService:
         if inp.out_of_pocket_cost > 50:
             drivers.append(f"High out-of-pocket cost (${inp.out_of_pocket_cost:.2f})")
 
+        # 1. Primary: Remote AWS EC2 ML Service
+        if self.base_url:
+            try:
+                payload = {
+                    "previous_pdc_180": inp.previous_pdc_180,
+                    "previous_pdc_365": inp.previous_pdc_365,
+                    "refill_gap_days_90": inp.refill_gap_days_90,
+                    "refill_gap_days_180": inp.refill_gap_days_180,
+                    "access_friction_score": inp.access_friction_score,
+                    "out_of_pocket_cost": inp.out_of_pocket_cost,
+                    "estimated_patient_cost": inp.estimated_patient_cost,
+                    "concurrent_medications_count": inp.concurrent_medications_count,
+                    "current_medication_count": inp.current_medication_count,
+                    "prior_medication_count": inp.prior_medication_count,
+                    "active_chronic_count": inp.active_chronic_count,
+                    "formulary_tier": inp.formulary_tier,
+                    "prior_auth_required": inp.prior_auth_required,
+                    "access_friction_level": inp.access_friction_level,
+                }
+                with httpx.Client(timeout=self.request_timeout) as client:
+                    resp = client.post(
+                        f"{self.base_url}/predict/adherence", json=payload
+                    )
+                    if resp.status_code == 200 or resp.status_code == 201:
+                        data = resp.json()
+                        pred_str = str(
+                            data.get("primary_risk_level")
+                            or data.get("prediction", "LOW")
+                        ).upper()
+                        if pred_str not in {"LOW", "MEDIUM", "HIGH"}:
+                            pred_str = "LOW"
+
+                        risk_scores_raw = data.get("risk_scores", {})
+                        # Normalize percentages (e.g. 53.18) to 0.0 - 1.0 probabilities
+                        class_probs = {
+                            str(k): round(v / 100.0 if v > 1.0 else v, 4)
+                            for k, v in risk_scores_raw.items()
+                        }
+                        adherence_score = (
+                            class_probs.get("LOW", 0.75)
+                            if "LOW" in class_probs
+                            else float(
+                                max(class_probs.values()) if class_probs else 0.75
+                            )
+                        )
+
+                        return AdherencePredictionOutput(
+                            predicted_risk_level=pred_str,  # type: ignore[arg-type]
+                            adherence_score=round(adherence_score, 4),
+                            class_probabilities=class_probs,
+                            key_drivers=drivers
+                            or ["Adherence baseline within expected clinical ranges."],
+                        )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    f"AWS ML adherence prediction failed ({self.base_url}): {exc}. Attempting local fallback."
+                )
+
+        # 2. Secondary: Local Scikit-learn Model
         if self.adherence_model is not None and self.adherence_features:
             try:
                 row_dict = {
@@ -134,9 +239,9 @@ class MLPredictorService:
                     or ["Adherence baseline within expected clinical ranges."],
                 )
             except Exception as exc:  # noqa: BLE001
-                logger.warning(f"Adherence model inference failed: {exc}")
+                logger.warning(f"Local adherence model inference failed: {exc}")
 
-        # Deterministic clinical fallback
+        # 3. Tertiary: Deterministic clinical fallback
         adh_score = max(
             0.1, min(1.0, inp.previous_pdc_180 - (inp.refill_gap_days_90 * 0.005))
         )
@@ -165,6 +270,58 @@ class MLPredictorService:
                 f"Patient has history of {inp.prior_abandonment_count} previous prescription abandonment(s)"
             )
 
+        # 1. Primary: Remote AWS EC2 ML Service
+        if self.base_url:
+            try:
+                payload = {
+                    "out_of_pocket_cost": inp.out_of_pocket_cost,
+                    "estimated_patient_cost": inp.estimated_patient_cost,
+                    "formulary_tier": inp.formulary_tier,
+                    "prior_auth_required": inp.prior_auth_required,
+                    "refill_gap_days_90": inp.refill_gap_days_90,
+                    "previous_pdc_180": inp.previous_pdc_180,
+                    "active_chronic_count": 1,
+                    "access_friction_score": inp.access_friction_score,
+                    "features": {},
+                }
+                with httpx.Client(timeout=self.request_timeout) as client:
+                    resp = client.post(
+                        f"{self.base_url}/predict/abandonment", json=payload
+                    )
+                    if resp.status_code == 200 or resp.status_code == 201:
+                        data = resp.json()
+                        raw_prob = float(data.get("abandonment_probability", 0.0))
+                        prob = raw_prob / 100.0 if raw_prob > 1.0 else raw_prob
+                        is_likely = bool(
+                            data.get(
+                                "is_abandonment_likely",
+                                prob >= self.abandonment_threshold,
+                            )
+                        )
+                        category = str(data.get("risk_category", "LOW")).upper()
+                        if category not in {"LOW", "MEDIUM", "HIGH"}:
+                            category = (
+                                "HIGH"
+                                if is_likely
+                                else ("MEDIUM" if prob > 0.25 else "LOW")
+                            )
+
+                        return AbandonmentPredictionOutput(
+                            abandonment_risk_level=category,  # type: ignore[arg-type]
+                            abandonment_probability=round(prob, 4),
+                            optimal_threshold=self.abandonment_threshold,
+                            will_abandon=is_likely,
+                            risk_drivers=drivers
+                            or [
+                                "Cost and access friction within acceptable tolerance."
+                            ],
+                        )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    f"AWS ML abandonment prediction failed ({self.base_url}): {exc}. Attempting local fallback."
+                )
+
+        # 2. Secondary: Local Scikit-learn Model
         if self.abandonment_model is not None and self.abandonment_features:
             try:
                 row_dict = {
@@ -197,9 +354,9 @@ class MLPredictorService:
                     or ["Cost and access friction within acceptable tolerance."],
                 )
             except Exception as exc:  # noqa: BLE001
-                logger.warning(f"Abandonment model inference failed: {exc}")
+                logger.warning(f"Local abandonment model inference failed: {exc}")
 
-        # Deterministic clinical fallback
+        # 3. Tertiary: Deterministic clinical fallback
         base_prob = 0.08
         if inp.out_of_pocket_cost > 40:
             base_prob += 0.25
