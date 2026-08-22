@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel
 
 
@@ -12,7 +11,9 @@ class InvoiceRequest(BaseModel):
     prescribing_physician: str | None = "Dr. Lauren Sharma, MD"
     medical_facility: str | None = "Ohio State University Wexner Medical Center"
     diagnosis: str | None = "Epilepsy / Seizure Disorder"
-    dosage_regimen: str | None = "1 Tablet Oral - Twice Daily (Take as directed by physician)"
+    dosage_regimen: str | None = (
+        "1 Tablet Oral - Twice Daily (Take as directed by physician)"
+    )
     days_supply: int | None = 30
     original_drug_cost: float | None = None
     copay_discount: float | None = 0.0
@@ -41,4 +42,4 @@ class InvoiceResponse(BaseModel):
     payment_status: str
     approval_status: str
     digital_stamp: str
-    html_invoice: str | None = None
+    html_invoice: str | None = None

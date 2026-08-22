@@ -14,13 +14,34 @@ def generate_invoice_html(invoice: dict) -> str:
         rx_id = f"#{rx_id}"
 
     patient_id = escape(str(invoice.get("patient_id", "PAT_94021")))
-    physician = escape(str(invoice.get("prescribing_physician", "Dr. Lauren Sharma, MD")))
-    facility = escape(str(invoice.get("medical_facility", "Ohio State University Wexner Medical Center")))
+    physician = escape(
+        str(invoice.get("prescribing_physician", "Dr. Lauren Sharma, MD"))
+    )
+    facility = escape(
+        str(
+            invoice.get(
+                "medical_facility", "Ohio State University Wexner Medical Center"
+            )
+        )
+    )
     diagnosis = escape(str(invoice.get("diagnosis", "Epilepsy / Seizure Disorder")))
-    
+
     orig_drug = escape(str(invoice.get("original_drug", "Keppra 500mg")))
-    alt_drug = escape(str(invoice.get("alternative_drug", "Levetiracetam 500mg (Antiepileptic Therapy)")))
-    regimen = escape(str(invoice.get("dosage_regimen", "1 Tablet Oral - Twice Daily (Take as directed by physician)")))
+    alt_drug = escape(
+        str(
+            invoice.get(
+                "alternative_drug", "Levetiracetam 500mg (Antiepileptic Therapy)"
+            )
+        )
+    )
+    regimen = escape(
+        str(
+            invoice.get(
+                "dosage_regimen",
+                "1 Tablet Oral - Twice Daily (Take as directed by physician)",
+            )
+        )
+    )
     days_supply = int(invoice.get("days_supply", 30))
 
     tablet_cost = float(invoice.get("tablet_cost", 35.00))
@@ -29,11 +50,25 @@ def generate_invoice_html(invoice: dict) -> str:
     patient_payable = float(invoice.get("patient_payable", 5.00))
     orig_cost = float(invoice.get("original_drug_cost", max(tablet_cost * 2.5, 240.00)))
     savings = float(invoice.get("savings", max(0.0, orig_cost - patient_payable)))
-    savings_pct = float(invoice.get("savings_percentage", round((savings / orig_cost * 100) if orig_cost > 0 else 0.0, 1)))
+    savings_pct = float(
+        invoice.get(
+            "savings_percentage",
+            round((savings / orig_cost * 100) if orig_cost > 0 else 0.0, 1),
+        )
+    )
 
-    payment_status = escape(str(invoice.get("payment_status", "NO PATIENT PAYMENT" if patient_payable == 0 else "PATIENT PAYMENT")))
+    payment_status = escape(
+        str(
+            invoice.get(
+                "payment_status",
+                "NO PATIENT PAYMENT" if patient_payable == 0 else "PATIENT PAYMENT",
+            )
+        )
+    )
     approval_status = escape(str(invoice.get("approval_status", "APPROVED")))
-    digital_stamp = escape(str(invoice.get("digital_stamp", "SHA256-7D8E2A91F4B03C8E-981A4D02")))
+    digital_stamp = escape(
+        str(invoice.get("digital_stamp", "SHA256-7D8E2A91F4B03C8E-981A4D02"))
+    )
 
     is_free = patient_payable <= 0.0001
     payment_badge_color = "#059669" if is_free else "#1E3A8A"
@@ -601,7 +636,9 @@ def generate_invoice_html(invoice: dict) -> str:
                     <div class="medication-name">{alt_drug}</div>
                     <div class="medication-sub">
                         <strong>Dosage Regimen:</strong> {regimen}<br>
-                        <span style="color: #059669; font-weight: 600; font-size: 12px;">Substitution for: {orig_drug} (Clinically Equivalent / Tier-1 Formulary)</span>
+                        <span style="color: #059669; font-weight: 600; font-size: 12px;">Substitution for: {
+        orig_drug
+    } (Clinically Equivalent / Tier-1 Formulary)</span>
                     </div>
                 </div>
                 <div class="medication-badge">
@@ -626,7 +663,9 @@ def generate_invoice_html(invoice: dict) -> str:
                         <tr>
                             <td>
                                 <strong>Original Brand Retail Reference</strong>
-                                <div style="font-size: 12px; color: #64748B;">{orig_drug} (Standard Out-of-Pocket Cost)</div>
+                                <div style="font-size: 12px; color: #64748B;">{
+        orig_drug
+    } (Standard Out-of-Pocket Cost)</div>
                             </td>
                             <td class="amount" style="text-decoration: line-through; color: #94A3B8;">
                                 ${orig_cost:.2f}
@@ -635,7 +674,9 @@ def generate_invoice_html(invoice: dict) -> str:
                         <tr>
                             <td>
                                 <strong>Alternative Medication Retail Price</strong>
-                                <div style="font-size: 12px; color: #64748B;">{alt_drug} (Generic Unit Rate)</div>
+                                <div style="font-size: 12px; color: #64748B;">{
+        alt_drug
+    } (Generic Unit Rate)</div>
                             </td>
                             <td class="amount">
                                 ${tablet_cost:.2f}
@@ -650,7 +691,8 @@ def generate_invoice_html(invoice: dict) -> str:
                                 -${insurance_cov:.2f}
                             </td>
                         </tr>
-                        {f'''<tr>
+                        {
+        f'''<tr>
                             <td>
                                 <strong>Co-Pay Assistance & Generic Discount</strong>
                                 <div style="font-size: 12px; color: #059669;">Applied Manufacturer / Clinic Co-Pay Relief</div>
@@ -658,7 +700,10 @@ def generate_invoice_html(invoice: dict) -> str:
                             <td class="amount deduction">
                                 -${copay_discount:.2f}
                             </td>
-                        </tr>''' if copay_discount > 0 else ''}
+                        </tr>'''
+        if copay_discount > 0
+        else ""
+    }
                         <tr class="final-cost-row">
                             <td>
                                 <div class="final-cost-title">
@@ -668,7 +713,8 @@ def generate_invoice_html(invoice: dict) -> str:
                                     FINAL COST FOR ALTERNATIVE (PATIENT PAYABLE)
                                 </div>
                                 <div class="final-cost-savings">
-                                    Total Patient Savings: ${savings:.2f} ({savings_pct:.1f}% Less Than Brand)
+                                    Total Patient Savings: ${savings:.2f} ({
+        savings_pct:.1f}% Less Than Brand)
                                 </div>
                             </td>
                             <td class="final-cost-amount">
@@ -681,10 +727,14 @@ def generate_invoice_html(invoice: dict) -> str:
 
             <!-- 5. Status Badges -->
             <div class="status-grid">
-                <div class="status-box" style="background: {payment_badge_bg}; border-color: {payment_badge_color}33;">
+                <div class="status-box" style="background: {
+        payment_badge_bg
+    }; border-color: {payment_badge_color}33;">
                     <div class="status-box-label">Payment Adjudication Status</div>
                     <div class="status-box-val" style="color: {payment_badge_color};">
-                        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:{payment_badge_color};"></span>
+                        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:{
+        payment_badge_color
+    };"></span>
                         {payment_status}
                     </div>
                 </div>

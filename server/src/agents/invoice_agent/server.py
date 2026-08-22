@@ -15,7 +15,7 @@ from agents.invoice_agent.app.router import router as invoice_router
 app = FastAPI(
     title="PharmaAssist Invoice Agent",
     version="1.0.0",
-    description="Generates alternative medicine cost invoices"
+    description="Generates alternative medicine cost invoices",
 )
 
 app.include_router(invoice_router)
@@ -23,15 +23,8 @@ app.include_router(invoice_router)
 
 @app.get("/")
 def root():
-    return {
-        "service": "PharmaAssist Invoice Agent",
-        "status": "running"
-    }
+    return {"service": "PharmaAssist Invoice Agent", "status": "running"}
 
 
 if __name__ == "__main__":
-    uvicorn.run(
-        app,
-        host="127.0.0.1",
-        port=8005
-    )
+    uvicorn.run(app, host="127.0.0.1", port=8005)

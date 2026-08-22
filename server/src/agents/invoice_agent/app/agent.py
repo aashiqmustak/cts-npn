@@ -3,7 +3,6 @@ import uuid
 
 
 class InvoiceAgent:
-
     def generate_invoice(
         self,
         patient_id: str,
@@ -36,7 +35,9 @@ class InvoiceAgent:
         effective_insurance = min(insurance_coverage, tablet_cost)
         remaining_after_insurance = max(0.0, tablet_cost - effective_insurance)
         effective_copay = min(copay_discount, remaining_after_insurance)
-        patient_payable = round(max(0.0, remaining_after_insurance - effective_copay), 2)
+        patient_payable = round(
+            max(0.0, remaining_after_insurance - effective_copay), 2
+        )
 
         # Baseline original brand cost if not provided (typical 2.5x to 4x of generic)
         if original_drug_cost is not None:
@@ -47,19 +48,30 @@ class InvoiceAgent:
             orig_cost = round(max(tablet_cost * 2.5, tablet_cost + 45.0), 2)
 
         savings = round(max(0.0, orig_cost - patient_payable), 2)
-        savings_percentage = round((savings / orig_cost * 100), 1) if orig_cost > 0 else 0.0
+        savings_percentage = (
+            round((savings / orig_cost * 100), 1) if orig_cost > 0 else 0.0
+        )
 
         inv_suffix = uuid.uuid4().hex[:5].upper()
         invoice_id = f"INV_{inv_suffix}"
-        
-        rx_id = prescription_id if prescription_id else f"RX_{uuid.uuid4().hex[:5].upper()}"
-        if not rx_id.startswith("#") and not rx_id.startswith("RX_") and not rx_id.startswith("RX-"):
+
+        rx_id = (
+            prescription_id if prescription_id else f"RX_{uuid.uuid4().hex[:5].upper()}"
+        )
+        if (
+            not rx_id.startswith("#")
+            and not rx_id.startswith("RX_")
+            and not rx_id.startswith("RX-")
+        ):
             rx_id = f"RX_{rx_id}"
 
         doc_name = prescribing_physician or "Dr. Lauren Sharma, MD"
         facility = medical_facility or "Ohio State University Wexner Medical Center"
         diag = diagnosis or "Epilepsy / Seizure Disorder"
-        regimen = dosage_regimen or "1 Tablet Oral - Twice Daily (Take as directed by physician)"
+        regimen = (
+            dosage_regimen
+            or "1 Tablet Oral - Twice Daily (Take as directed by physician)"
+        )
 
         # Generate cryptographic signature stamp
         stamp_raw = f"{invoice_id}:{rx_id}:{patient_id}:{alternative_drug}:{patient_payable}:{approval_status}"
@@ -85,9 +97,7 @@ class InvoiceAgent:
             "savings": savings,
             "savings_percentage": savings_percentage,
             "payment_status": (
-                "NO PATIENT PAYMENT"
-                if patient_payable == 0
-                else "PATIENT PAYMENT"
+                "NO PATIENT PAYMENT" if patient_payable == 0 else "PATIENT PAYMENT"
             ),
             "approval_status": approval_status,
             "digital_stamp": digital_stamp,
@@ -95,6 +105,7 @@ class InvoiceAgent:
 
         if include_html:
             from .invoice_template import generate_invoice_html
+
             result["html_invoice"] = generate_invoice_html(result)
 
-        return result
+        return result

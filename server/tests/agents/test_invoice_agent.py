@@ -1,11 +1,12 @@
-import unittest
-import sys
 import os
+import sys
+import unittest
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src')))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+)
 
 from agents.invoice_agent.app.agent import InvoiceAgent
-from agents.invoice_agent.app.invoice_template import generate_invoice_html
 from agents.invoice_agent.app.schemas import InvoiceRequest, InvoiceResponse
 
 
@@ -15,112 +16,114 @@ class TestInvoiceAgent(unittest.TestCase):
 
     def test_generate_invoice_basic(self):
         result = self.agent.generate_invoice(
-            patient_id='PAT-00181',
-            original_drug='Keppra 500mg',
-            alternative_drug='Levetiracetam 500mg (Antiepileptic Therapy)',
+            patient_id="PAT-00181",
+            original_drug="Keppra 500mg",
+            alternative_drug="Levetiracetam 500mg (Antiepileptic Therapy)",
             tablet_cost=35.0,
             insurance_coverage=30.0,
         )
 
-        self.assertTrue(result['invoice_id'].startswith('INV_'))
-        self.assertEqual(result['patient_id'], 'PAT-00181')
-        self.assertEqual(result['original_drug'], 'Keppra 500mg')
-        self.assertEqual(result['alternative_drug'], 'Levetiracetam 500mg (Antiepileptic Therapy)')
-        self.assertEqual(result['tablet_cost'], 35.0)
-        self.assertEqual(result['insurance_coverage'], 30.0)
-        self.assertEqual(result['patient_payable'], 5.0)
-        self.assertEqual(result['payment_status'], 'PATIENT PAYMENT')
-        self.assertGreater(result['savings'], 0.0)
-        self.assertGreater(result['savings_percentage'], 0.0)
-        self.assertTrue(result['digital_stamp'].startswith('SHA256-'))
+        self.assertTrue(result["invoice_id"].startswith("INV_"))
+        self.assertEqual(result["patient_id"], "PAT-00181")
+        self.assertEqual(result["original_drug"], "Keppra 500mg")
+        self.assertEqual(
+            result["alternative_drug"], "Levetiracetam 500mg (Antiepileptic Therapy)"
+        )
+        self.assertEqual(result["tablet_cost"], 35.0)
+        self.assertEqual(result["insurance_coverage"], 30.0)
+        self.assertEqual(result["patient_payable"], 5.0)
+        self.assertEqual(result["payment_status"], "PATIENT PAYMENT")
+        self.assertGreater(result["savings"], 0.0)
+        self.assertGreater(result["savings_percentage"], 0.0)
+        self.assertTrue(result["digital_stamp"].startswith("SHA256-"))
 
     def test_zero_patient_payable(self):
         result = self.agent.generate_invoice(
-            patient_id='PAT-99999',
-            original_drug='Brand Drug',
-            alternative_drug='Generic Drug',
+            patient_id="PAT-99999",
+            original_drug="Brand Drug",
+            alternative_drug="Generic Drug",
             tablet_cost=25.0,
             insurance_coverage=30.0,  # Coverage exceeds tablet cost
         )
-        self.assertEqual(result['patient_payable'], 0.0)
-        self.assertEqual(result['insurance_coverage'], 25.0)
-        self.assertEqual(result['payment_status'], 'NO PATIENT PAYMENT')
+        self.assertEqual(result["patient_payable"], 0.0)
+        self.assertEqual(result["insurance_coverage"], 25.0)
+        self.assertEqual(result["payment_status"], "NO PATIENT PAYMENT")
 
     def test_copay_discount_calculation(self):
         result = self.agent.generate_invoice(
-            patient_id='PAT-00181',
-            original_drug='Keppra 500mg',
-            alternative_drug='Levetiracetam 500mg',
+            patient_id="PAT-00181",
+            original_drug="Keppra 500mg",
+            alternative_drug="Levetiracetam 500mg",
             tablet_cost=50.0,
             insurance_coverage=30.0,
             copay_discount=15.0,
         )
         # 50 - 30 = 20 remaining, - 15 copay discount = 5.0
-        self.assertEqual(result['patient_payable'], 5.0)
-        self.assertEqual(result['copay_discount'], 15.0)
+        self.assertEqual(result["patient_payable"], 5.0)
+        self.assertEqual(result["copay_discount"], 15.0)
 
     def test_negative_values_raise_error(self):
         with self.assertRaises(ValueError):
             self.agent.generate_invoice(
-                patient_id='PAT-1',
-                original_drug='A',
-                alternative_drug='B',
+                patient_id="PAT-1",
+                original_drug="A",
+                alternative_drug="B",
                 tablet_cost=-10.0,
-                insurance_coverage=0.0
+                insurance_coverage=0.0,
             )
 
         with self.assertRaises(ValueError):
             self.agent.generate_invoice(
-                patient_id='PAT-1',
-                original_drug='A',
-                alternative_drug='B',
+                patient_id="PAT-1",
+                original_drug="A",
+                alternative_drug="B",
                 tablet_cost=10.0,
-                insurance_coverage=-5.0
+                insurance_coverage=-5.0,
             )
 
     def test_html_template_contains_all_prescription_elements(self):
         invoice_data = self.agent.generate_invoice(
-            patient_id='PAT-00181',
-            original_drug='Keppra 500mg (Brand)',
-            alternative_drug='Levetiracetam 500mg (Antiepileptic Therapy)',
+            patient_id="PAT-00181",
+            original_drug="Keppra 500mg (Brand)",
+            alternative_drug="Levetiracetam 500mg (Antiepileptic Therapy)",
             tablet_cost=35.0,
             insurance_coverage=30.0,
-            prescribing_physician='Dr. Lauren Sharma, MD',
-            medical_facility='Ohio State University Wexner Medical Center',
-            diagnosis='Epilepsy / Seizure Disorder',
-            dosage_regimen='1 Tablet Oral - Twice Daily (Take as directed by physician)',
+            prescribing_physician="Dr. Lauren Sharma, MD",
+            medical_facility="Ohio State University Wexner Medical Center",
+            diagnosis="Epilepsy / Seizure Disorder",
+            dosage_regimen="1 Tablet Oral - Twice Daily (Take as directed by physician)",
             days_supply=30,
             original_drug_cost=240.0,
-            prescription_id='RX_00181',
-            include_html=True
+            prescription_id="RX_00181",
+            include_html=True,
         )
 
-        html = invoice_data['html_invoice']
-        self.assertIn('ALTERNEA HEALTH CLINICAL NETWORK', html)
-        self.assertIn('FHIR v4.0 VERIFIED', html)
-        self.assertIn('#RX_00181', html)
-        self.assertIn('Dr. Lauren Sharma, MD', html)
-        self.assertIn('Ohio State University Wexner Medical Center', html)
-        self.assertIn('Epilepsy / Seizure Disorder', html)
-        self.assertIn('Levetiracetam 500mg (Antiepileptic Therapy)', html)
-        self.assertIn('30 Days Supply', html)
-        self.assertIn('FINAL COST FOR ALTERNATIVE (PATIENT PAYABLE)', html)
-        self.assertIn('.00', html)
-        self.assertIn('SHA-256 DIGITAL CLINICAL SIGNATURE STAMP', html)
-        self.assertIn('ALTERNEA HEALTH NETWORK', html)
-        self.assertIn('OFFICIAL CLINICAL E-PRESCRIPTION WATERMARK', html)
-        self.assertIn('Generated by Alternea Health Telemetry', html)
-        self.assertIn('Page 1 of 1', html)
+        html = invoice_data["html_invoice"]
+        self.assertIn("ALTERNEA HEALTH CLINICAL NETWORK", html)
+        self.assertIn("FHIR v4.0 VERIFIED", html)
+        self.assertIn("#RX_00181", html)
+        self.assertIn("Dr. Lauren Sharma, MD", html)
+        self.assertIn("Ohio State University Wexner Medical Center", html)
+        self.assertIn("Epilepsy / Seizure Disorder", html)
+        self.assertIn("Levetiracetam 500mg (Antiepileptic Therapy)", html)
+        self.assertIn("30 Days Supply", html)
+        self.assertIn("FINAL COST FOR ALTERNATIVE (PATIENT PAYABLE)", html)
+        self.assertIn(".00", html)
+        self.assertIn("SHA-256 DIGITAL CLINICAL SIGNATURE STAMP", html)
+        self.assertIn("ALTERNEA HEALTH NETWORK", html)
+        self.assertIn("OFFICIAL CLINICAL E-PRESCRIPTION WATERMARK", html)
+        self.assertIn("Generated by Alternea Health Telemetry", html)
+        self.assertIn("Page 1 of 1", html)
 
     def test_pydantic_schema_validation(self):
         req = InvoiceRequest(
-            patient_id='PAT-101',
-            original_drug='Keppra',
-            alternative_drug='Levetiracetam',
+            patient_id="PAT-101",
+            original_drug="Keppra",
+            alternative_drug="Levetiracetam",
             tablet_cost=35.0,
             insurance_coverage=30.0,
         )
-        self.assertEqual(req.prescribing_physician, 'Dr. Lauren Sharma, MD')
+        self.assertEqual(req.prescribing_physician, "Dr. Lauren Sharma, MD")
         self.assertEqual(req.days_supply, 30)
 
         inv_dict = self.agent.generate_invoice(
@@ -132,8 +135,8 @@ class TestInvoiceAgent(unittest.TestCase):
         )
         res = InvoiceResponse(**inv_dict)
         self.assertEqual(res.patient_payable, 5.0)
-        self.assertTrue(res.digital_stamp.startswith('SHA256-'))
+        self.assertTrue(res.digital_stamp.startswith("SHA256-"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

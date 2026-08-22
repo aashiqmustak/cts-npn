@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Query
 from fastapi.responses import HTMLResponse
 
@@ -6,20 +5,14 @@ from .agent import InvoiceAgent
 from .invoice_template import generate_invoice_html
 from .schemas import InvoiceRequest, InvoiceResponse
 
-router = APIRouter(
-    prefix="/invoice",
-    tags=["Invoice Agent"]
-)
+router = APIRouter(prefix="/invoice", tags=["Invoice Agent"])
 
 agent = InvoiceAgent()
 
 
 @router.get("/health")
 def health():
-    return {
-        "status": "ok",
-        "agent": "invoice_agent"
-    }
+    return {"status": "ok", "agent": "invoice_agent"}
 
 
 @router.post("/generate", response_model=InvoiceResponse)
@@ -47,19 +40,39 @@ def generate_invoice(request: InvoiceRequest):
 @router.get("/view", response_class=HTMLResponse)
 def view_invoice(
     patient_id: str = Query("PAT-00181", description="Patient identifier"),
-    original_drug: str = Query("Keppra 500mg (Brand)", description="Original prescribed brand name"),
-    alternative_drug: str = Query("Levetiracetam 500mg (Antiepileptic Therapy)", description="Substituted alternative drug"),
+    original_drug: str = Query(
+        "Keppra 500mg (Brand)", description="Original prescribed brand name"
+    ),
+    alternative_drug: str = Query(
+        "Levetiracetam 500mg (Antiepileptic Therapy)",
+        description="Substituted alternative drug",
+    ),
     tablet_cost: float = Query(35.0, description="Alternative drug retail cost"),
-    insurance_coverage: float = Query(30.0, description="Payer / insurance formulary coverage"),
+    insurance_coverage: float = Query(
+        30.0, description="Payer / insurance formulary coverage"
+    ),
     approval_status: str = Query("APPROVED", description="Adjudication / PA status"),
-    prescribing_physician: str | None = Query("Dr. Lauren Sharma, MD", description="Doctor name"),
-    medical_facility: str | None = Query("Ohio State University Wexner Medical Center", description="Hospital / Facility"),
-    diagnosis: str | None = Query("Epilepsy / Seizure Disorder", description="Clinical diagnosis"),
-    dosage_regimen: str | None = Query("1 Tablet Oral - Twice Daily (Take as directed by physician)", description="Dosage instructions"),
+    prescribing_physician: str | None = Query(
+        "Dr. Lauren Sharma, MD", description="Doctor name"
+    ),
+    medical_facility: str | None = Query(
+        "Ohio State University Wexner Medical Center", description="Hospital / Facility"
+    ),
+    diagnosis: str | None = Query(
+        "Epilepsy / Seizure Disorder", description="Clinical diagnosis"
+    ),
+    dosage_regimen: str | None = Query(
+        "1 Tablet Oral - Twice Daily (Take as directed by physician)",
+        description="Dosage instructions",
+    ),
     days_supply: int = Query(30, description="Supply duration in days"),
-    original_drug_cost: float | None = Query(240.0, description="Original brand reference retail cost"),
+    original_drug_cost: float | None = Query(
+        240.0, description="Original brand reference retail cost"
+    ),
     copay_discount: float = Query(0.0, description="Copay assistance discount"),
-    prescription_id: str | None = Query("RX_00181", description="Associated prescription ID"),
+    prescription_id: str | None = Query(
+        "RX_00181", description="Associated prescription ID"
+    ),
 ):
     invoice_data = agent.generate_invoice(
         patient_id=patient_id,
@@ -101,4 +114,4 @@ def render_invoice_post(request: InvoiceRequest):
         pharmacy_name=request.pharmacy_name,
     )
 
-    return generate_invoice_html(invoice_data)
+    return generate_invoice_html(invoice_data)
