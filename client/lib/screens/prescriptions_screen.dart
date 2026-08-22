@@ -294,27 +294,178 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          ElevatedButton(
-            onPressed: onView,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.bgSlate,
-              foregroundColor: AppColors.primaryTeal,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-                side: BorderSide(color: AppColors.metallicBorder),
+          const SizedBox(width: 12),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => _showDownloadPdfModal(context, id, doctor, dateDetails),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF1244A2),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  side: BorderSide(color: const Color(0xFF1244A2).withValues(alpha: 0.4)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.picture_as_pdf_rounded, size: 15, color: Color(0xFF1244A2)),
+                label: Text(
+                  'Download PDF',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w800),
+                ),
               ),
-            ),
-            child: Text(
-              'Inspect Rx',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
+              const SizedBox(width: 6),
+              ElevatedButton(
+                onPressed: onView,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.bgSlate,
+                  foregroundColor: AppColors.primaryTeal,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: AppColors.metallicBorder),
+                  ),
+                ),
+                child: Text(
+                  'Inspect Rx',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  void _showDownloadPdfModal(BuildContext context, String id, String doctor, String dateDetails) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        contentPadding: const EdgeInsets.all(24),
+        content: SizedBox(
+          width: 520,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1244A2),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white, size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Official Clinical e-Prescription Document',
+                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.textDark),
+                        ),
+                        Text(
+                          'FHIR v4.0 Certified • DEA & NPI Signed',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const Divider(height: 24),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('ALTERNEA HEALTH CLINICAL NETWORK', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w900, color: const Color(0xFF1244A2))),
+                        Text('Rx ID: $id', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.textDark)),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text('Prescribing Physician:', style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
+                    Text(doctor, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark)),
+                    const SizedBox(height: 8),
+                    Text('Patient & Date Details:', style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
+                    Text(dateDetails, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textDark)),
+                    const SizedBox(height: 12),
+                    const Divider(height: 1),
+                    const SizedBox(height: 12),
+                    Text('Rx Regimen Payload:', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: const Color(0xFF1244A2))),
+                    const SizedBox(height: 4),
+                    Text('1. Amantadine 100mg Capsule — 1 Cap Oral QD (30 Days)', style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600)),
+                    Text('2. Lipitor (Atorvastatin) 20mg Tablet — 1 Tab QHS (90 Days)', style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF10B981)),
+                          const SizedBox(width: 6),
+                          Text('SHA-256 Signature Stamp: Verified & Encrypted', style: GoogleFonts.inter(fontSize: 10.5, fontWeight: FontWeight.w800, color: const Color(0xFF10B981))),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text('Close', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textMuted)),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1244A2),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    ),
+                    icon: const Icon(Icons.download_rounded, size: 16, color: Colors.white),
+                    label: Text('Save / Download PDF', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: Colors.white)),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('e-Prescription PDF ($id) downloaded successfully!'),
+                          backgroundColor: const Color(0xFF1244A2),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

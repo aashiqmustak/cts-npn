@@ -140,7 +140,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                           id: patient.assignedDoctorId ?? 'DOC-201',
                           name: 'Dr. Rahul Verma',
                           specialty: 'Internal Medicine / Cardiology',
-                          email: 'doctor@alternea.org',
+                          email: '',
                           phone: '(555) 019-2834',
                           hospitalId: patient.hospitalId ?? 'HOSP-101',
                         ),

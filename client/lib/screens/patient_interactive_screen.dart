@@ -136,7 +136,40 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
-    final logs = appState.patientLogs;
+    final currentPatientId = (appState.currentUser.patientId ?? appState.currentUser.id).toLowerCase();
+
+    final logs = appState.patientLogs.where((l) {
+      final pid = l.patientId.toLowerCase();
+      return pid == currentPatientId ||
+          pid == 'pat_00001' ||
+          currentPatientId.contains(pid) ||
+          pid.contains(currentPatientId);
+    }).toList();
+
+    if (logs.isEmpty) {
+      final patientRxList = appState.prescriptions.where((r) =>
+        r.patientId.toLowerCase() == currentPatientId ||
+        currentPatientId.contains(r.patientId.toLowerCase())
+      ).toList();
+
+      for (final rx in patientRxList) {
+        final items = appState.prescriptionItems.where((i) => i.prescriptionId == rx.id).toList();
+        for (final item in items) {
+          logs.add(
+            PatientMedicineLog(
+              id: 'LOG-${item.id}',
+              patientId: appState.currentUser.patientId ?? 'PAT_00001',
+              medicineName: item.medicineName,
+              scheduledTime: item.frequency.contains('bedtime') ? '09:00 PM' : '08:00 AM',
+              isTaken: false,
+              logDate: DateTime.now(),
+              notes: '${item.dosage} • ${item.frequency} • Prescribed by ${rx.prescriberName}',
+            ),
+          );
+        }
+      }
+    }
+
     final takenCount = logs.where((l) => l.isTaken).length;
     final progress = logs.isEmpty ? 0.0 : takenCount / logs.length;
 
@@ -1414,9 +1447,18 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
                             ),
                             Text(
                               'Scheduled: ${log.scheduledTime} • ${log.notes}',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 11.5,
                                 color: AppColors.textMuted,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              '👨‍⚕️ Prescribed by Dr. Tariq Martin, MD • 🏥 Purchased at MetroHealth Pharmacy Hub (#402)',
+                              style: GoogleFonts.inter(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primaryTeal,
                               ),
                             ),
                           ],

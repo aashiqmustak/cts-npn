@@ -1,9 +1,61 @@
+import 'package:flutter/material.dart';
+
 enum UserRole {
   admin,
   insuranceAgent,
   doctor,
   pharmacist,
   patient,
+}
+
+/// Extension for user-friendly presentation of the 5 system roles.
+extension UserRoleAuthMeta on UserRole {
+  String get label {
+    switch (this) {
+      case UserRole.doctor:
+        return 'Doctor';
+      case UserRole.pharmacist:
+        return 'Pharmacist';
+      case UserRole.patient:
+        return 'Patient';
+      case UserRole.insuranceAgent:
+        return 'Insurance Agent';
+      case UserRole.admin:
+        return 'Admin';
+    }
+  }
+
+  String get subtitle {
+    switch (this) {
+      case UserRole.doctor:
+        return 'Prescribe & Consult';
+      case UserRole.pharmacist:
+        return 'Dispense & Adherence';
+      case UserRole.patient:
+        return 'Meds & Health Hub';
+      case UserRole.insuranceAgent:
+        return 'Policies & Claims';
+      case UserRole.admin:
+        return 'System Governance';
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case UserRole.doctor:
+        return Icons.medical_services_rounded;
+      case UserRole.pharmacist:
+        return Icons.local_pharmacy_rounded;
+      case UserRole.patient:
+        return Icons.favorite_rounded;
+      case UserRole.insuranceAgent:
+        return Icons.verified_user_rounded;
+      case UserRole.admin:
+        return Icons.admin_panel_settings_rounded;
+    }
+  }
+
+  String get defaultEmail => '';
 }
 
 enum RiskLevel { high, medium, low }
@@ -34,8 +86,8 @@ class User {
     required this.email,
     this.phone,
     required this.role,
-    required this.assignedPatientIds,
-    required this.avatarUrl,
+    this.assignedPatientIds = const [],
+    this.avatarUrl = '',
     required this.title,
     this.hospitalId,
     this.hospitalName,
@@ -547,6 +599,7 @@ class Prescription {
   final String drugId;
   final String drugName;
   final String drugClass;
+  final String? diagnosis;
   final List<DateTime> fillDates;
   final List<FillRecord> fillRecords;
   final double pdcScore;
@@ -564,6 +617,7 @@ class Prescription {
     required this.drugId,
     required this.drugName,
     required this.drugClass,
+    this.diagnosis,
     required this.fillDates,
     required this.fillRecords,
     required this.pdcScore,
@@ -583,6 +637,7 @@ class Prescription {
       drugId: json['drug_id']?.toString() ?? '',
       drugName: json['drug_name'] ?? '',
       drugClass: json['drug_class'] ?? 'Cardiovascular',
+      diagnosis: json['diagnosis']?.toString(),
       fillDates: [],
       fillRecords: [],
       pdcScore: (json['pdc_score'] as num?)?.toDouble() ?? 0.85,

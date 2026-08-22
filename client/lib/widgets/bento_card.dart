@@ -51,18 +51,40 @@ class _BentoCardState extends State<BentoCard> {
         border: border,
         boxShadow: [
           BoxShadow(
-            color: AppColors.accentNavy.withValues(
-              alpha: _isHovered && widget.enableHover ? 0.06 : 0.035,
-            ),
+            color: _isHovered && widget.enableHover
+                ? AppColors.primaryTeal.withValues(alpha: 0.16)
+                : AppColors.accentNavy.withValues(alpha: 0.035),
             blurRadius: _isHovered && widget.enableHover ? 32 : 24,
             offset: Offset(0, _isHovered && widget.enableHover ? 10 : 6),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
+          if (_isHovered && widget.enableHover)
+            Positioned(
+              top: -widget.padding.vertical / 2,
+              left: 20,
+              right: 20,
+              child: Container(
+                height: 3,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: AppColors.gradientPill),
+                  borderRadius: BorderRadius.circular(3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryTeal.withValues(alpha: 0.6),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
           if (widget.title != null || widget.icon != null || widget.trailing != null) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -82,7 +104,7 @@ class _BentoCardState extends State<BentoCard> {
                             children: [
                               Text(
                                 widget.title!,
-                                style: GoogleFonts.plusJakartaSans(
+                                style: GoogleFonts.inter(
                                   fontSize: 17.5,
                                   fontWeight: FontWeight.w800,
                                   color: AppColors.textDark,
@@ -93,7 +115,7 @@ class _BentoCardState extends State<BentoCard> {
                                 const SizedBox(height: 3),
                                 Text(
                                   widget.subtitle!,
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: GoogleFonts.inter(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                     color: AppColors.textMuted,
@@ -114,7 +136,9 @@ class _BentoCardState extends State<BentoCard> {
           widget.child,
         ],
       ),
-    );
+    ],
+  ),
+);
 
     if (widget.onTap != null || widget.enableHover) {
       return MouseRegion(
@@ -200,7 +224,7 @@ class BentoHeroBanner extends StatelessWidget {
                         Flexible(
                           child: Text(
                             title,
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: isWide ? 20 : 17,
                               fontWeight: FontWeight.w800,
                               color: Colors.white,
@@ -221,7 +245,7 @@ class BentoHeroBanner extends StatelessWidget {
                             ),
                             child: Text(
                               statusLabel!,
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.electricMint,
@@ -234,7 +258,7 @@ class BentoHeroBanner extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.inter(
                         fontSize: 12,
                         color: Colors.white.withValues(alpha: 0.88),
                         height: 1.35,
@@ -326,15 +350,39 @@ class _BentoMetricTileState extends State<BentoMetricTile> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.accentNavy.withValues(alpha: _isHovered ? 0.06 : 0.035),
+                  color: _isHovered
+                      ? AppColors.primaryTeal.withValues(alpha: 0.16)
+                      : AppColors.accentNavy.withValues(alpha: 0.035),
                   blurRadius: _isHovered ? 30 : 24,
                   offset: const Offset(0, 6),
                 ),
               ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Stack(
+              clipBehavior: Clip.none,
               children: [
+                if (_isHovered)
+                  Positioned(
+                    top: -20,
+                    left: 15,
+                    right: 15,
+                    child: Container(
+                      height: 3,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: AppColors.gradientPill),
+                        borderRadius: BorderRadius.circular(3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryTeal.withValues(alpha: 0.6),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -355,7 +403,7 @@ class _BentoMetricTileState extends State<BentoMetricTile> {
                         ),
                         child: Text(
                           widget.trendText!,
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,
                             color: AppColors.primaryTeal,
@@ -373,7 +421,7 @@ class _BentoMetricTileState extends State<BentoMetricTile> {
                 const SizedBox(height: 16),
                 Text(
                   widget.value,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.inter(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
                     color: AppColors.textDark,
@@ -383,7 +431,7 @@ class _BentoMetricTileState extends State<BentoMetricTile> {
                 const SizedBox(height: 3),
                 Text(
                   widget.label,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textMuted,
@@ -391,9 +439,11 @@ class _BentoMetricTileState extends State<BentoMetricTile> {
                 ),
               ],
             ),
-          ),
+          ],
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 }

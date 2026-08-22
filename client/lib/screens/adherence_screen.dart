@@ -124,7 +124,7 @@ class AdherenceScreen extends StatelessWidget {
                                 planId: 'PLAN-01',
                                 riskScore: 0.35,
                                 phone: '(555) 019-2834',
-                                email: 'patient@alternea.org',
+                                email: '',
                               ),
                       );
 
@@ -303,8 +303,9 @@ class AdherenceScreen extends StatelessWidget {
             child: SizedBox(
               height: 40,
               child: DropdownButtonFormField<RiskLevel?>(
-                initialValue: appState.selectedRiskFilter,
-                style: GoogleFonts.plusJakartaSans(
+                value: appState.selectedRiskFilter,
+                isExpanded: true,
+                style: GoogleFonts.inter(
                     fontSize: 12.5, color: AppColors.textDark),
                 decoration: const InputDecoration(
                   contentPadding:
@@ -312,16 +313,16 @@ class AdherenceScreen extends StatelessWidget {
                   labelText: 'Risk Filter',
                 ),
                 items: const [
-                  DropdownMenuItem(value: null, child: Text('All Risk Levels')),
+                  DropdownMenuItem(value: null, child: Text('All Risk Levels', overflow: TextOverflow.ellipsis, maxLines: 1)),
                   DropdownMenuItem(
                       value: RiskLevel.high,
-                      child: Text('High Risk (<65% PDC)')),
+                      child: Text('High Risk (<65% PDC)', overflow: TextOverflow.ellipsis, maxLines: 1)),
                   DropdownMenuItem(
                       value: RiskLevel.medium,
-                      child: Text('Medium Risk (65-79% PDC)')),
+                      child: Text('Medium Risk (65-79% PDC)', overflow: TextOverflow.ellipsis, maxLines: 1)),
                   DropdownMenuItem(
                       value: RiskLevel.low,
-                      child: Text('Low Risk (>=80% PDC)')),
+                      child: Text('Low Risk (>=80% PDC)', overflow: TextOverflow.ellipsis, maxLines: 1)),
                 ],
                 onChanged: (val) => appState.setAdherenceRiskFilter(val),
               ),

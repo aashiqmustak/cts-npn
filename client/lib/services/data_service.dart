@@ -227,23 +227,66 @@ class DataService {
     required List<Map<String, dynamic>> items,
   }) async {
     final newRxId = 'RX-${DateTime.now().millisecondsSinceEpoch}';
-    for (final item in items) {
+
+    // 1. Create main Prescription record
+    final firstDrugName = items.isNotEmpty ? items.first['medicineName'] : 'Prescription Payload';
+    final rxRecord = Prescription(
+      id: newRxId,
+      patientId: patientId,
+      patientName: _getPatientNameById(patientId),
+      drugId: firstDrugName,
+      drugName: firstDrugName,
+      drugClass: 'General',
+      diagnosis: diagnosis,
+      fillDates: [DateTime.now()],
+      fillRecords: [],
+      pdcScore: 0.95,
+      status: 'Active',
+      lastFillDate: DateTime.now(),
+      nextDueDate: DateTime.now().add(const Duration(days: 30)),
+      prescriberName: 'Dr. Tariq Martin',
+    );
+    _prescriptions.add(rxRecord);
+
+    // 2. Add PrescriptionItems & convert into active PatientMedicineLogs for the Patient's Medicine Cabinet
+    for (int i = 0; i < items.length; i++) {
+      final item = items[i];
+      final medName = item['medicineName'] ?? 'Prescribed Drug';
+      final dosage = item['dosage'] ?? '1 Tablet (Oral)';
+      final frequency = item['frequency'] ?? 'Once daily';
+
       _prescriptionItems.add(
         PrescriptionItem(
-          id: 'ITEM-${DateTime.now().millisecondsSinceEpoch}-${items.indexOf(item)}',
+          id: 'ITEM-${DateTime.now().millisecondsSinceEpoch}-$i',
           prescriptionId: newRxId,
-          medicineName: item['medicineName'],
-          dosage: item['dosage'],
-          frequency: item['frequency'],
+          medicineName: medName,
+          dosage: dosage,
+          frequency: frequency,
           durationDays: item['durationDays'] ?? 30,
           isDispensed: false,
-          instructions: item['instructions'],
+          instructions: item['instructions'] ?? notes,
+        ),
+      );
+
+      // Instantly add to Patient Medicine Cabinet Logs
+      _patientLogs.add(
+        PatientMedicineLog(
+          id: 'LOG-${DateTime.now().millisecondsSinceEpoch}-$i',
+          patientId: patientId,
+          medicineName: medName,
+          scheduledTime: frequency.contains('bedtime')
+              ? '09:00 PM'
+              : (frequency.contains('morning') ? '08:00 AM' : '09:00 AM'),
+          isTaken: false,
+          logDate: DateTime.now(),
+          notes: '$dosage • $frequency • e-Rx Prescribed',
         ),
       );
     }
 
     if (supabaseService.isInitialized) {
       await supabaseService.createPrescriptionWithItems(
+        prescriptionId: newRxId,
         patientId: patientId,
         doctorId: doctorId,
         hospitalId: hospitalId,
@@ -253,6 +296,23 @@ class DataService {
       );
     }
     return true;
+  }
+
+  String _getPatientNameById(String pid) {
+    final match = _patientRecords.firstWhere(
+      (p) => p.id.toLowerCase() == pid.toLowerCase(),
+      orElse: () => PatientRecord(
+        id: pid,
+        name: 'Patient ($pid)',
+        email: '',
+        phone: '',
+        age: 45,
+        gender: 'Other',
+        currentProblem: 'General Consultation',
+        visitDate: DateTime.now(),
+      ),
+    );
+    return match.name;
   }
 
   // Patient Action: Log medicine from scratch

@@ -653,14 +653,15 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedTag,
-                  style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textDark),
+                  value: selectedTag,
+                  isExpanded: true,
+                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textDark),
                   decoration: const InputDecoration(labelText: 'Record Category'),
                   items: const [
-                    DropdownMenuItem(value: 'Report', child: Text('Clinical Report')),
-                    DropdownMenuItem(value: 'Lab', child: Text('Lab Diagnostics')),
-                    DropdownMenuItem(value: 'Imaging', child: Text('Imaging & Scans')),
-                    DropdownMenuItem(value: 'Vaccination', child: Text('Vaccination Record')),
+                    DropdownMenuItem(value: 'Report', child: Text('Clinical Report', overflow: TextOverflow.ellipsis, maxLines: 1)),
+                    DropdownMenuItem(value: 'Lab', child: Text('Lab Diagnostics', overflow: TextOverflow.ellipsis, maxLines: 1)),
+                    DropdownMenuItem(value: 'Imaging', child: Text('Imaging & Scans', overflow: TextOverflow.ellipsis, maxLines: 1)),
+                    DropdownMenuItem(value: 'Vaccination', child: Text('Vaccination Record', overflow: TextOverflow.ellipsis, maxLines: 1)),
                   ],
                   onChanged: (val) {
                     if (val != null) setModalState(() => selectedTag = val);

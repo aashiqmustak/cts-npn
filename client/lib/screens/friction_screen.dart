@@ -207,14 +207,15 @@ class FrictionScreen extends StatelessWidget {
           Expanded(
             flex: 2,
             child: DropdownButtonFormField<BarrierType?>(
-              initialValue: appState.selectedBarrierFilter,
-              style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textDark),
+              value: appState.selectedBarrierFilter,
+              isExpanded: true,
+              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textDark),
               decoration: const InputDecoration(labelText: 'Barrier Type'),
               items: const [
-                DropdownMenuItem(value: null, child: Text('All Barriers')),
-                DropdownMenuItem(value: BarrierType.paRequired, child: Text('Prior Authorization')),
-                DropdownMenuItem(value: BarrierType.stepTherapyFailed, child: Text('Step Therapy Failed')),
-                DropdownMenuItem(value: BarrierType.quantityLimit, child: Text('Quantity Limit')),
+                DropdownMenuItem(value: null, child: Text('All Barriers', overflow: TextOverflow.ellipsis, maxLines: 1)),
+                DropdownMenuItem(value: BarrierType.paRequired, child: Text('Prior Authorization', overflow: TextOverflow.ellipsis, maxLines: 1)),
+                DropdownMenuItem(value: BarrierType.stepTherapyFailed, child: Text('Step Therapy Failed', overflow: TextOverflow.ellipsis, maxLines: 1)),
+                DropdownMenuItem(value: BarrierType.quantityLimit, child: Text('Quantity Limit', overflow: TextOverflow.ellipsis, maxLines: 1)),
               ],
               onChanged: (val) => appState.setFrictionBarrierFilter(val),
             ),
