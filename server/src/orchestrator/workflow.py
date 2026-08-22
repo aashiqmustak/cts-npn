@@ -1,6 +1,6 @@
 import datetime
 import logging
-from typing import Any
+
 
 from agents.alternative_discovery.app.agent import AlternativeDiscoveryAgent
 from agents.alternative_discovery.app.repository import AlternativeDiscoveryRepository
@@ -109,7 +109,7 @@ class MultiAgentOrchestrator:
             doctor_id=request.doctor_id,
         )
         canonical_drug_name = norm_rx.drug.name or request.prescription_text
-        rxnorm_id = norm_rx.drug.rxnorm_id or "RX_NORM_UNKNOWN"
+        _rxnorm_id = norm_rx.drug.rxnorm_id or "RX_NORM_UNKNOWN"
 
         inferred_class, inferred_ind = infer_clinical_class_and_indication(canonical_drug_name + " " + request.prescription_text)
 
@@ -155,7 +155,7 @@ class MultiAgentOrchestrator:
             drug_id=matched_drug_id,
             insurance_plan_id=request.insurance_plan_id,
             pharmacy_id=request.pharmacy_id,
-            date=datetime.date.today().isoformat(),
+            date=datetime.datetime.now(datetime.timezone.utc).date().isoformat(),
         )
         form_res: FormularyResponse = self.formulary_agent.process_request(
             form_req

@@ -221,7 +221,7 @@ def rank_candidate_drugs(row: dict[str, Any]) -> RankingOutput:
         for m in patient_context.get("current_medications", [])
         if m
     ]
-    conditions_list = [
+    _conditions_list = [
         c.get("name", "").lower() if isinstance(c, dict) else str(c).lower()
         for c in patient_context.get("conditions", [])
         if c

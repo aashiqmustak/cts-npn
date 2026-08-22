@@ -43,7 +43,7 @@ from agents.patient_history_agent.app.schemas import (
 )
 from agents.patient_history_agent.app.service import PatientHistoryService
 from agents.prescription_agent.app.agent import PrescriptionAgent
-from agents.prescription_agent.app.models import DrugDetails, PrescriptionOutput
+from agents.prescription_agent.app.models import  PrescriptionOutput
 from agents.ranking_agent.app.agent import RankingAgent
 from agents.ranking_agent.app.schemas import RankingInput, RankingOutput
 from agents.ranking_agent.app.service import RankingService
@@ -52,7 +52,7 @@ from ml.schemas import (
     AbandonmentPredictionOutput,
     AdherencePredictionInput,
     AdherencePredictionOutput,
-    CombinedMLRiskOutput,
+    
 )
 from ml.service import MLPredictorService
 from orchestrator.schemas import (
@@ -414,7 +414,7 @@ async def root() -> dict[str, Any]:
 async def system_health() -> dict[str, Any]:
     return {
         "system_status": "healthy",
-        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
         "agents": {
             "prescription": "healthy",
             "formulary": f"healthy ({len(formulary_repo.records)} records)",

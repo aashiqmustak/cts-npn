@@ -50,7 +50,7 @@ If generic only is true, prioritize generic medications.
 Return the exact JSON output required. Do not invent any drugs. Only use the drugs provided in the candidate list.
 """
                 self.prompt = PromptTemplate.from_template(template)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.warning(
                     f"Could not initialize Groq LLM: {e}. Falling back to deterministic rule-based matching."
                 )
@@ -102,7 +102,7 @@ Return the exact JSON output required. Do not invent any drugs. Only use the dru
                 parsed_result = cast(AlternativeDiscoveryOutput, result)
                 parsed_result.candidate_count = len(parsed_result.candidates)
                 return parsed_result
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.warning(
                     f"LLM discovery failed: {e}. Using deterministic fallback."
                 )

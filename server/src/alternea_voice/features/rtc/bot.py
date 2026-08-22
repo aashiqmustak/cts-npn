@@ -132,7 +132,7 @@ async def handle_evaluate_prescription(*args_list, **kwargs):
         args = params.arguments or {}
         result_callback = params.result_callback
     elif len(args_list) >= 6:
-        function_name, tool_call_id, args, llm, context, result_callback = args_list[:6]
+        _function_name, _tool_call_id, args, _llm, _context, result_callback = args_list[:6]
     else:
         args = kwargs.get("args") or kwargs.get("arguments") or {}
         result_callback = kwargs.get("result_callback")
@@ -214,7 +214,7 @@ async def handle_evaluate_prescription(*args_list, **kwargs):
 
         print(f"[Alternea Agent Bridge] Multi-Agent Evaluation Complete. Winning Drug: {top_name} (Score: {top_score}/100)\n")
         await result_callback(result_payload)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         logger.exception("Error executing backend multi-agent pipeline")
         await result_callback({"status": "error", "message": str(exc)})
 

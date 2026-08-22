@@ -45,7 +45,7 @@ def start_voice_agent():
 
         print("\n[Alternea Voice] Initializing Voice Agent Runner...")
         pipecat_main()
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         print(f"[Alternea Voice] Note: Voice runner exited or not configured: {exc}")
 
 
@@ -71,7 +71,7 @@ def main():
         help="Port to bind the Agent Service (default: 8000)",
     )
 
-    args, unknown = parser.parse_known_args()
+    args, _unknown = parser.parse_known_args()
 
     if args.mode == "api":
         start_agent_service(host=args.host, port=args.port)
@@ -96,7 +96,7 @@ def main():
             pipecat_main()
         except KeyboardInterrupt:
             print("\n[CTS PharmaAssist] Shutting down gracefully...")
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             print(f"[CTS PharmaAssist] Running in Agent API mode (Voice standby: {exc})")
             # Keep the API service running on main thread
             try:
