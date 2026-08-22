@@ -117,8 +117,12 @@ class CandidateDrug(BaseModel):
     strength: str | None = None
     dosage_form: str | None = None
     route: str | None = None
-    formulary_tier: int | None = Field(default=1, description="Insurance formulary tier (1-4)")
-    estimated_cost: float | None = Field(default=15.0, description="Estimated out-of-pocket cost")
+    formulary_tier: int | None = Field(
+        default=1, description="Insurance formulary tier (1-4)"
+    )
+    estimated_cost: float | None = Field(
+        default=15.0, description="Estimated out-of-pocket cost"
+    )
     relationship: str | None = Field(
         default="SAME_CLASS",
         description="Relationship type: SAME_CLASS, THERAPEUTIC_ALTERNATIVE, SAME_INDICATION",
@@ -157,7 +161,9 @@ class SafetyIssue(BaseModel):
 
 
 class ScoreBreakdown(BaseModel):
-    safety_score: float = Field(..., description="Score for clinical safety profile (max 40)")
+    safety_score: float = Field(
+        ..., description="Score for clinical safety profile (max 40)"
+    )
     class_alignment_score: float = Field(
         ..., description="Score for therapeutic class/relationship match (max 25)"
     )
@@ -167,11 +173,15 @@ class ScoreBreakdown(BaseModel):
     adherence_simplicity_score: float = Field(
         ..., description="Score for regimen simplicity (max 15)"
     )
-    total_score: float = Field(..., description="Composite overall ranking score (0-100)")
+    total_score: float = Field(
+        ..., description="Composite overall ranking score (0-100)"
+    )
 
 
 class RankedCandidate(BaseModel):
-    rank: int = Field(..., description="1-based rank position among eligible candidates")
+    rank: int = Field(
+        ..., description="1-based rank position among eligible candidates"
+    )
     drug_id: str
     drug_name: str
     eligible: bool = True
@@ -209,7 +219,11 @@ class RejectedCandidate(BaseModel):
                     values["reason"] = first.get("reason", "")
                 elif isinstance(first, str):
                     values["reason"] = first
-            elif "reason" in values and values.get("reason") and not values.get("reasons"):
+            elif (
+                "reason" in values
+                and values.get("reason")
+                and not values.get("reasons")
+            ):
                 values["reasons"] = [
                     {
                         "type": "clinical_check",
@@ -252,7 +266,11 @@ class ReviewCandidate(BaseModel):
                     values["reason"] = first.get("reason", "")
                 elif isinstance(first, str):
                     values["reason"] = first
-            elif "reason" in values and values.get("reason") and not values.get("reasons"):
+            elif (
+                "reason" in values
+                and values.get("reason")
+                and not values.get("reasons")
+            ):
                 values["reasons"] = [
                     {
                         "type": "clinical_check",

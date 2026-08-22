@@ -1,7 +1,5 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field
-
 from agents.alternative_discovery.app.schemas import Candidate
 from agents.formulary_agent.app.schemas import FormularyResponse
 from agents.pa_agent.app.schemas import PAResponse
@@ -15,6 +13,7 @@ from agents.ranking_agent.app.schemas import (
     ReviewCandidate,
 )
 from ml.schemas import CombinedMLRiskOutput
+from pydantic import BaseModel, Field
 
 
 class PrescriptionEvaluationRequest(BaseModel):
@@ -47,9 +46,7 @@ class TherapyEvaluationReport(BaseModel):
     alternatives_discovered: list[Candidate] = Field(default_factory=list)
     ranking_result: RankingOutput
     rejected_alternatives: list[RejectedCandidate] = Field(default_factory=list)
-    review_required_alternatives: list[ReviewCandidate] = Field(
-        default_factory=list
-    )
+    review_required_alternatives: list[ReviewCandidate] = Field(default_factory=list)
 
 
 __all__ = [

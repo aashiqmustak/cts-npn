@@ -258,9 +258,7 @@ def rank_candidate_drugs(row: dict[str, Any]) -> RankingOutput:
 
         # 1. Check Allergy Conflict
         allergy_conflict = any(
-            cand_name_lower in a or a in cand_name_lower
-            for a in allergies_list
-            if a
+            cand_name_lower in a or a in cand_name_lower for a in allergies_list if a
         )
         allergy_result = {
             "status": "REJECT" if allergy_conflict else "PASS",
@@ -277,7 +275,10 @@ def rank_candidate_drugs(row: dict[str, Any]) -> RankingOutput:
         interaction_found = (
             interaction_flag
             or (
-                (cand_name_lower in {"drug_c", "rx_200002"} or cand_id_upper == "RX_200002")
+                (
+                    cand_name_lower in {"drug_c", "rx_200002"}
+                    or cand_id_upper == "RX_200002"
+                )
                 and any("drug_x" in m or "drug_c" in m for m in current_meds_list)
             )
             or any(
@@ -368,9 +369,7 @@ def rank_candidate_drugs(row: dict[str, Any]) -> RankingOutput:
                 }
             )
         elif cand_status == "REJECT":
-            primary_reason = (
-                issues[0].reason if issues else "Safety check rejected"
-            )
+            primary_reason = issues[0].reason if issues else "Safety check rejected"
             rejected_candidates.append(
                 RejectedCandidate(
                     drug_id=cand_id,
@@ -382,9 +381,7 @@ def rank_candidate_drugs(row: dict[str, Any]) -> RankingOutput:
                 )
             )
         else:
-            primary_reason = (
-                issues[0].reason if issues else "Clinical review required"
-            )
+            primary_reason = issues[0].reason if issues else "Clinical review required"
             review_required.append(
                 ReviewCandidate(
                     drug_id=cand_id,
@@ -442,8 +439,10 @@ def rank_candidate_drugs(row: dict[str, Any]) -> RankingOutput:
             f"Selected for complete safety clearance, optimal therapeutic alignment, and high affordability."
             f"{rej_text}{rev_text}"
         )
-        overall_status = "PASS" if not review_required and not rejected_candidates else (
-            "REVIEW" if rejected_candidates or review_required else "PASS"
+        overall_status = (
+            "PASS"
+            if not review_required and not rejected_candidates
+            else ("REVIEW" if rejected_candidates or review_required else "PASS")
         )
     elif review_required:
         summary = f"No candidate passed automatic clearance. {len(review_required)} alternative(s) require physician review."

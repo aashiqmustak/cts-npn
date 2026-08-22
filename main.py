@@ -25,16 +25,22 @@ from agent_service import app as agent_app
 # Import Alternea Voice Bot at module level (required for Pipecat runner discovery)
 try:
     from alternea_voice.features.rtc.bot import bot
-except Exception as _bot_err:
+except Exception as _bot_err:  # noqa: BLE001
     bot = None
     print(f"[Alternea Voice] Note: Voice bot import warning: {_bot_err}")
 
 
 def start_agent_service(host: str = "0.0.0.0", port: int = 8000):
     """Runs the Litestar Agent & Orchestrator API Server."""
-    print(f"\n[CTS PharmaAssist] Starting Litestar Agent API Service on http://{host}:{port}")
-    print(f"[CTS PharmaAssist] Interactive OpenAPI Docs available at http://127.0.0.1:{port}/docs")
-    print(f"[CTS PharmaAssist] Orchestrator Endpoint: http://127.0.0.1:{port}/api/v1/orchestrate/evaluate-prescription\n")
+    print(
+        f"\n[CTS PharmaAssist] Starting Litestar Agent API Service on http://{host}:{port}"
+    )
+    print(
+        f"[CTS PharmaAssist] Interactive OpenAPI Docs available at http://127.0.0.1:{port}/docs"
+    )
+    print(
+        f"[CTS PharmaAssist] Orchestrator Endpoint: http://127.0.0.1:{port}/api/v1/orchestrate/evaluate-prescription\n"
+    )
     uvicorn.run(agent_app, host=host, port=port, log_level="info")
 
 
@@ -97,7 +103,9 @@ def main():
         except KeyboardInterrupt:
             print("\n[CTS PharmaAssist] Shutting down gracefully...")
         except Exception as exc:  # noqa: BLE001
-            print(f"[CTS PharmaAssist] Running in Agent API mode (Voice standby: {exc})")
+            print(
+                f"[CTS PharmaAssist] Running in Agent API mode (Voice standby: {exc})"
+            )
             # Keep the API service running on main thread
             try:
                 api_thread.join()

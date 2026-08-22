@@ -1,12 +1,8 @@
-# Forwarding wrapper to agent_service
-import pathlib
-import sys
+"""Main server entrypoint."""
 
-_current = pathlib.Path(__file__).resolve().parent
-if str(_current) not in sys.path:
-    sys.path.insert(0, str(_current))
+import uvicorn
 
-from agent_service import app, run_agent_service
+from .agent_service import app
 
 if __name__ == "__main__":
-    run_agent_service()
+    uvicorn.run(app, host="0.0.0.0", port=8000)

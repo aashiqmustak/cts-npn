@@ -116,14 +116,12 @@ Return the exact JSON output required. Do not invent any drugs. Only use the dru
             c_class = (c.get("therapeutic_class") or "").lower()
             c_ind = (c.get("indication") or "").lower()
 
-            if (
-                orig_class_lower
-                and (orig_class_lower in c_class or c_class in orig_class_lower)
+            if orig_class_lower and (
+                orig_class_lower in c_class or c_class in orig_class_lower
             ):
                 rel = "SAME_CLASS"
-            elif (
-                orig_ind_lower
-                and (orig_ind_lower in c_ind or c_ind in orig_ind_lower)
+            elif orig_ind_lower and (
+                orig_ind_lower in c_ind or c_ind in orig_ind_lower
             ):
                 rel = "SAME_INDICATION"
             else:

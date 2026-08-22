@@ -1,7 +1,6 @@
 import datetime
 import logging
 
-
 from agents.alternative_discovery.app.agent import AlternativeDiscoveryAgent
 from agents.alternative_discovery.app.repository import AlternativeDiscoveryRepository
 from agents.alternative_discovery.app.schemas import (
@@ -40,24 +39,123 @@ from .schemas import PrescriptionEvaluationRequest, TherapyEvaluationReport
 
 logger = logging.getLogger(__name__)
 
+
 def infer_clinical_class_and_indication(drug_text: str) -> tuple[str, str]:
     d = (drug_text or "").lower()
-    if any(k in d for k in ["entresto", "sacubitril", "valsartan", "lisinopril", "losartan", "amlodipine", "telmisartan", "enalapril", "ramipril", "hydrochlorothiazide", "metoprolol", "atenolol", "carvedilol", "blood pressure", "hypertens", "heart failure"]):
+    if any(
+        k in d
+        for k in [
+            "entresto",
+            "sacubitril",
+            "valsartan",
+            "lisinopril",
+            "losartan",
+            "amlodipine",
+            "telmisartan",
+            "enalapril",
+            "ramipril",
+            "hydrochlorothiazide",
+            "metoprolol",
+            "atenolol",
+            "carvedilol",
+            "blood pressure",
+            "hypertens",
+            "heart failure",
+        ]
+    ):
         return "Antihypertensive", "Hypertension"
-    elif any(k in d for k in ["metformin", "januvia", "jardiance", "glipizide", "glimepiride", "sitagliptin", "empagliflozin", "dapagliflozin", "insulin", "pioglitazone", "diabet", "glycemic"]):
+    elif any(
+        k in d
+        for k in [
+            "metformin",
+            "januvia",
+            "jardiance",
+            "glipizide",
+            "glimepiride",
+            "sitagliptin",
+            "empagliflozin",
+            "dapagliflozin",
+            "insulin",
+            "pioglitazone",
+            "diabet",
+            "glycemic",
+        ]
+    ):
         return "Antidiabetic", "Type 2 Diabetes Mellitus"
-    elif any(k in d for k in ["atorvastatin", "rosuvastatin", "simvastatin", "crestor", "lipitor", "pravastatin", "ezetimibe", "statin", "cholesterol", "lipid"]):
+    elif any(
+        k in d
+        for k in [
+            "atorvastatin",
+            "rosuvastatin",
+            "simvastatin",
+            "crestor",
+            "lipitor",
+            "pravastatin",
+            "ezetimibe",
+            "statin",
+            "cholesterol",
+            "lipid",
+        ]
+    ):
         return "Lipid_lowering", "Hyperlipidemia"
-    elif any(k in d for k in ["advair", "albuterol", "fluticasone", "salmeterol", "symbicort", "budesonide", "montelukast", "ipratropium", "inhaler", "asthma", "copd"]):
+    elif any(
+        k in d
+        for k in [
+            "advair",
+            "albuterol",
+            "fluticasone",
+            "salmeterol",
+            "symbicort",
+            "budesonide",
+            "montelukast",
+            "ipratropium",
+            "inhaler",
+            "asthma",
+            "copd",
+        ]
+    ):
         return "Respiratory", "Asthma / COPD Maintenance"
-    elif any(k in d for k in ["plavix", "clopidogrel", "brilinta", "ticagrelor", "warfarin", "eliquis", "apixaban", "xarelto", "thrombo"]):
+    elif any(
+        k in d
+        for k in [
+            "plavix",
+            "clopidogrel",
+            "brilinta",
+            "ticagrelor",
+            "warfarin",
+            "eliquis",
+            "apixaban",
+            "xarelto",
+            "thrombo",
+        ]
+    ):
         return "Cardiovascular", "Atrial Fibrillation / DVT Prevention"
-    elif any(k in d for k in ["omeprazole", "pantoprazole", "famotidine", "ondansetron", "esomeprazole", "gerd", "acid"]):
+    elif any(
+        k in d
+        for k in [
+            "omeprazole",
+            "pantoprazole",
+            "famotidine",
+            "ondansetron",
+            "esomeprazole",
+            "gerd",
+            "acid",
+        ]
+    ):
         return "Gastrointestinal", "GERD / Peptic Ulcer Disease"
-    elif any(k in d for k in ["amoxicillin", "azithromycin", "ciprofloxacin", "doxycycline", "cephalexin", "antibiotic"]):
+    elif any(
+        k in d
+        for k in [
+            "amoxicillin",
+            "azithromycin",
+            "ciprofloxacin",
+            "doxycycline",
+            "cephalexin",
+            "antibiotic",
+        ]
+    ):
         return "Antibiotic", "Bacterial Infection"
     return "Antihypertensive", "Hypertension"
-
 
 
 class MultiAgentOrchestrator:
@@ -69,9 +167,7 @@ class MultiAgentOrchestrator:
 
         # 2. Formulary Lookup
         self.formulary_repo = FormularyRepository()
-        self.formulary_agent = FormularyAgent(
-            FormularyService(self.formulary_repo)
-        )
+        self.formulary_agent = FormularyAgent(FormularyService(self.formulary_repo))
 
         # 3. Prior Authorization Evaluator
         self.pa_repo = PARepository()
@@ -111,7 +207,9 @@ class MultiAgentOrchestrator:
         canonical_drug_name = norm_rx.drug.name or request.prescription_text
         _rxnorm_id = norm_rx.drug.rxnorm_id or "RX_NORM_UNKNOWN"
 
-        inferred_class, inferred_ind = infer_clinical_class_and_indication(canonical_drug_name + " " + request.prescription_text)
+        inferred_class, inferred_ind = infer_clinical_class_and_indication(
+            canonical_drug_name + " " + request.prescription_text
+        )
 
         # Attempt to map to a dataset drug_id
         matched_drug_id = None
@@ -142,7 +240,9 @@ class MultiAgentOrchestrator:
             if request.patient_context.indication
             else (
                 request.patient_context.conditions[0].name
-                if request.patient_context.conditions and request.patient_context.conditions[0].name not in ("Hyperlipidemia", "Diagnosed Indication")
+                if request.patient_context.conditions
+                and request.patient_context.conditions[0].name
+                not in ("Hyperlipidemia", "Diagnosed Indication")
                 else (matched_indication or inferred_ind)
             )
         )
@@ -155,11 +255,9 @@ class MultiAgentOrchestrator:
             drug_id=matched_drug_id,
             insurance_plan_id=request.insurance_plan_id,
             pharmacy_id=request.pharmacy_id,
-            date=datetime.datetime.now(datetime.timezone.utc).date().isoformat(),
+            date=datetime.datetime.now(datetime.UTC).date().isoformat(),
         )
-        form_res: FormularyResponse = self.formulary_agent.process_request(
-            form_req
-        )
+        form_res: FormularyResponse = self.formulary_agent.process_request(form_req)
 
         # -------------------------------------------------------------
         # STEP 3: Patient History Retrieval
@@ -169,9 +267,7 @@ class MultiAgentOrchestrator:
             drug_id=matched_drug_id,
             lookback_days=365,
         )
-        hist_res: PatientHistoryResponse = self.history_agent.process_request(
-            hist_req
-        )
+        hist_res: PatientHistoryResponse = self.history_agent.process_request(hist_req)
 
         # -------------------------------------------------------------
         # STEP 4: Prior Authorization Evaluation
@@ -270,16 +366,18 @@ class MultiAgentOrchestrator:
             original_drug_id=matched_drug_id,
             original_drug_name=canonical_drug_name,
         )
-        ranking_res: RankingOutput = self.ranking_agent.process_request(
-            ranking_inp
-        )
+        ranking_res: RankingOutput = self.ranking_agent.process_request(ranking_inp)
 
         # -------------------------------------------------------------
         # Final Decision Synthesis
         # -------------------------------------------------------------
         top_drug = ranking_res.top_recommended_drug
 
-        if top_drug and top_drug.drug_id == matched_drug_id and not trigger_alternatives:
+        if (
+            top_drug
+            and top_drug.drug_id == matched_drug_id
+            and not trigger_alternatives
+        ):
             decision = "DISPENSE_PRIMARY"
             msg = f"Primary medication '{canonical_drug_name}' passed all safety checks, is covered under formulary (Tier {form_res.coverage.tier}), and shows low abandonment risk."
         elif top_drug and top_drug.drug_id != matched_drug_id:

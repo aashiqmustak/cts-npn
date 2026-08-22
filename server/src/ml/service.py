@@ -50,7 +50,7 @@ class MLPredictorService:
                 else:
                     self.adherence_model = data
                 logger.info(f"Loaded adherence model from {path}")
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning(f"Error loading adherence model: {exc}")
         else:
             logger.warning("Adherence model file not found.")
@@ -69,7 +69,7 @@ class MLPredictorService:
                 else:
                     self.abandonment_model = data
                 logger.info(f"Loaded abandonment model from {path}")
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning(f"Error loading abandonment model: {exc}")
         else:
             logger.warning("Abandonment model file not found.")
@@ -87,9 +87,7 @@ class MLPredictorService:
                 f"Extended refill gap of {inp.refill_gap_days_90} days in past 90 days"
             )
         if inp.out_of_pocket_cost > 50:
-            drivers.append(
-                f"High out-of-pocket cost (${inp.out_of_pocket_cost:.2f})"
-            )
+            drivers.append(f"High out-of-pocket cost (${inp.out_of_pocket_cost:.2f})")
 
         if self.adherence_model is not None and self.adherence_features:
             try:
@@ -117,9 +115,7 @@ class MLPredictorService:
                 proba = self.adherence_model.predict_proba(df)[0]
                 classes = list(self.adherence_model.classes_)
 
-                class_probs = {
-                    str(c): float(p) for c, p in zip(classes, proba)
-                }
+                class_probs = {str(c): float(p) for c, p in zip(classes, proba)}
                 adherence_score = (
                     class_probs.get("LOW", 0.75)
                     if "LOW" in class_probs
@@ -137,11 +133,13 @@ class MLPredictorService:
                     key_drivers=drivers
                     or ["Adherence baseline within expected clinical ranges."],
                 )
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning(f"Adherence model inference failed: {exc}")
 
         # Deterministic clinical fallback
-        adh_score = max(0.1, min(1.0, inp.previous_pdc_180 - (inp.refill_gap_days_90 * 0.005)))
+        adh_score = max(
+            0.1, min(1.0, inp.previous_pdc_180 - (inp.refill_gap_days_90 * 0.005))
+        )
         risk = "HIGH" if adh_score < 0.6 else ("MEDIUM" if adh_score < 0.8 else "LOW")
         return AdherencePredictionOutput(
             predicted_risk_level=risk,  # type: ignore[arg-type]
@@ -155,11 +153,17 @@ class MLPredictorService:
     ) -> AbandonmentPredictionOutput:
         drivers = []
         if inp.out_of_pocket_cost > 50:
-            drivers.append(f"Elevated patient copay (${inp.out_of_pocket_cost:.2f}) increases abandonment likelihood")
+            drivers.append(
+                f"Elevated patient copay (${inp.out_of_pocket_cost:.2f}) increases abandonment likelihood"
+            )
         if inp.prior_auth_required == 1:
-            drivers.append("Prior Authorization requirement adds fulfillment delay friction")
+            drivers.append(
+                "Prior Authorization requirement adds fulfillment delay friction"
+            )
         if inp.prior_abandonment_count > 0:
-            drivers.append(f"Patient has history of {inp.prior_abandonment_count} previous prescription abandonment(s)")
+            drivers.append(
+                f"Patient has history of {inp.prior_abandonment_count} previous prescription abandonment(s)"
+            )
 
         if self.abandonment_model is not None and self.abandonment_features:
             try:
@@ -178,16 +182,21 @@ class MLPredictorService:
 
                 proba = float(self.abandonment_model.predict_proba(df)[0][1])
                 will_abandon = proba >= self.abandonment_threshold
-                risk_level = "HIGH" if will_abandon or proba > 0.5 else ("MEDIUM" if proba > 0.25 else "LOW")
+                risk_level = (
+                    "HIGH"
+                    if will_abandon or proba > 0.5
+                    else ("MEDIUM" if proba > 0.25 else "LOW")
+                )
 
                 return AbandonmentPredictionOutput(
                     abandonment_risk_level=risk_level,  # type: ignore[arg-type]
                     abandonment_probability=round(proba, 4),
                     optimal_threshold=self.abandonment_threshold,
                     will_abandon=will_abandon,
-                    risk_drivers=drivers or ["Cost and access friction within acceptable tolerance."],
+                    risk_drivers=drivers
+                    or ["Cost and access friction within acceptable tolerance."],
                 )
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning(f"Abandonment model inference failed: {exc}")
 
         # Deterministic clinical fallback
@@ -272,9 +281,13 @@ class MLPredictorService:
 
         notes = []
         if access_barrier:
-            notes.append("Access barrier identified: Alternative drug discovery recommended.")
+            notes.append(
+                "Access barrier identified: Alternative drug discovery recommended."
+            )
         else:
-            notes.append("Patient has low friction and high adherence prognosis for prescribed therapy.")
+            notes.append(
+                "Patient has low friction and high adherence prognosis for prescribed therapy."
+            )
 
         return CombinedMLRiskOutput(
             adherence=adh_out,

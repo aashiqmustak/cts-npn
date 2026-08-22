@@ -1,12 +1,10 @@
-import json
 import logging
 import os
 import pathlib
 import sys
-import tomllib
-from typing import Any
 
 import aiohttp
+import tomllib
 from dotenv import load_dotenv
 from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import (
@@ -17,9 +15,8 @@ from pipecat.audio.vad.vad_analyzer import VADParams
 from pipecat.frames.frames import (
     Frame,
     LLMMessagesAppendFrame,
-    LLMRunFrame,
-    TTSSpeakFrame,
     TranscriptionFrame,
+    TTSSpeakFrame,
 )
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
@@ -132,7 +129,9 @@ async def handle_evaluate_prescription(*args_list, **kwargs):
         args = params.arguments or {}
         result_callback = params.result_callback
     elif len(args_list) >= 6:
-        _function_name, _tool_call_id, args, _llm, _context, result_callback = args_list[:6]
+        _function_name, _tool_call_id, args, _llm, _context, result_callback = (
+            args_list[:6]
+        )
     else:
         args = kwargs.get("args") or kwargs.get("arguments") or {}
         result_callback = kwargs.get("result_callback")
@@ -140,14 +139,38 @@ async def handle_evaluate_prescription(*args_list, **kwargs):
     prescription_text = args.get("prescription_text", "")
     patient_id = args.get("patient_id", "PAT_001")
     allergies = args.get("allergies", [])
-        # Infer condition from drug name if not explicitly provided
+    # Infer condition from drug name if not explicitly provided
     inferred_cond = ["Hypertension"]
     d_low = prescription_text.lower()
-    if any(k in d_low for k in ["entresto", "valsartan", "lisinopril", "losartan", "amlodipine", "telmisartan", "enalapril"]):
+    if any(
+        k in d_low
+        for k in [
+            "entresto",
+            "valsartan",
+            "lisinopril",
+            "losartan",
+            "amlodipine",
+            "telmisartan",
+            "enalapril",
+        ]
+    ):
         inferred_cond = ["Hypertension", "Heart Failure"]
-    elif any(k in d_low for k in ["metformin", "januvia", "jardiance", "glipizide", "glimepiride", "sitagliptin"]):
+    elif any(
+        k in d_low
+        for k in [
+            "metformin",
+            "januvia",
+            "jardiance",
+            "glipizide",
+            "glimepiride",
+            "sitagliptin",
+        ]
+    ):
         inferred_cond = ["Type 2 Diabetes Mellitus"]
-    elif any(k in d_low for k in ["atorvastatin", "rosuvastatin", "simvastatin", "crestor", "lipitor"]):
+    elif any(
+        k in d_low
+        for k in ["atorvastatin", "rosuvastatin", "simvastatin", "crestor", "lipitor"]
+    ):
         inferred_cond = ["Hyperlipidemia"]
     elif any(k in d_low for k in ["advair", "albuterol", "fluticasone", "symbicort"]):
         inferred_cond = ["Asthma", "COPD"]
@@ -155,7 +178,9 @@ async def handle_evaluate_prescription(*args_list, **kwargs):
     conditions = args.get("conditions") or inferred_cond
     current_medications = args.get("current_medications", [])
 
-    print(f"\n[Alternea Agent Bridge] Running Multi-Agent Pipeline for '{prescription_text}'...")
+    print(
+        f"\n[Alternea Agent Bridge] Running Multi-Agent Pipeline for '{prescription_text}'..."
+    )
 
     try:
         # Build patient context
@@ -167,8 +192,7 @@ async def handle_evaluate_prescription(*args_list, **kwargs):
             {"name": c} if isinstance(c, str) else c for c in conditions
         ]
         parsed_meds = [
-            {"drug_name": m} if isinstance(m, str) else m
-            for m in current_medications
+            {"drug_name": m} if isinstance(m, str) else m for m in current_medications
         ]
 
         req = PrescriptionEvaluationRequest(
@@ -198,8 +222,7 @@ async def handle_evaluate_prescription(*args_list, **kwargs):
         )
 
         rejections = [
-            f"{r.drug_name}: {r.reason}"
-            for r in report.rejected_alternatives
+            f"{r.drug_name}: {r.reason}" for r in report.rejected_alternatives
         ]
 
         result_payload = {
@@ -212,9 +235,11 @@ async def handle_evaluate_prescription(*args_list, **kwargs):
             "executive_summary": report.ranking_result.ranking_summary,
         }
 
-        print(f"[Alternea Agent Bridge] Multi-Agent Evaluation Complete. Winning Drug: {top_name} (Score: {top_score}/100)\n")
+        print(
+            f"[Alternea Agent Bridge] Multi-Agent Evaluation Complete. Winning Drug: {top_name} (Score: {top_score}/100)\n"
+        )
         await result_callback(result_payload)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Error executing backend multi-agent pipeline")
         await result_callback({"status": "error", "message": str(exc)})
 
@@ -267,9 +292,13 @@ async def run_bot(
     groq_model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
     if not sarvam_key:
-        print("\n[Alternea Voice] WARNING: SARVAM_API_KEY is not set in .env! Voice STT/TTS requires a Sarvam API key.")
+        print(
+            "\n[Alternea Voice] WARNING: SARVAM_API_KEY is not set in .env! Voice STT/TTS requires a Sarvam API key."
+        )
     if not groq_key:
-        print("[Alternea Voice] WARNING: GROQ_API_KEY is not set in .env! Voice LLM requires a Groq API key.\n")
+        print(
+            "[Alternea Voice] WARNING: GROQ_API_KEY is not set in .env! Voice LLM requires a Groq API key.\n"
+        )
 
     async with aiohttp.ClientSession():
         stt = SarvamSTTService(

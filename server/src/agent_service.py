@@ -8,12 +8,6 @@ _current = pathlib.Path(__file__).resolve().parent
 if str(_current) not in sys.path:
     sys.path.insert(0, str(_current))
 
-from litestar import Litestar, Router, get, post
-from litestar.config.cors import CORSConfig
-from litestar.exceptions import HTTPException
-from litestar.openapi.config import OpenAPIConfig
-from litestar.openapi.plugins import ScalarRenderPlugin, SwaggerRenderPlugin
-
 # 1. Domain Agents & Services
 from agents.alternative_discovery.app.agent import AlternativeDiscoveryAgent
 from agents.alternative_discovery.app.repository import (
@@ -43,16 +37,20 @@ from agents.patient_history_agent.app.schemas import (
 )
 from agents.patient_history_agent.app.service import PatientHistoryService
 from agents.prescription_agent.app.agent import PrescriptionAgent
-from agents.prescription_agent.app.models import  PrescriptionOutput
+from agents.prescription_agent.app.models import PrescriptionOutput
 from agents.ranking_agent.app.agent import RankingAgent
 from agents.ranking_agent.app.schemas import RankingInput, RankingOutput
 from agents.ranking_agent.app.service import RankingService
+from litestar import Litestar, Router, get, post
+from litestar.config.cors import CORSConfig
+from litestar.exceptions import HTTPException
+from litestar.openapi.config import OpenAPIConfig
+from litestar.openapi.plugins import ScalarRenderPlugin, SwaggerRenderPlugin
 from ml.schemas import (
     AbandonmentPredictionInput,
     AbandonmentPredictionOutput,
     AdherencePredictionInput,
     AdherencePredictionOutput,
-    
 )
 from ml.service import MLPredictorService
 from orchestrator.schemas import (
@@ -60,7 +58,7 @@ from orchestrator.schemas import (
     TherapyEvaluationReport,
 )
 from orchestrator.workflow import MultiAgentOrchestrator
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 # =====================================================================
 # SINGLETON INSTANCES
@@ -148,9 +146,7 @@ async def check_formulary(data: FormularyRequest) -> FormularyResponse:
 
 
 @get("/search")
-async def search_formulary(
-    query: str = "", limit: int = 20
-) -> list[dict[str, Any]]:
+async def search_formulary(query: str = "", limit: int = 20) -> list[dict[str, Any]]:
     return formulary_agent.search_drugs(query=query, limit=limit)
 
 
@@ -207,9 +203,7 @@ async def evaluate_pa(data: PARequest) -> PAResponse:
 
 
 @get("/policy/{drug_id:str}")
-async def get_pa_policy(
-    drug_id: str, plan_id: str | None = None
-) -> dict[str, Any]:
+async def get_pa_policy(drug_id: str, plan_id: str | None = None) -> dict[str, Any]:
     policy = pa_agent.get_pa_policy(drug_id=drug_id, plan_id=plan_id)
     if policy is None:
         raise HTTPException(
@@ -461,8 +455,10 @@ app = Litestar(
     cors_config=cors_config,
 )
 
+
 def run_agent_service(host: str = "0.0.0.0", port: int = 8000):
     import uvicorn
+
     uvicorn.run(app, host=host, port=port)
 
 
