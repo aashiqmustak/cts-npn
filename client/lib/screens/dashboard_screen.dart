@@ -67,7 +67,7 @@ class DashboardScreen extends StatelessWidget {
                       children: [
                         Text(
                           'Insurance & Financial Portal',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: AppFonts.googleSans(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
@@ -77,7 +77,7 @@ class DashboardScreen extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           'Manage your health insurance policies, claims records, and drug copay structures.',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: AppFonts.googleSans(
                             fontSize: 12.5,
                             color: Colors.white.withValues(alpha: 0.88),
                           ),
@@ -94,7 +94,7 @@ class DashboardScreen extends StatelessWidget {
                   ),
                   child: Text(
                     'Role: ${user.role.name.toUpperCase()}',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppFonts.googleSans(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
@@ -173,7 +173,7 @@ class DashboardScreen extends StatelessWidget {
                   ),
                   child: Text(
                     title,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppFonts.googleSans(
                       fontSize: 12.5,
                       fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                       color: isSelected ? Colors.white : AppColors.textMuted,
@@ -248,7 +248,7 @@ class DashboardScreen extends StatelessWidget {
             children: [
               Text(
                 'Active Coverage Summary',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textDark,
@@ -263,7 +263,7 @@ class DashboardScreen extends StatelessWidget {
                 onPressed: () {},
                 child: Row(
                   children: [
-                    Text('View Policy Details', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
+                    Text('View Policy Details', style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w700)),
                     const SizedBox(width: 4),
                     const Icon(Icons.chevron_right_rounded, size: 16),
                   ],
@@ -305,7 +305,7 @@ class DashboardScreen extends StatelessWidget {
                       ),
                       child: Text(
                         'Active Health Plan',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: AppFonts.googleSans(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                           color: AppColors.successText,
@@ -315,7 +315,7 @@ class DashboardScreen extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       'Alternea Health Secure Plus',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppFonts.googleSans(
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
                         color: AppColors.textDark,
@@ -324,7 +324,7 @@ class DashboardScreen extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       'Policy ID: HSN789456123 • Medicare Part D',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: AppColors.textMuted),
+                      style: AppFonts.googleSans(fontSize: 11.5, color: AppColors.textMuted),
                     ),
                   ],
                 ),
@@ -366,12 +366,12 @@ class DashboardScreen extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
+            style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted),
           ),
           const SizedBox(height: 3),
           Text(
             value,
-            style: GoogleFonts.plusJakartaSans(
+            style: AppFonts.googleSans(
               fontSize: 12.5,
               fontWeight: isBoldValue ? FontWeight.w800 : FontWeight.w600,
               color: AppColors.textDark,
@@ -398,7 +398,7 @@ class DashboardScreen extends StatelessWidget {
             children: [
               Text(
                 'Recent Reimbursement Claims',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textDark,
@@ -406,7 +406,7 @@ class DashboardScreen extends StatelessWidget {
               ),
               Text(
                 'All Claims Verified',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 12,
                   color: AppColors.primaryTeal,
                   fontWeight: FontWeight.w800,
@@ -446,7 +446,7 @@ class DashboardScreen extends StatelessWidget {
         children: [
           Expanded(
             flex: 2,
-            child: Text(id, style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
+            child: Text(id, style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
           ),
           Expanded(
             flex: 3,
@@ -459,18 +459,18 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(type, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textDark), overflow: TextOverflow.ellipsis),
+                  child: Text(type, style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textDark), overflow: TextOverflow.ellipsis),
                 ),
               ],
             ),
           ),
           Expanded(
             flex: 2,
-            child: Text(date, style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: AppColors.textDark)),
+            child: Text(date, style: AppFonts.googleSans(fontSize: 11.5, color: AppColors.textDark)),
           ),
           Expanded(
             flex: 2,
-            child: Text(amount, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textDark)),
+            child: Text(amount, style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textDark)),
           ),
           Expanded(
             flex: 2,
@@ -481,7 +481,7 @@ class DashboardScreen extends StatelessWidget {
                 decoration: BoxDecoration(color: bgStatus, borderRadius: BorderRadius.circular(8)),
                 child: Text(
                   status,
-                  style: GoogleFonts.plusJakartaSans(fontSize: 10.5, fontWeight: FontWeight.w800, color: textStatus),
+                  style: AppFonts.googleSans(fontSize: 10.5, fontWeight: FontWeight.w800, color: textStatus),
                 ),
               ),
             ),
@@ -507,8 +507,8 @@ class DashboardScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Stress-free cashless coverage active across all network facilities.', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark)),
-                Text('Real-time prescription coordination and electronic prior-authorization enabled.', style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted)),
+                Text('Stress-free cashless coverage active across all network facilities.', style: AppFonts.googleSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark)),
+                Text('Real-time prescription coordination and electronic prior-authorization enabled.', style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted)),
               ],
             ),
           ),
@@ -543,7 +543,7 @@ class DashboardScreen extends StatelessWidget {
             children: [
               Text(
                 'Coverage Utilization',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 14.5,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textDark,
@@ -557,7 +557,7 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 child: Text(
                   'Active Plan',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w800,
                     color: AppColors.primaryTeal,
@@ -628,10 +628,10 @@ class DashboardScreen extends StatelessWidget {
           children: [
             Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
             const SizedBox(width: 6),
-            Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+            Text(label, style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
           ],
         ),
-        Text(amount, style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.textDark)),
+        Text(amount, style: AppFonts.googleSans(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.textDark)),
       ],
     );
   }
@@ -649,7 +649,7 @@ class DashboardScreen extends StatelessWidget {
         children: [
           Text(
             'In-Network Health Facilities',
-            style: GoogleFonts.plusJakartaSans(fontSize: 14.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
+            style: AppFonts.googleSans(fontSize: 14.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
           ),
           const SizedBox(height: 12),
           _buildFacilityRow('MetroHealth Medical Center', 'Boston, MA • 2.1 mi'),
@@ -674,8 +674,8 @@ class DashboardScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w800)),
-                Text(details, style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: AppColors.textMuted)),
+                Text(name, style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w800)),
+                Text(details, style: AppFonts.googleSans(fontSize: 10.5, color: AppColors.textMuted)),
               ],
             ),
           ),
@@ -697,7 +697,7 @@ class DashboardScreen extends StatelessWidget {
         children: [
           Text(
             'Quick Actions',
-            style: GoogleFonts.plusJakartaSans(fontSize: 14.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
+            style: AppFonts.googleSans(fontSize: 14.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
           ),
           const SizedBox(height: 14),
           Row(
@@ -729,7 +729,7 @@ class DashboardScreen extends StatelessWidget {
           Text(
             label,
             textAlign: TextAlign.center,
-            style: GoogleFonts.plusJakartaSans(fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
+            style: AppFonts.googleSans(fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
           ),
         ],
       ),

@@ -62,7 +62,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Edit Profile Details',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: AppColors.textDark),
+          style: AppFonts.googleSans(fontWeight: FontWeight.w800, color: AppColors.textDark),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -87,7 +87,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.textMuted)),
+            child: Text('Cancel', style: AppFonts.googleSans(color: AppColors.textMuted)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -117,7 +117,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: Text('Save Changes', style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
+            child: Text('Save Changes', style: AppFonts.googleSans(fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -197,7 +197,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             alignment: Alignment.center,
             child: Text(
               initials,
-              style: GoogleFonts.inter(
+              style: AppFonts.googleSans(
                 fontSize: 26,
                 fontWeight: FontWeight.w900,
                 color: Colors.white,
@@ -216,7 +216,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   children: [
                     Text(
                       displayName,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.googleSans(
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
                         color: AppColors.textDark,
@@ -237,7 +237,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           const SizedBox(width: 4),
                           Text(
                             'Verified',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.googleSans(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w800,
                               color: const Color(0xFF047857),
@@ -251,7 +251,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 const SizedBox(height: 4),
                 Text(
                   _getUserSubtitle(user),
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w600,
                     color: AppColors.primaryTeal,
@@ -271,7 +271,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       ),
                       child: Text(
                         'Role: ${user.roleLabel}',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.googleSans(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
                           color: brandColor,
@@ -292,7 +292,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           const SizedBox(width: 4),
                           Text(
                             facilityName,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.googleSans(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF334155),
@@ -320,7 +320,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             icon: const Icon(Icons.edit_rounded, size: 16),
             label: Text(
               'Edit Profile',
-              style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w800),
+              style: AppFonts.googleSans(fontSize: 12.5, fontWeight: FontWeight.w800),
             ),
           ),
         ],
@@ -362,7 +362,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               const SizedBox(width: 12),
               Text(
                 'Practitioner Credentials & Clinical Context',
-                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
+                style: AppFonts.googleSans(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
               ),
             ],
           ),
@@ -399,7 +399,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               const SizedBox(width: 12),
               Text(
                 'Pharmacy License & Dispensing Metrics',
-                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
+                style: AppFonts.googleSans(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
               ),
             ],
           ),
@@ -435,7 +435,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               const SizedBox(width: 12),
               Text(
                 'Patient Health Record & Insurance Coverage',
-                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
+                style: AppFonts.googleSans(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
               ),
             ],
           ),
@@ -472,7 +472,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               const SizedBox(width: 12),
               Text(
                 'Payer Credentials & Prior Auth Adjudication',
-                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
+                style: AppFonts.googleSans(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
               ),
             ],
           ),
@@ -508,7 +508,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               const SizedBox(width: 12),
               Text(
                 'System Administrator Privilege & Audit Log',
-                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
+                style: AppFonts.googleSans(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
               ),
             ],
           ),
@@ -531,7 +531,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         children: [
           Text(
             'Account Preferences & Security',
-            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
+            style: AppFonts.googleSans(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
           ),
           const Divider(height: 24),
 
@@ -544,8 +544,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: SwitchListTile(
-              title: Text('Clinical Notification Alerts', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800)),
-              subtitle: Text('Receive immediate push alerts for Rx & PA updates', style: GoogleFonts.inter(fontSize: 11.5, color: AppColors.textMuted)),
+              title: Text('Clinical Notification Alerts', style: AppFonts.googleSans(fontSize: 13, fontWeight: FontWeight.w800)),
+              subtitle: Text('Receive immediate push alerts for Rx & PA updates', style: AppFonts.googleSans(fontSize: 11.5, color: AppColors.textMuted)),
               value: _notificationsEnabled,
               activeColor: const Color(0xFF1244A2),
               onChanged: (val) => setState(() => _notificationsEnabled = val),
@@ -580,11 +580,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     children: [
                       Text(
                         'Single Sign-In Persistent Session',
-                        style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w800, color: const Color(0xFF065F46)),
+                        style: AppFonts.googleSans(fontSize: 12.5, fontWeight: FontWeight.w800, color: const Color(0xFF065F46)),
                       ),
                       Text(
                         'Session encrypted & stored via SharedPreferences',
-                        style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF047857)),
+                        style: AppFonts.googleSans(fontSize: 11, color: const Color(0xFF047857)),
                       ),
                     ],
                   ),
@@ -597,7 +597,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   ),
                   child: Text(
                     'Active',
-                    style: GoogleFonts.inter(fontSize: 10.5, fontWeight: FontWeight.w800, color: Colors.white),
+                    style: AppFonts.googleSans(fontSize: 10.5, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                 ),
               ],
@@ -622,7 +622,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               icon: const Icon(Icons.logout_rounded, color: Color(0xFFDC2626), size: 18),
               label: Text(
                 'Log Out of Clinical Account',
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFFDC2626)),
+                style: AppFonts.googleSans(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFFDC2626)),
               ),
             ),
           ),
@@ -650,7 +650,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             width: 180,
             child: Text(
               label,
-              style: GoogleFonts.inter(
+              style: AppFonts.googleSans(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textMuted,
@@ -660,7 +660,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.inter(
+              style: AppFonts.googleSans(
                 fontSize: 12.5,
                 fontWeight: isHighlight ? FontWeight.w900 : FontWeight.w700,
                 color: isHighlight ? const Color(0xFF1244A2) : AppColors.textDark,

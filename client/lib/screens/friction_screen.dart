@@ -35,7 +35,7 @@ class FrictionScreen extends StatelessWidget {
               ),
               child: Text(
                 '${events.length} Active Bottlenecks',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   color: AppColors.warningText,
                   fontWeight: FontWeight.w800,
                   fontSize: 12,
@@ -63,7 +63,7 @@ class FrictionScreen extends StatelessWidget {
                     child: Center(
                       child: Text(
                         'No PA or Step Therapy friction points match your query.',
-                        style: GoogleFonts.plusJakartaSans(color: AppColors.textMuted),
+                        style: AppFonts.googleSans(color: AppColors.textMuted),
                       ),
                     ),
                   )
@@ -96,7 +96,7 @@ class FrictionScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     event.patientName,
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: AppFonts.googleSans(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 14,
                                       color: AppColors.textDark,
@@ -105,14 +105,14 @@ class FrictionScreen extends StatelessWidget {
                                   const SizedBox(height: 2),
                                   Text(
                                     'Drug: ${event.drugName} • ${event.daysDelayed} Days Delayed',
-                                    style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textMuted),
+                                    style: AppFonts.googleSans(fontSize: 12, color: AppColors.textMuted),
                                   ),
                                   if (event.suggestedAltName != null)
                                     Padding(
                                       padding: const EdgeInsets.only(top: 2),
                                       child: Text(
                                         'Suggested Alternative: ${event.suggestedAltName}',
-                                        style: GoogleFonts.plusJakartaSans(
+                                        style: AppFonts.googleSans(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
                                           color: AppColors.primaryTeal,
@@ -131,7 +131,7 @@ class FrictionScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     'Est. Annual Savings: ${fmt.format(event.estAnnualSavings)}',
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: AppFonts.googleSans(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 12.5,
                                       color: AppColors.successText,
@@ -140,7 +140,7 @@ class FrictionScreen extends StatelessWidget {
                                   const SizedBox(height: 2),
                                   Text(
                                     'Status: ${event.status.name.toUpperCase()}',
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: AppFonts.googleSans(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
                                       color: _getStatusColor(event.status),
@@ -162,7 +162,7 @@ class FrictionScreen extends StatelessWidget {
                               },
                               child: Text(
                                 'Resolve',
-                                style: GoogleFonts.plusJakartaSans(
+                                style: AppFonts.googleSans(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -191,7 +191,7 @@ class FrictionScreen extends StatelessWidget {
             child: SizedBox(
               height: 42,
               child: TextField(
-                style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                style: AppFonts.googleSans(fontSize: 13),
                 decoration: InputDecoration(
                   hintText: 'Search patient, drug, or suggested alternative...',
                   prefixIcon: const Icon(Icons.search_rounded, size: 19, color: AppColors.primaryTeal),
@@ -209,7 +209,7 @@ class FrictionScreen extends StatelessWidget {
             child: DropdownButtonFormField<BarrierType?>(
               value: appState.selectedBarrierFilter,
               isExpanded: true,
-              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textDark),
+              style: AppFonts.googleSans(fontSize: 13, color: AppColors.textDark),
               decoration: const InputDecoration(labelText: 'Barrier Type'),
               items: const [
                 DropdownMenuItem(value: null, child: Text('All Barriers', overflow: TextOverflow.ellipsis, maxLines: 1)),
@@ -278,7 +278,7 @@ class FrictionScreen extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
           'Resolve Claim Bottleneck',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 16),
+          style: AppFonts.googleSans(fontWeight: FontWeight.w800, fontSize: 16),
         ),
         content: SizedBox(
           width: 440,
@@ -288,18 +288,18 @@ class FrictionScreen extends StatelessWidget {
             children: [
               Text(
                 'Patient: ${event.patientName}',
-                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13.5),
+                style: AppFonts.googleSans(fontWeight: FontWeight.w700, fontSize: 13.5),
               ),
               const SizedBox(height: 4),
               Text(
                 'Target Drug: ${event.drugName} • Barrier: ${event.barrierLabel}',
-                style: GoogleFonts.plusJakartaSans(color: AppColors.textMuted, fontSize: 12),
+                style: AppFonts.googleSans(color: AppColors.textMuted, fontSize: 12),
               ),
               if (event.suggestedAltName != null) ...[
                 const SizedBox(height: 8),
                 Text(
                   'Suggested Alternative: ${event.suggestedAltName}',
-                  style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryTeal),
+                  style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryTeal),
                 ),
               ],
             ],
@@ -308,7 +308,7 @@ class FrictionScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Close', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+            child: Text('Close', style: AppFonts.googleSans(fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -325,7 +325,7 @@ class FrictionScreen extends StatelessWidget {
                 ),
               );
             },
-            child: Text('Mark Resolved', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+            child: Text('Mark Resolved', style: AppFonts.googleSans(fontWeight: FontWeight.w700)),
           ),
         ],
       ),

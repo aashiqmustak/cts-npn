@@ -118,7 +118,7 @@ class InsurancePortalScreen extends StatelessWidget {
                           children: [
                             Text(
                               plan.name,
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 14.5,
                                 color: AppColors.textDark,
@@ -127,7 +127,7 @@ class InsurancePortalScreen extends StatelessWidget {
                             const SizedBox(height: 3),
                             Text(
                               'CMS ID: ${plan.cmsPlanId} • Formulary Year: ${plan.formularyYear} • Enrollees: ${plan.totalEnrollees}',
-                              style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: AppColors.textMuted),
+                              style: AppFonts.googleSans(fontSize: 11.5, color: AppColors.textMuted),
                             ),
                           ],
                         ),
@@ -137,11 +137,11 @@ class InsurancePortalScreen extends StatelessWidget {
                         children: [
                           Text(
                             '\$${plan.deductible.toInt()} Deductible',
-                            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 13),
+                            style: AppFonts.googleSans(fontWeight: FontWeight.w800, fontSize: 13),
                           ),
                           Text(
                             'Medicare Standard',
-                            style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
+                            style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted),
                           ),
                         ],
                       ),

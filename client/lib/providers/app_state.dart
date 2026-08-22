@@ -371,6 +371,36 @@ class AppState extends ChangeNotifier {
     return true;
   }
 
+  Future<void> signInWithGooglePatient() async {
+    if (dataService.supabaseService.isInitialized) {
+      try {
+        await dataService.supabaseService.signInWithGoogle();
+      } catch (e) {
+        debugPrint('Supabase Google OAuth error: $e');
+      }
+    }
+
+    // Authenticate as a Patient account
+    final patientUser = dataService.users.firstWhere(
+      (u) => u.role == UserRole.patient,
+      orElse: () => const User(
+        id: 'U_GOOGLE_PATIENT',
+        name: 'Jessica Thompson',
+        email: 'jessica.thompson@gmail.com',
+        phone: '+1 (555) 234-5678',
+        role: UserRole.patient,
+        assignedPatientIds: ['PT-301'],
+        avatarUrl: '',
+        title: 'Patient Account',
+        patientId: 'PT-301',
+        hospitalId: 'HOSP-101',
+        hospitalName: 'MetroHealth Medical Center',
+      ),
+    );
+
+    login(patientUser);
+  }
+
   Future<bool> registerAccount({
     required String name,
     required String email,

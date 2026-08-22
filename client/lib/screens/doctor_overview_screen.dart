@@ -1,3 +1,4 @@
+import '../theme/app_theme.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -169,7 +170,7 @@ class _DoctorOverviewDashboardScreenState
                         Flexible(
                           child: Text(
                             doctorName,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.googleSans(
                               fontSize: 22,
                               fontWeight: FontWeight.w900,
                               color: Colors.white,
@@ -197,7 +198,7 @@ class _DoctorOverviewDashboardScreenState
                               const SizedBox(width: 4),
                               Text(
                                 'DEA & NPI Active',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.googleSans(
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w700,
                                   color: const Color(0xFF34D399),
@@ -211,7 +212,7 @@ class _DoctorOverviewDashboardScreenState
                     const SizedBox(height: 4),
                     Text(
                       '$hospitalName — Cardiology & Internal Medicine',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.googleSans(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                         color: const Color(0xFF94A3B8),
@@ -230,7 +231,7 @@ class _DoctorOverviewDashboardScreenState
                 icon: const Icon(Icons.edit_note_rounded, size: 18, color: Colors.white),
                 label: Text(
                   '+ Issue Quick e-Rx',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
@@ -372,7 +373,7 @@ class _DoctorOverviewDashboardScreenState
                 ),
                 child: Text(
                   change,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444),
@@ -384,7 +385,7 @@ class _DoctorOverviewDashboardScreenState
           const SizedBox(height: 16),
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: AppFonts.googleSans(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF64748B),
@@ -393,7 +394,7 @@ class _DoctorOverviewDashboardScreenState
           const SizedBox(height: 4),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: AppFonts.googleSans(
               fontSize: 20,
               fontWeight: FontWeight.w900,
               color: const Color(0xFF0F172A),
@@ -455,7 +456,7 @@ class _DoctorOverviewDashboardScreenState
                       getTitlesWidget: (value, meta) {
                         return Text(
                           value.toInt().toString(),
-                          style: GoogleFonts.inter(
+                          style: AppFonts.googleSans(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFF94A3B8),
@@ -474,7 +475,7 @@ class _DoctorOverviewDashboardScreenState
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
                               days[value.toInt()],
-                              style: GoogleFonts.inter(
+                              style: AppFonts.googleSans(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: const Color(0xFF64748B),
@@ -564,7 +565,7 @@ class _DoctorOverviewDashboardScreenState
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.googleSans(
             fontSize: 10.5,
             fontWeight: FontWeight.w700,
             color: isSelected ? Colors.white : const Color(0xFF64748B),
@@ -603,7 +604,7 @@ class _DoctorOverviewDashboardScreenState
                     value: 38,
                     title: '38%',
                     radius: 45,
-                    titleStyle: GoogleFonts.inter(
+                    titleStyle: AppFonts.googleSans(
                         fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                   PieChartSectionData(
@@ -611,7 +612,7 @@ class _DoctorOverviewDashboardScreenState
                     value: 26,
                     title: '26%',
                     radius: 45,
-                    titleStyle: GoogleFonts.inter(
+                    titleStyle: AppFonts.googleSans(
                         fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                   PieChartSectionData(
@@ -619,7 +620,7 @@ class _DoctorOverviewDashboardScreenState
                     value: 20,
                     title: '20%',
                     radius: 45,
-                    titleStyle: GoogleFonts.inter(
+                    titleStyle: AppFonts.googleSans(
                         fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                   PieChartSectionData(
@@ -627,7 +628,7 @@ class _DoctorOverviewDashboardScreenState
                     value: 16,
                     title: '16%',
                     radius: 45,
-                    titleStyle: GoogleFonts.inter(
+                    titleStyle: AppFonts.googleSans(
                         fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                 ],
@@ -663,7 +664,7 @@ class _DoctorOverviewDashboardScreenState
         const SizedBox(width: 6),
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.googleSans(
             fontSize: 11,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF64748B),
@@ -697,7 +698,7 @@ class _DoctorOverviewDashboardScreenState
               padding: const EdgeInsets.all(24.0),
               child: Text(
                 'No registered patient consultations scheduled.',
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                     fontSize: 13, color: const Color(0xFF94A3B8)),
               ),
             )
@@ -717,7 +718,7 @@ class _DoctorOverviewDashboardScreenState
                     backgroundColor: const Color(0xFF1244A2).withValues(alpha: 0.1),
                     child: Text(
                       p.name.isNotEmpty ? p.name[0] : 'P',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.googleSans(
                         fontWeight: FontWeight.w800,
                         color: const Color(0xFF1244A2),
                       ),
@@ -725,7 +726,7 @@ class _DoctorOverviewDashboardScreenState
                   ),
                   title: Text(
                     p.name,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.googleSans(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF0F172A),
@@ -733,7 +734,7 @@ class _DoctorOverviewDashboardScreenState
                   ),
                   subtitle: Text(
                     'Age: ${p.age} • ${p.currentProblem}',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.googleSans(
                       fontSize: 11.5,
                       color: const Color(0xFF64748B),
                     ),
@@ -750,7 +751,7 @@ class _DoctorOverviewDashboardScreenState
                     ),
                     child: Text(
                       index == 0 ? 'Ready for e-Rx' : 'In Consultation',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.googleSans(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
                         color: index == 0
@@ -844,7 +845,7 @@ class _DoctorOverviewDashboardScreenState
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF0F172A),
@@ -853,7 +854,7 @@ class _DoctorOverviewDashboardScreenState
                 const SizedBox(height: 2),
                 Text(
                   description,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF64748B),

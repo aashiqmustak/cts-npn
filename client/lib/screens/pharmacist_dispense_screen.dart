@@ -74,17 +74,15 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                     height: 42,
                     child: TextField(
                       controller: _searchController,
-                      onChanged: (_) => setState(() {
-                        _currentPage = 1;
-                      }),
-                      style: GoogleFonts.plusJakartaSans(
+                      onChanged: (_) => setState(() {}),
+                      style: AppFonts.googleSans(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textDark,
                       ),
                       decoration: InputDecoration(
                         hintText: 'Search prescription queue by patient name, Rx ID, or clinical indication...',
-                        hintStyle: GoogleFonts.plusJakartaSans(
+                        hintStyle: AppFonts.googleSans(
                           fontSize: 12.5,
                           color: AppColors.textMuted.withValues(alpha: 0.7),
                         ),
@@ -218,7 +216,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
       ),
       child: Text(
         label,
-        style: GoogleFonts.plusJakartaSans(
+        style: AppFonts.googleSans(
           fontSize: 11.5,
           fontWeight: FontWeight.w800,
           color: text,
@@ -248,7 +246,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
             const SizedBox(height: 16),
             Text(
               'No Prescriptions Found',
-              style: GoogleFonts.plusJakartaSans(
+              style: AppFonts.googleSans(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textDark,
@@ -257,7 +255,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
             const SizedBox(height: 6),
             Text(
               'No active patients match your search filter. Try entering a different patient name or Rx identifier.',
-              style: GoogleFonts.plusJakartaSans(
+              style: AppFonts.googleSans(
                 fontSize: 12.5,
                 color: AppColors.textMuted,
               ),
@@ -306,7 +304,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                 alignment: Alignment.center,
                 child: Text(
                   patient.name.isNotEmpty ? patient.name[0] : 'P',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontWeight: FontWeight.w900,
                     fontSize: 16,
                     color: Colors.white,
@@ -322,7 +320,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                       children: [
                         Text(
                           patient.name,
-                          style: GoogleFonts.plusJakartaSans(
+                          style: AppFonts.googleSans(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                             color: AppColors.textDark,
@@ -339,7 +337,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                           ),
                           child: Text(
                             'ID: ${patient.id}',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: AppFonts.googleSans(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textMuted,
@@ -363,7 +361,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                           Flexible(
                             child: Text(
                               patient.currentProblem,
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.dangerRed,
@@ -433,7 +431,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
               const SizedBox(width: 8),
               Text(
                 'Prescription Items Ready to Dispense',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 13.5,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textDark,
@@ -490,7 +488,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
               children: [
                 Text(
                   label.toUpperCase(),
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 9.5,
                     fontWeight: FontWeight.w800,
                     color: AppColors.textMuted,
@@ -500,7 +498,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                 const SizedBox(height: 3),
                 Text(
                   title,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w800,
                     color: AppColors.textDark,
@@ -508,7 +506,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                 ),
                 Text(
                   subtitle,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 11,
                     color: AppColors.textMuted,
                   ),
@@ -583,7 +581,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                       children: [
                         Text(
                           '${item.medicineName} (${item.dosage})',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: AppFonts.googleSans(
                             fontWeight: FontWeight.w800,
                             fontSize: 13.5,
                             color: AppColors.textDark,
@@ -592,7 +590,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                         const SizedBox(height: 2),
                         Text(
                           'Frequency: ${item.frequency} • Duration: ${item.durationDays} Days Supply',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: AppFonts.googleSans(
                             fontSize: 11.5,
                             color: AppColors.textMuted,
                           ),
@@ -602,7 +600,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                             padding: const EdgeInsets.only(top: 2),
                             child: Text(
                               'Instructions: ${item.instructions}',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppFonts.googleSans(
                                 fontSize: 10.5,
                                 fontStyle: FontStyle.italic,
                                 color: AppColors.primaryTeal,
@@ -627,7 +625,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                           const SizedBox(width: 4),
                           Text(
                             'Dispensed',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: AppFonts.googleSans(
                               color: AppColors.successText,
                               fontWeight: FontWeight.w800,
                               fontSize: 11,
@@ -660,7 +658,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 content: Text(
                                   '${item.medicineName} Dispensed to Patient!',
-                                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+                                  style: AppFonts.googleSans(fontWeight: FontWeight.w600),
                                 ),
                               ),
                             );
@@ -669,7 +667,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
                         icon: const Icon(Icons.local_pharmacy_rounded, size: 15, color: Colors.white),
                         label: Text(
                           'Dispense Now',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: AppFonts.googleSans(
                             fontWeight: FontWeight.w800,
                             fontSize: 12,
                             color: Colors.white,

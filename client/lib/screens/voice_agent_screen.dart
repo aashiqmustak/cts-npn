@@ -75,7 +75,7 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Try speaking: "$prompt"',
-              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+              style: AppFonts.googleSans(fontWeight: FontWeight.w600)),
           backgroundColor: AppColors.primaryTeal,
           duration: const Duration(seconds: 3),
         ),
@@ -84,7 +84,7 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Connect to the Voice AI agent first, then speak.',
-              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+              style: AppFonts.googleSans(fontWeight: FontWeight.w600)),
           backgroundColor: AppColors.accentNavy,
         ),
       );
@@ -164,7 +164,7 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
               ),
               child: Text(
                 'Role: ${user.role.name.toUpperCase()}',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -290,7 +290,7 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                           : state == PipecatState.failed
                               ? 'Connection Interrupted • Tap to Reconnect'
                               : 'Tap the Glowing Orb to Begin Voice Session',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: isConnecting
@@ -308,7 +308,7 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                   isConnected
                       ? '48 kHz WebRTC Opus Stream Active • AI Auto-Transcription On'
                       : 'Zero-latency continuous medical voice dictation & command execution',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 12,
                     color: AppColors.textMuted,
                   ),
@@ -331,7 +331,7 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                     const SizedBox(width: 8),
                     Text(
                       'Suggested Voice Directives for ${user.role.name.toUpperCase()}',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppFonts.googleSans(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,
                         color: AppColors.textDark,
@@ -371,7 +371,7 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                         size: 16, color: AppColors.dangerRed),
                     label: Text(
                       'Clear History',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppFonts.googleSans(
                         color: AppColors.dangerRed,
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
@@ -401,7 +401,7 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                         const SizedBox(height: 12),
                         Text(
                           'No Speech Detected Yet',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: AppFonts.googleSans(
                             fontSize: 14,
                             fontWeight: FontWeight.w800,
                             color: AppColors.textDark,
@@ -410,7 +410,7 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                         const SizedBox(height: 4),
                         Text(
                           'Tap the glowing Siri sphere above to start speaking or dictating medical instructions.',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: AppFonts.googleSans(
                             fontSize: 12,
                             color: AppColors.textMuted,
                           ),
@@ -480,7 +480,7 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                                         isUser
                                             ? user.name
                                             : 'Alternea Voice AI',
-                                        style: GoogleFonts.plusJakartaSans(
+                                        style: AppFonts.googleSans(
                                           fontWeight: FontWeight.w800,
                                           fontSize: 13,
                                           color: AppColors.textDark,
@@ -488,7 +488,7 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                                       ),
                                       Text(
                                         item.time,
-                                        style: GoogleFonts.plusJakartaSans(
+                                        style: AppFonts.googleSans(
                                           fontSize: 10.5,
                                           color: AppColors.textMuted,
                                         ),
@@ -498,7 +498,7 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
                                   const SizedBox(height: 4),
                                   Text(
                                     item.text,
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: AppFonts.googleSans(
                                       fontSize: 13,
                                       color: AppColors.textDark,
                                       height: 1.4,
@@ -732,7 +732,7 @@ class _VoicePromptPillState extends State<_VoicePromptPill> {
               const SizedBox(width: 8),
               Text(
                 widget.prompt,
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 12,
                   fontWeight:
                       _isHovered ? FontWeight.w800 : FontWeight.w600,
