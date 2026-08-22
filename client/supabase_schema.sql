@@ -243,22 +243,53 @@ CREATE POLICY "Public Pharmacist Dispense Records Access" ON pharmacist_dispense
 CREATE POLICY "Public OTP Codes Access" ON otp_codes FOR ALL USING (true) WITH CHECK (true);
 
 -- 18. AUTOMATED SUPABASE AUTH TRIGGER FOR USER PROFILES
--- Description: Automatically populates user_profiles table whenever a user signs up via Supabase Auth
+-- Description: Robust trigger handling Google OAuth and email signups
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  extracted_name TEXT;
+  extracted_role TEXT;
+  extracted_avatar TEXT;
 BEGIN
-  INSERT INTO public.user_profiles (id, email, name, role, title)
+  extracted_name := COALESCE(
+    NEW.raw_user_meta_data->>'full_name',
+    NEW.raw_user_meta_data->>'name',
+    split_part(NEW.email, '@', 1),
+    'Authorized User'
+  );
+  
+  extracted_role := COALESCE(
+    NEW.raw_user_meta_data->>'role',
+    'doctor'
+  );
+  
+  IF extracted_role NOT IN ('admin', 'insurance_agent', 'doctor', 'pharmacist', 'patient') THEN
+    extracted_role := 'doctor';
+  END IF;
+
+  extracted_avatar := COALESCE(
+    NEW.raw_user_meta_data->>'avatar_url',
+    NEW.raw_user_meta_data->>'picture',
+    ''
+  );
+
+  INSERT INTO public.user_profiles (id, email, name, role, title, avatar_url)
   VALUES (
     NEW.id::text,
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'patient'),
-    COALESCE(NEW.raw_user_meta_data->>'title', 'Authorized User')
+    COALESCE(NEW.email, ''),
+    extracted_name,
+    extracted_role,
+    'Authorized User',
+    extracted_avatar
   )
   ON CONFLICT (id) DO UPDATE SET
     email = EXCLUDED.email,
     name = EXCLUDED.name,
-    role = EXCLUDED.role;
+    avatar_url = EXCLUDED.avatar_url;
+
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  -- Prevent database trigger error from blocking OAuth user creation
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

@@ -146,7 +146,7 @@ class _AuthorizedPharmacyScreenState extends State<AuthorizedPharmacyScreen> {
                         children: [
                           Text(
                             'Authorized In-Network Hospitals & Google Maps WebView',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.googleSans(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                               color: AppColors.textDark,
@@ -154,7 +154,7 @@ class _AuthorizedPharmacyScreenState extends State<AuthorizedPharmacyScreen> {
                           ),
                           Text(
                             'Select any hospital below to load its live Google Maps WebView & GPS navigation.',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.googleSans(
                               fontSize: 11.5,
                               color: AppColors.textMuted,
                             ),
@@ -211,7 +211,7 @@ class _AuthorizedPharmacyScreenState extends State<AuthorizedPharmacyScreen> {
                                 const SizedBox(width: 6),
                                 Text(
                                   '${f['name'].toString().split(' ')[0]} (${f['distance']})',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.googleSans(
                                     fontSize: 11.5,
                                     fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                                     color: isSelected ? Colors.white : AppColors.textDark,
@@ -288,7 +288,7 @@ class _AuthorizedPharmacyScreenState extends State<AuthorizedPharmacyScreen> {
                         Expanded(
                           child: Text(
                             f['name'],
-                            style: GoogleFonts.inter(
+                            style: AppFonts.googleSans(
                               fontSize: 15,
                               fontWeight: FontWeight.w900,
                               color: AppColors.textDark,
@@ -304,7 +304,7 @@ class _AuthorizedPharmacyScreenState extends State<AuthorizedPharmacyScreen> {
                           ),
                           child: Text(
                             f['badge'],
-                            style: GoogleFonts.inter(
+                            style: AppFonts.googleSans(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w800,
                               color: const Color(0xFF047857),
@@ -316,7 +316,7 @@ class _AuthorizedPharmacyScreenState extends State<AuthorizedPharmacyScreen> {
                     const SizedBox(height: 2),
                     Text(
                       '${f['address']} • ${f['distance']} (${f['driveTime']})',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.googleSans(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: AppColors.primaryTeal,
@@ -347,7 +347,7 @@ class _AuthorizedPharmacyScreenState extends State<AuthorizedPharmacyScreen> {
                   icon: const Icon(Icons.navigation_rounded, size: 18),
                   label: Text(
                     '📍 Open Directions in Google Maps',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.googleSans(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w900,
                     ),
@@ -374,7 +374,7 @@ class _AuthorizedPharmacyScreenState extends State<AuthorizedPharmacyScreen> {
                 icon: const Icon(Icons.phone_in_talk_rounded, size: 16, color: Color(0xFF0F172A)),
                 label: Text(
                   'Call Hospital',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF0F172A),

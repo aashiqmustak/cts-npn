@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/google_logo.dart';
 
 class AuthScreen extends StatefulWidget {
   final ValueChanged<UserRole>? onRoleChanged;
@@ -70,6 +71,7 @@ class _AuthScreenState extends State<AuthScreen> {
   void _handleRoleTap(UserRole role) {
     setState(() {
       _selectedRole = role;
+      _isPatientLoginMode = (role == UserRole.patient);
       _signInEmailController.text = role.defaultEmail;
     });
     widget.onRoleChanged?.call(role);
@@ -158,7 +160,7 @@ class _AuthScreenState extends State<AuthScreen> {
         const SizedBox(width: 10),
         Text(
           'Alternea',
-          style: GoogleFonts.inter(
+          style: AppFonts.googleSans(
             fontSize: 22,
             fontWeight: FontWeight.w900,
             color: const Color(0xFF0F172A),
@@ -167,7 +169,7 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
         Text(
           'Health',
-          style: GoogleFonts.inter(
+          style: AppFonts.googleSans(
             fontSize: 22,
             fontWeight: FontWeight.w900,
             color: const Color(0xFF1244A2),
@@ -208,7 +210,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         ? 'Sign in to Alternea'
                         : 'Create an Account',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.googleSans(
                       fontSize: 26,
                       fontWeight: FontWeight.w800,
                       color: const Color(0xFF0F172A),
@@ -221,7 +223,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         ? 'All Your Hospital & Pharmacy Needs in One Place.'
                         : 'Join the Alternea Intelligent Healthcare Ecosystem.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.googleSans(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w400,
                       color: const Color(0xFF64748B),
@@ -336,7 +338,7 @@ class _AuthScreenState extends State<AuthScreen> {
               Text(
                 slide['title']!,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 18.5,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF0F172A),
@@ -348,7 +350,7 @@ class _AuthScreenState extends State<AuthScreen> {
               Text(
                 slide['subtitle']!,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w400,
                   color: const Color(0xFF64748B),
@@ -388,7 +390,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     const SizedBox(width: 8),
                     Text(
                       'Alternea Dashboard',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.googleSans(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                         color: const Color(0xFF0F172A),
@@ -407,7 +409,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   child: Text(
                     'Live EHR Sync',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.googleSans(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF047857),
@@ -461,7 +463,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   children: [
                     Text(
                       'Appointments Schedule',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.googleSans(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF0F172A),
@@ -516,7 +518,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     const SizedBox(width: 8),
                     Text(
                       'Fulfillment Engine',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.googleSans(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                         color: const Color(0xFF0F172A),
@@ -535,7 +537,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   child: Text(
                     '94.2% PDC Adherence',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.googleSans(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF1D4ED8),
@@ -596,7 +598,7 @@ class _AuthScreenState extends State<AuthScreen> {
           const SizedBox(height: 12),
           Text(
             'Zero-Trust Enterprise Vault',
-            style: GoogleFonts.inter(
+            style: AppFonts.googleSans(
               fontSize: 15,
               fontWeight: FontWeight.w800,
               color: const Color(0xFF0F172A),
@@ -605,7 +607,7 @@ class _AuthScreenState extends State<AuthScreen> {
           const SizedBox(height: 6),
           Text(
             '256-Bit TLS Audit Log & HIPAA Compliance Verified',
-            style: GoogleFonts.inter(
+            style: AppFonts.googleSans(
               fontSize: 11.5,
               fontWeight: FontWeight.w500,
               color: const Color(0xFF64748B),
@@ -636,7 +638,7 @@ class _AuthScreenState extends State<AuthScreen> {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
+            style: AppFonts.googleSans(
               fontSize: 9.5,
               fontWeight: FontWeight.w500,
               color: const Color(0xFF64748B),
@@ -648,7 +650,7 @@ class _AuthScreenState extends State<AuthScreen> {
             children: [
               Text(
                 value,
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF0F172A),
@@ -656,7 +658,7 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
               Text(
                 change,
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 9.5,
                   fontWeight: FontWeight.w700,
                   color:
@@ -690,7 +692,7 @@ class _AuthScreenState extends State<AuthScreen> {
               name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
+              style: AppFonts.googleSans(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF0F172A),
@@ -703,7 +705,7 @@ class _AuthScreenState extends State<AuthScreen> {
               dept,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
+              style: AppFonts.googleSans(
                 fontSize: 10,
                 color: const Color(0xFF64748B),
               ),
@@ -711,7 +713,7 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
           Text(
             time,
-            style: GoogleFonts.inter(
+            style: AppFonts.googleSans(
               fontSize: 10,
               fontWeight: FontWeight.w500,
               color: const Color(0xFF64748B),
@@ -743,7 +745,7 @@ class _AuthScreenState extends State<AuthScreen> {
             children: [
               Text(
                 med,
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF0F172A),
@@ -751,7 +753,7 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
               Text(
                 doc,
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 9.5,
                   color: const Color(0xFF64748B),
                 ),
@@ -766,7 +768,7 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
             child: Text(
               savings,
-              style: GoogleFonts.inter(
+              style: AppFonts.googleSans(
                 fontSize: 9.5,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF047857),
@@ -830,7 +832,7 @@ class _AuthScreenState extends State<AuthScreen> {
               const SizedBox(width: 4),
               Text(
                 '256-Bit TLS',
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF64748B),
@@ -849,7 +851,7 @@ class _AuthScreenState extends State<AuthScreen> {
               const SizedBox(width: 4),
               Text(
                 'HIPAA Audit',
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF64748B),
@@ -868,7 +870,7 @@ class _AuthScreenState extends State<AuthScreen> {
               const SizedBox(width: 4),
               Text(
                 'Zero-Trust',
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF64748B),
@@ -902,10 +904,8 @@ class _AuthScreenState extends State<AuthScreen> {
               final val = _signInEmailController.text.trim();
               if (val.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(_isPatientLoginMode
-                        ? 'Please enter your User ID, Phone, or Patient MRN'
-                        : 'Please enter your User ID or Email address'),
+                  const SnackBar(
+                    content: Text('Please enter your User ID or Email address'),
                   ),
                 );
                 return;
@@ -930,7 +930,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
                   'OR',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF94A3B8),
@@ -943,85 +943,12 @@ class _AuthScreenState extends State<AuthScreen> {
 
           const SizedBox(height: 20),
 
-          // Social Auth Buttons Row (Google & Apple)
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Google Sign-In initiated...'),
-                      ),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    side: const BorderSide(color: Color(0xFFCBD5E1)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.g_mobiledata_rounded,
-                        size: 24,
-                        color: Color(0xFFEA4335),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Continue with Google',
-                        style: GoogleFonts.inter(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0F172A),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Apple Sign-In initiated...'),
-                      ),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    side: const BorderSide(color: Color(0xFFCBD5E1)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.apple_rounded,
-                        size: 18,
-                        color: Color(0xFF0F172A),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Continue with Apple',
-                        style: GoogleFonts.inter(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0F172A),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+          // Google Sign-In with actual 4-color Google logo strictly for patients
+          GoogleSignInButton(
+            text: 'Sign in with Google (Patients)',
+            onPressed: () async {
+              await appState.signInWithGooglePatient();
+            },
           ),
 
           const SizedBox(height: 24),
@@ -1031,7 +958,7 @@ class _AuthScreenState extends State<AuthScreen> {
             children: [
               Text(
                 "Don't have an Account? ",
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 13,
                   color: const Color(0xFF64748B),
                 ),
@@ -1044,7 +971,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 },
                 child: Text(
                   'Register',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF1244A2),
@@ -1082,7 +1009,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 children: [
                   Text(
                     userExists ? 'User ID Verified' : 'New User ID Intake',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.googleSans(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
                       color: const Color(0xFF0F172A),
@@ -1092,7 +1019,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     userExists
                         ? '$userName ($userRole)'
                         : 'ID: ${_signInEmailController.text}',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.googleSans(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF64748B),
@@ -1146,7 +1073,7 @@ class _AuthScreenState extends State<AuthScreen> {
               icon: const Icon(Icons.arrow_back_rounded, size: 14),
               label: Text(
                 'Back to User ID',
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF1244A2),
@@ -1166,7 +1093,7 @@ class _AuthScreenState extends State<AuthScreen> {
               },
               child: Text(
                 'Resend Code',
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF1D4ED8),
@@ -1205,7 +1132,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 const SizedBox(width: 10),
                 Text(
                   'Create Account',
-                  style: GoogleFonts.urbanist(
+                  style: AppFonts.googleSans(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: AppColors.textDark,
@@ -1234,7 +1161,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   const SizedBox(width: 4),
                   Text(
                     _selectedRole.label,
-                    style: GoogleFonts.urbanist(
+                    style: AppFonts.googleSans(
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
                       color: AppColors.primaryTeal,
@@ -1257,6 +1184,34 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
 
         const SizedBox(height: 14),
+
+        if (_selectedRole == UserRole.patient) ...[
+          GoogleSignInButton(
+            text: 'Sign up with Google (Patient)',
+            onPressed: () async {
+              await appState.signInWithGooglePatient();
+            },
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  'OR MANUAL REGISTRATION',
+                  style: AppFonts.googleSans(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF94A3B8),
+                  ),
+                ),
+              ),
+              const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
+            ],
+          ),
+          const SizedBox(height: 14),
+        ],
 
         _GlowBorderFormField(
           controller: _regNameController,
@@ -1316,7 +1271,7 @@ class _AuthScreenState extends State<AuthScreen> {
             Expanded(
               child: Text(
                 'I acknowledge Alternea Clinical Data Agreement & HIPAA Compliance Policy',
-                style: GoogleFonts.urbanist(
+                style: AppFonts.googleSans(
                   fontSize: 10.5,
                   color: AppColors.textMuted,
                   height: 1.35,
@@ -1368,7 +1323,7 @@ class _AuthScreenState extends State<AuthScreen> {
             const SizedBox(width: 5),
             Text(
               'Protected by 256-Bit TLS Encryption • HIPAA Compliant',
-              style: GoogleFonts.urbanist(
+              style: AppFonts.googleSans(
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textMuted,
@@ -1539,7 +1494,7 @@ class _RoleSelectCardState extends State<_RoleSelectCard> {
                       widget.role.label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.urbanist(
+                      style: AppFonts.googleSans(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w800,
                         color: isSelected ? Colors.white : AppColors.textDark,
@@ -1550,7 +1505,7 @@ class _RoleSelectCardState extends State<_RoleSelectCard> {
                       widget.role.subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.urbanist(
+                      style: AppFonts.googleSans(
                         fontSize: 8.5,
                         fontWeight: FontWeight.w600,
                         color:
@@ -1632,7 +1587,7 @@ class _RolePrivilegesBanner extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: GoogleFonts.urbanist(
+                  style: AppFonts.googleSans(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w800,
                     color: AppColors.textDark,
@@ -1670,7 +1625,7 @@ class _RolePrivilegesBanner extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           badge,
-                          style: GoogleFonts.urbanist(
+                          style: AppFonts.googleSans(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                             color: AppColors.primaryTeal,
@@ -1751,7 +1706,7 @@ class _PasswordStrengthMeter extends StatelessWidget {
           children: [
             Text(
               'PASSWORD SECURITY STRENGTH',
-              style: GoogleFonts.urbanist(
+              style: AppFonts.googleSans(
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textMuted,
@@ -1760,7 +1715,7 @@ class _PasswordStrengthMeter extends StatelessWidget {
             ),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
-              style: GoogleFonts.urbanist(
+              style: AppFonts.googleSans(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w800,
                 color: color,
@@ -1864,7 +1819,7 @@ class _PasswordStrengthMeter extends StatelessWidget {
         const SizedBox(width: 3),
         Text(
           text,
-          style: GoogleFonts.urbanist(
+          style: AppFonts.googleSans(
             fontSize: 9.5,
             fontWeight: isMet ? FontWeight.w700 : FontWeight.w500,
             color: isMet ? AppColors.textDark : AppColors.textMuted,
@@ -1961,7 +1916,7 @@ class _PillCtaButtonState extends State<_PillCtaButton> {
               children: [
                 Text(
                   widget.label,
-                  style: GoogleFonts.urbanist(
+                  style: AppFonts.googleSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -2016,14 +1971,14 @@ class _GlowBorderFormField extends StatelessWidget {
               controller: controller,
               obscureText: obscureText,
               keyboardType: keyboardType,
-              style: GoogleFonts.urbanist(
+              style: AppFonts.googleSans(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF0F172A),
               ),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: GoogleFonts.urbanist(
+                hintStyle: AppFonts.googleSans(
                   fontSize: 14,
                   color: const Color(0xFF94A3B8),
                   fontWeight: FontWeight.w400,
@@ -2078,7 +2033,7 @@ class _GradientBlueCtaButton extends StatelessWidget {
         ),
         child: Text(
           label.toUpperCase(),
-          style: GoogleFonts.urbanist(
+          style: AppFonts.googleSans(
             fontSize: 14,
             fontWeight: FontWeight.w800,
             color: Colors.white,

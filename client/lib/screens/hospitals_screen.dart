@@ -40,7 +40,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           title: Text(
             'Register Hospital / Medical Center',
-            style: GoogleFonts.plusJakartaSans(
+            style: AppFonts.googleSans(
               fontWeight: FontWeight.w800,
               fontSize: 17,
               color: AppColors.textDark,
@@ -54,7 +54,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                 children: [
                   TextField(
                     controller: _nameController,
-                    style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                    style: AppFonts.googleSans(fontSize: 13),
                     decoration: const InputDecoration(
                       labelText: 'Hospital Name',
                       hintText: 'e.g. Mount Sinai Medical Center',
@@ -64,7 +64,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: _addressController,
-                    style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                    style: AppFonts.googleSans(fontSize: 13),
                     decoration: const InputDecoration(
                       labelText: 'Street Address',
                       hintText: 'e.g. One Gustave L. Levy Place',
@@ -77,7 +77,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                       Expanded(
                         child: TextField(
                           controller: _cityController,
-                          style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                          style: AppFonts.googleSans(fontSize: 13),
                           decoration: const InputDecoration(
                             labelText: 'City',
                             hintText: 'New York',
@@ -88,7 +88,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                       Expanded(
                         child: TextField(
                           controller: _zipController,
-                          style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                          style: AppFonts.googleSans(fontSize: 13),
                           decoration: const InputDecoration(
                             labelText: 'ZIP Code',
                             hintText: '10029',
@@ -100,7 +100,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: _phoneController,
-                    style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                    style: AppFonts.googleSans(fontSize: 13),
                     decoration: const InputDecoration(
                       labelText: 'Phone Contact',
                       hintText: '(212) 241-6500',
@@ -116,7 +116,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
               onPressed: () => Navigator.pop(context),
               child: Text(
                 'Cancel',
-                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+                style: AppFonts.googleSans(fontWeight: FontWeight.w600),
               ),
             ),
             ElevatedButton(
@@ -152,7 +152,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                     backgroundColor: AppColors.primaryTeal,
                     content: Text(
                       'Hospital Added Successfully!',
-                      style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+                      style: AppFonts.googleSans(fontWeight: FontWeight.w600),
                     ),
                   ),
                 );
@@ -163,7 +163,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
               ),
               child: Text(
                 'Save Hospital',
-                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+                style: AppFonts.googleSans(fontWeight: FontWeight.w800),
               ),
             ),
           ],
@@ -218,7 +218,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                 icon: const Icon(Icons.add_business_rounded, size: 18, color: Colors.white),
                 label: Text(
                   'Register Facility',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -241,10 +241,10 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                     child: TextField(
                       controller: _searchController,
                       onChanged: (_) => setState(() {}),
-                      style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textDark),
+                      style: AppFonts.googleSans(fontSize: 13, color: AppColors.textDark),
                       decoration: InputDecoration(
                         hintText: 'Search hospital facilities by name, city, or address...',
-                        hintStyle: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: AppColors.textMuted),
+                        hintStyle: AppFonts.googleSans(fontSize: 12.5, color: AppColors.textMuted),
                         prefixIcon: const Icon(Icons.search_rounded, size: 19, color: AppColors.primaryTeal),
                         contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                         filled: true,
@@ -262,7 +262,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                   ),
                   child: Text(
                     '${hospitals.length} Facilities Active',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppFonts.googleSans(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: AppColors.primaryTeal,
@@ -286,7 +286,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                     const SizedBox(height: 14),
                     Text(
                       'No Medical Centers Found',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppFonts.googleSans(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                         color: AppColors.textDark,
@@ -295,7 +295,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                     const SizedBox(height: 4),
                     Text(
                       'Try modifying your search query or register a new facility to the network.',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: AppColors.textMuted),
+                      style: AppFonts.googleSans(fontSize: 12.5, color: AppColors.textMuted),
                     ),
                   ],
                 ),
@@ -347,7 +347,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                                       h.name,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.plusJakartaSans(
+                                      style: AppFonts.googleSans(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w800,
                                         color: AppColors.textDark,
@@ -355,7 +355,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                                     ),
                                     Text(
                                       'Facility ID: ${h.id}',
-                                      style: GoogleFonts.plusJakartaSans(
+                                      style: AppFonts.googleSans(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
                                         color: AppColors.primaryTeal,
@@ -375,7 +375,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                                   '${h.address}, ${h.city}, ${h.state} ${h.zip}',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: AppFonts.googleSans(
                                     fontSize: 11.5,
                                     color: AppColors.textMuted,
                                   ),
@@ -392,7 +392,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                                   const SizedBox(width: 4),
                                   Text(
                                     h.phone,
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: AppFonts.googleSans(
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w700,
                                       color: AppColors.textDark,
@@ -408,7 +408,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                                 ),
                                 child: Text(
                                   'Active Center',
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: AppFonts.googleSans(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w800,
                                     color: AppColors.successText,

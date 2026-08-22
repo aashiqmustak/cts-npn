@@ -35,7 +35,7 @@ class AdherenceScreen extends StatelessWidget {
               ),
               child: Text(
                 '${flags.length} Flagged Patients',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   color: AppColors.dangerText,
                   fontWeight: FontWeight.w800,
                   fontSize: 12,
@@ -70,7 +70,7 @@ class AdherenceScreen extends StatelessWidget {
                     child: Center(
                       child: Text(
                         'No patients flagged at current PDC threshold and filter criteria.',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: AppFonts.googleSans(
                             color: AppColors.textMuted),
                       ),
                     ),
@@ -140,7 +140,7 @@ class AdherenceScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     flag.patientName,
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: AppFonts.googleSans(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w800,
                                       color: AppColors.textDark,
@@ -148,7 +148,7 @@ class AdherenceScreen extends StatelessWidget {
                                   ),
                                   Text(
                                     '${flag.drugName} • Prescriber: ${patient.prescriberName}',
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: AppFonts.googleSans(
                                       fontSize: 11,
                                       color: AppColors.textMuted,
                                     ),
@@ -167,7 +167,7 @@ class AdherenceScreen extends StatelessWidget {
                               ),
                               child: Text(
                                 'PDC ${(flag.pdcScore * 100).toInt()}%',
-                                style: GoogleFonts.plusJakartaSans(
+                                style: AppFonts.googleSans(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w800,
                                   color: flag.pdcScore < 0.65
@@ -220,7 +220,7 @@ class AdherenceScreen extends StatelessWidget {
             children: [
               Text(
                 'Active PDC Adherence Target: ${(appState.pdcThreshold * 100).toInt()}%',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textDark,
@@ -239,7 +239,7 @@ class AdherenceScreen extends StatelessWidget {
                   appState.pdcThreshold >= 0.80
                       ? 'CMS 5-Star Compliant'
                       : 'Sub-Optimal Benchmark',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: appState.pdcThreshold >= 0.80
@@ -283,7 +283,7 @@ class AdherenceScreen extends StatelessWidget {
             child: SizedBox(
               height: 40,
               child: TextField(
-                style: GoogleFonts.plusJakartaSans(fontSize: 12.5),
+                style: AppFonts.googleSans(fontSize: 12.5),
                 decoration: InputDecoration(
                   hintText: 'Search patient name or prescribed medication...',
                   prefixIcon: const Icon(Icons.search_rounded,
@@ -305,7 +305,7 @@ class AdherenceScreen extends StatelessWidget {
               child: DropdownButtonFormField<RiskLevel?>(
                 value: appState.selectedRiskFilter,
                 isExpanded: true,
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                     fontSize: 12.5, color: AppColors.textDark),
                 decoration: const InputDecoration(
                   contentPadding:
@@ -407,7 +407,7 @@ class AdherenceScreen extends StatelessWidget {
       child: Text(
         label,
         textAlign: TextAlign.center,
-        style: GoogleFonts.plusJakartaSans(
+        style: AppFonts.googleSans(
           color: text,
           fontSize: 10.5,
           fontWeight: FontWeight.w700,
@@ -424,7 +424,7 @@ class AdherenceScreen extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
           'Patient Adherence Timeline & Outreach',
-          style: GoogleFonts.plusJakartaSans(
+          style: AppFonts.googleSans(
               fontWeight: FontWeight.w800, fontSize: 16),
         ),
         content: SizedBox(
@@ -435,13 +435,13 @@ class AdherenceScreen extends StatelessWidget {
             children: [
               Text(
                 '${patient.name} (Age: ${patient.age})',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                     fontWeight: FontWeight.w700, fontSize: 14),
               ),
               const SizedBox(height: 4),
               Text(
                 'Prescribed: ${flag.drugName} • Prescriber: ${patient.prescriberName}',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                     fontSize: 12, color: AppColors.textMuted),
               ),
               const SizedBox(height: 12),
@@ -455,10 +455,10 @@ class AdherenceScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Current PDC: ${(flag.pdcScore * 100).toInt()}%',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: AppFonts.googleSans(
                             fontWeight: FontWeight.w700)),
                     Text('Risk: ${flag.riskLevel.name.toUpperCase()}',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: AppFonts.googleSans(
                             color: AppColors.textMuted,
                             fontSize: 11.5,
                             fontWeight: FontWeight.w700)),
@@ -472,7 +472,7 @@ class AdherenceScreen extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text('Close',
-                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+                style: AppFonts.googleSans(fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -488,7 +488,7 @@ class AdherenceScreen extends StatelessWidget {
               Navigator.pop(context);
             },
             child: Text('Mark Contacted',
-                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+                style: AppFonts.googleSans(fontWeight: FontWeight.w700)),
           ),
         ],
       ),

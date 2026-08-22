@@ -75,6 +75,21 @@ class SupabaseService {
     );
   }
 
+  Future<bool> signInWithGoogle() async {
+    if (!isInitialized) return false;
+    try {
+      return await client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: kIsWeb ? null : 'io.supabase.alternea://login-callback/',
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Supabase signInWithOAuth error: $e');
+      }
+      return false;
+    }
+  }
+
   // OTP Operations with public.otp_codes Table & SMTP Mailer
   Future<String?> sendOtpCode(String email) async {
     if (email.isEmpty) return null;

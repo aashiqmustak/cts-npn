@@ -55,7 +55,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                 icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
                 label: Text(
                   '+ Add Medicine',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -261,7 +261,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
         ),
         child: Text(
           label,
-          style: GoogleFonts.plusJakartaSans(
+          style: AppFonts.googleSans(
             fontSize: 12.5,
             fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
             color: isSelected ? Colors.white : AppColors.textDark,
@@ -312,7 +312,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                         Expanded(
                           child: Text(
                             'e-Prescription #${rx.id}',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.googleSans(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                               color: AppColors.textDark,
@@ -333,7 +333,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                               const SizedBox(width: 4),
                               Text(
                                 'PRESCRIBED TODAY',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.googleSans(
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w800,
                                   color: const Color(0xFF1244A2),
@@ -347,7 +347,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                     const SizedBox(height: 2),
                     Text(
                       'Prescribed By: $prescriberName • $hospital',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.googleSans(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textMuted,
@@ -376,12 +376,12 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Diagnosis / Purpose: ',
-                  style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w700, color: const Color(0xFF334155)),
+                  style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w700, color: const Color(0xFF334155)),
                 ),
                 Expanded(
                   child: Text(
                     diagnosis,
-                    style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF1244A2)),
+                    style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF1244A2)),
                   ),
                 ),
               ],
@@ -391,7 +391,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
           const SizedBox(height: 16),
           Text(
             'Prescribed Medicine Items (${items.length}):',
-            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textDark),
+            style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textDark),
           ),
           const SizedBox(height: 8),
 
@@ -412,12 +412,12 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                   Expanded(
                     child: Text(
                       rx.drugName.isNotEmpty ? rx.drugName : 'Prescribed Clinical Therapy',
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textDark),
+                      style: AppFonts.googleSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textDark),
                     ),
                   ),
                   Text(
                     '1 Tablet • 30 Days',
-                    style: GoogleFonts.inter(fontSize: 11.5, color: AppColors.textMuted),
+                    style: AppFonts.googleSans(fontSize: 11.5, color: AppColors.textMuted),
                   ),
                 ],
               ),
@@ -450,12 +450,12 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                           children: [
                             Text(
                               item.medicineName,
-                              style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
+                              style: AppFonts.googleSans(fontSize: 13.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               '${item.dosage} • ${item.frequency}',
-                              style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+                              style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.textMuted),
                             ),
                           ],
                         ),
@@ -468,7 +468,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                         ),
                         child: Text(
                           '${item.durationDays} Days Supply',
-                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: const Color(0xFF059669)),
+                          style: AppFonts.googleSans(fontSize: 11, fontWeight: FontWeight.w800, color: const Color(0xFF059669)),
                         ),
                       ),
                     ],
@@ -489,14 +489,14 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                   const SizedBox(width: 4),
                   Text(
                     'Signed & Transmitted Live',
-                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFF10B981)),
+                    style: AppFonts.googleSans(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFF10B981)),
                   ),
                 ],
               ),
               ElevatedButton.icon(
                 onPressed: () => _showDownloadPdfModal(context, rx: rx, items: items),
                 icon: const Icon(Icons.download_rounded, size: 14),
-                label: Text('Download e-Rx PDF', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800)),
+                label: Text('Download e-Rx PDF', style: AppFonts.googleSans(fontSize: 11, fontWeight: FontWeight.w800)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1244A2),
                   foregroundColor: Colors.white,
@@ -544,11 +544,11 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                       children: [
                         Text(
                           'Official Clinical e-Prescription Document',
-                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.textDark),
+                          style: AppFonts.googleSans(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.textDark),
                         ),
                         Text(
                           'FHIR v4.0 Certified • DEA & NPI Signed',
-                          style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
+                          style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted),
                         ),
                       ],
                     ),
@@ -573,23 +573,23 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('ALTERNEA HEALTH CLINICAL NETWORK', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w900, color: const Color(0xFF1244A2))),
-                        Text('Rx ID: ${rx.id}', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.textDark)),
+                        Text('ALTERNEA HEALTH CLINICAL NETWORK', style: AppFonts.googleSans(fontSize: 10, fontWeight: FontWeight.w900, color: const Color(0xFF1244A2))),
+                        Text('Rx ID: ${rx.id}', style: AppFonts.googleSans(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.textDark)),
                       ],
                     ),
                     const SizedBox(height: 10),
-                    Text('Prescribing Physician:', style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
-                    Text('$prescriberName ($hospital)', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark)),
+                    Text('Prescribing Physician:', style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted)),
+                    Text('$prescriberName ($hospital)', style: AppFonts.googleSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark)),
                     const SizedBox(height: 8),
-                    Text('Diagnosis / Purpose:', style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
-                    Text(diagnosis, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textDark)),
+                    Text('Diagnosis / Purpose:', style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted)),
+                    Text(diagnosis, style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textDark)),
                     const SizedBox(height: 12),
                     const Divider(height: 1),
                     const SizedBox(height: 12),
-                    Text('Prescribed Medication Items:', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: const Color(0xFF1244A2))),
+                    Text('Prescribed Medication Items:', style: AppFonts.googleSans(fontSize: 11, fontWeight: FontWeight.w800, color: const Color(0xFF1244A2))),
                     const SizedBox(height: 4),
                     if (items.isEmpty)
-                      Text('1. ${rx.drugName.isNotEmpty ? rx.drugName : "Prescribed Medication Payload"} — 1 Tab Oral QD (30 Days)', style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600))
+                      Text('1. ${rx.drugName.isNotEmpty ? rx.drugName : "Prescribed Medication Payload"} — 1 Tab Oral QD (30 Days)', style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w600))
                     else
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -599,7 +599,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                             padding: const EdgeInsets.only(bottom: 2),
                             child: Text(
                               '${e.key + 1}. ${item.medicineName} — ${item.dosage} • ${item.frequency} (${item.durationDays} Days)',
-                              style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600),
+                              style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w600),
                             ),
                           );
                         }).toList(),
@@ -615,7 +615,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                         children: [
                           const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF10B981)),
                           const SizedBox(width: 6),
-                          Text('SHA-256 Signature Stamp: Verified & Encrypted', style: GoogleFonts.inter(fontSize: 10.5, fontWeight: FontWeight.w800, color: const Color(0xFF10B981))),
+                          Text('SHA-256 Signature Stamp: Verified & Encrypted', style: AppFonts.googleSans(fontSize: 10.5, fontWeight: FontWeight.w800, color: const Color(0xFF10B981))),
                         ],
                       ),
                     ),
@@ -628,7 +628,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.pop(ctx),
-                    child: Text('Close', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textMuted)),
+                    child: Text('Close', style: AppFonts.googleSans(fontWeight: FontWeight.w700, color: AppColors.textMuted)),
                   ),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
@@ -637,7 +637,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     ),
                     icon: const Icon(Icons.share_rounded, size: 16, color: Colors.white),
-                    label: Text('Share / Print', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: Colors.white)),
+                    label: Text('Share / Print', style: AppFonts.googleSans(fontWeight: FontWeight.w800, color: Colors.white)),
                     onPressed: () async {
                       Navigator.pop(ctx);
                       await PdfExportService.instance.printPdf(rx: rx, items: items);
@@ -651,7 +651,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     ),
                     icon: const Icon(Icons.download_rounded, size: 16, color: Colors.white),
-                    label: Text('Save / Download PDF', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: Colors.white)),
+                    label: Text('Save / Download PDF', style: AppFonts.googleSans(fontWeight: FontWeight.w800, color: Colors.white)),
                     onPressed: () async {
                       Navigator.pop(ctx);
                       await PdfExportService.instance.downloadOrSharePdf(rx: rx, items: items);
@@ -724,7 +724,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                         Expanded(
                           child: Text(
                             title,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.googleSans(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                               color: AppColors.textDark,
@@ -746,7 +746,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                                 const SizedBox(width: 4),
                                 Text(
                                   'PRESCRIBED TODAY',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.googleSans(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w800,
                                     color: const Color(0xFF1244A2),
@@ -764,7 +764,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                             ),
                             child: Text(
                               'Completed Course',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.googleSans(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.purpleText,
@@ -780,7 +780,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                             ),
                             child: Text(
                               'Refill in $daysLeft Days',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.googleSans(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.dangerText,
@@ -792,7 +792,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                     const SizedBox(height: 3),
                     Text(
                       dosage,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.googleSans(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                         color: AppColors.primaryTeal,
@@ -806,7 +806,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
           const SizedBox(height: 12),
           Text(
             'Indication: $purpose',
-            style: GoogleFonts.inter(fontSize: 11.5, color: AppColors.textMuted),
+            style: AppFonts.googleSans(fontSize: 11.5, color: AppColors.textMuted),
           ),
           const SizedBox(height: 12),
 
@@ -828,7 +828,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                     Expanded(
                       child: Text(
                         'Prescribed By: $prescriber • Prescribed $prescribeDate',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.googleSans(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textDark,
@@ -847,7 +847,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                     Expanded(
                       child: Text(
                         'Purchased & Dispensed At: $pharmacyLocation (Pharm. $pharmacistName) • $dispenseDate',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.googleSans(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textMuted,
@@ -873,11 +873,11 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                       children: [
                         Text(
                           'Adherence Score: ${(complianceScore * 100).toInt()}%',
-                          style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700),
+                          style: AppFonts.googleSans(fontSize: 11, fontWeight: FontWeight.w700),
                         ),
                         Text(
                           isCompleted ? 'Course Finished' : '$daysLeft Days Remaining',
-                          style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
+                          style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted),
                         ),
                       ],
                     ),
@@ -912,7 +912,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                       ),
                     );
                   },
-                  child: Text('Request Refill', style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                  child: Text('Request Refill', style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w700)),
                 ),
             ],
           ),
@@ -942,7 +942,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                 children: [
                   Text(
                     'Lisinopril 10mg (6 Days Left)',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppFonts.googleSans(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                       color: AppColors.warningText,
@@ -950,7 +950,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                   ),
                   Text(
                     'Tap Request Refill to notify your clinical pharmacy before supply runs out.',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textDark),
+                    style: AppFonts.googleSans(fontSize: 11, color: AppColors.textDark),
                   ),
                 ],
               ),
@@ -970,8 +970,8 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Monthly PDC Score', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 13)),
-              Text('94.2% (Optimal)', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.successText)),
+              Text('Monthly PDC Score', style: AppFonts.googleSans(fontWeight: FontWeight.w600, fontSize: 13)),
+              Text('94.2% (Optimal)', style: AppFonts.googleSans(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.successText)),
             ],
           ),
           const SizedBox(height: 10),
@@ -987,7 +987,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
           const SizedBox(height: 14),
           Text(
             'Keep up the great work! Consistent adherence protects you from cardiovascular and metabolic complications.',
-            style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: AppColors.textMuted),
+            style: AppFonts.googleSans(fontSize: 11.5, color: AppColors.textMuted),
           ),
         ],
       ),
@@ -1004,7 +1004,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
           'Add Medication to Cabinet',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 16),
+          style: AppFonts.googleSans(fontWeight: FontWeight.w800, fontSize: 16),
         ),
         content: SizedBox(
           width: 440,
@@ -1013,13 +1013,13 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
             children: [
               TextField(
                 controller: nameCtrl,
-                style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                style: AppFonts.googleSans(fontSize: 13),
                 decoration: const InputDecoration(labelText: 'Medication Name', hintText: 'e.g. CoQ10 200mg'),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: dosageCtrl,
-                style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                style: AppFonts.googleSans(fontSize: 13),
                 decoration: const InputDecoration(labelText: 'Dosage & Frequency', hintText: 'e.g. 1 Softgel with lunch'),
               ),
             ],
@@ -1028,7 +1028,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+            child: Text('Cancel', style: AppFonts.googleSans(fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryTeal),
@@ -1041,7 +1041,7 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                 ),
               );
             },
-            child: Text('Add Medication', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+            child: Text('Add Medication', style: AppFonts.googleSans(fontWeight: FontWeight.w700)),
           ),
         ],
       ),

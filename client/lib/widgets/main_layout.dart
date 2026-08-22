@@ -149,7 +149,7 @@ class MainLayout extends StatelessWidget {
                           children: [
                             Text(
                               'Alternea',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.googleSans(
                                 color: AppColors.textDark,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w900,
@@ -159,7 +159,7 @@ class MainLayout extends StatelessWidget {
                             const SizedBox(width: 4),
                             Text(
                               'Health',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.googleSans(
                                 color: AppColors.primaryTeal,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w900,
@@ -170,7 +170,7 @@ class MainLayout extends StatelessWidget {
                         ),
                         Text(
                           'Clinical Ecosystem',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.googleSans(
                             color: AppColors.textMuted,
                             fontSize: 10.5,
                             fontWeight: FontWeight.w600,
@@ -229,7 +229,7 @@ class MainLayout extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'FHIR v4.0 Synchronized',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.googleSans(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
                           color: AppColors.successText,
@@ -510,7 +510,7 @@ class MainLayout extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   user.roleLabel,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
                     color: AppColors.primaryTeal,
@@ -540,7 +540,7 @@ class MainLayout extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   user.hospitalName ?? 'MetroHealth Medical Center',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF334155),
@@ -807,7 +807,7 @@ class _RoleSwitcherTopButtonState extends State<_RoleSwitcherTopButton> {
                       children: [
                         Text(
                           _getRoleShortTitle(role),
-                          style: GoogleFonts.inter(
+                          style: AppFonts.googleSans(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
                             color: isSelected
@@ -817,7 +817,7 @@ class _RoleSwitcherTopButtonState extends State<_RoleSwitcherTopButton> {
                         ),
                         Text(
                           _getRoleDesc(role),
-                          style: GoogleFonts.inter(
+                          style: AppFonts.googleSans(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w500,
                             color: AppColors.textMuted,
@@ -877,7 +877,7 @@ class _RoleSwitcherTopButtonState extends State<_RoleSwitcherTopButton> {
               const SizedBox(width: 8),
               Text(
                 _getRoleShortTitle(currentRole),
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                   color: AppColors.primaryTeal,
@@ -939,7 +939,7 @@ class _RoleSwitcherSidebarCard extends StatelessWidget {
                   user.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
                     color: AppColors.textDark,
@@ -949,7 +949,7 @@ class _RoleSwitcherSidebarCard extends StatelessWidget {
                   user.roleLabel,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.googleSans(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
                     color: AppColors.primaryTeal,
@@ -1069,7 +1069,7 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
                 Expanded(
                   child: Text(
                     widget.label,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.googleSans(
                       color: isSelected
                           ? AppColors.primaryTeal
                           : (_isHovered
@@ -1453,7 +1453,7 @@ class _UserAvatarBadge extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         _getInitials(user.name),
-        style: GoogleFonts.inter(
+        style: AppFonts.googleSans(
           fontSize: radius * 0.72,
           fontWeight: FontWeight.w900,
           color: Colors.white,
@@ -1502,7 +1502,7 @@ class _NotificationIconButton extends StatelessWidget {
                       const SizedBox(width: 12),
                       Text(
                         'Clinical Alerts & Notifications',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.googleSans(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                           color: AppColors.textDark,
@@ -1512,7 +1512,7 @@ class _NotificationIconButton extends StatelessWidget {
                       if (list.isNotEmpty)
                         TextButton(
                           onPressed: () => state.markAllNotificationsRead(),
-                          child: Text('Mark All Read', style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w700, color: const Color(0xFF1244A2))),
+                          child: Text('Mark All Read', style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w700, color: const Color(0xFF1244A2))),
                         ),
                       IconButton(
                         icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
@@ -1527,7 +1527,7 @@ class _NotificationIconButton extends StatelessWidget {
                       child: Center(
                         child: Text(
                           'No active unread notifications',
-                          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textMuted),
+                          style: AppFonts.googleSans(fontSize: 13, color: AppColors.textMuted),
                         ),
                       ),
                     )
@@ -1582,12 +1582,12 @@ class _NotificationIconButton extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(notification.title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark)),
-                    Text(notification.time, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
+                    Text(notification.title, style: AppFonts.googleSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark)),
+                    Text(notification.time, style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted)),
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text(notification.subtitle, style: GoogleFonts.inter(fontSize: 11.5, color: AppColors.textMuted)),
+                Text(notification.subtitle, style: AppFonts.googleSans(fontSize: 11.5, color: AppColors.textMuted)),
               ],
             ),
           ),
@@ -1640,7 +1640,7 @@ class _NotificationIconButton extends StatelessWidget {
               child: Text(
                 '$count',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
+                style: AppFonts.googleSans(
                   color: Colors.white,
                   fontSize: 9.5,
                   fontWeight: FontWeight.w900,
@@ -1733,7 +1733,7 @@ class _DraggableNotificationCardState extends State<_DraggableNotificationCard> 
                     const SizedBox(width: 8),
                     Text(
                       '⚡ MOVABLE CLINICAL ALERT',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.googleSans(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w900,
                         color: const Color(0xFF38BDF8),
@@ -1773,12 +1773,12 @@ class _DraggableNotificationCardState extends State<_DraggableNotificationCard> 
                         children: [
                           Text(
                             notif.title,
-                            style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w800, color: Colors.white),
+                            style: AppFonts.googleSans(fontSize: 13.5, fontWeight: FontWeight.w800, color: Colors.white),
                           ),
                           const SizedBox(height: 3),
                           Text(
                             notif.subtitle,
-                            style: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF94A3B8), height: 1.3),
+                            style: AppFonts.googleSans(fontSize: 11.5, color: const Color(0xFF94A3B8), height: 1.3),
                           ),
                         ],
                       ),
@@ -1799,7 +1799,7 @@ class _DraggableNotificationCardState extends State<_DraggableNotificationCard> 
                         ),
                         child: Text(
                           'Dismiss / Remove',
-                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700),
+                          style: AppFonts.googleSans(fontSize: 11, fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -1820,7 +1820,7 @@ class _DraggableNotificationCardState extends State<_DraggableNotificationCard> 
                           ),
                           child: Text(
                             'View Cabinet',
-                            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800),
+                            style: AppFonts.googleSans(fontSize: 11, fontWeight: FontWeight.w800),
                           ),
                         ),
                       ),
@@ -1966,10 +1966,10 @@ class _PatientSearchBarState extends State<_PatientSearchBar> {
                 setState(() => _showDropdown = true);
               }
             },
-            style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textDark),
+            style: AppFonts.googleSans(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textDark),
             decoration: InputDecoration(
               hintText: 'Search Patient by ID (e.g. PAT-301) or Name...',
-              hintStyle: GoogleFonts.inter(
+              hintStyle: AppFonts.googleSans(
                 fontSize: 12,
                 color: AppColors.textMuted,
               ),
@@ -2031,7 +2031,7 @@ class _PatientSearchBarState extends State<_PatientSearchBar> {
                     children: [
                       Text(
                         patient.name,
-                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark),
+                        style: AppFonts.googleSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark),
                       ),
                       const SizedBox(width: 8),
                       Container(
@@ -2043,14 +2043,14 @@ class _PatientSearchBarState extends State<_PatientSearchBar> {
                         ),
                         child: Text(
                           'ID: ${patient.id}',
-                          style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800, color: const Color(0xFF1244A2)),
+                          style: AppFonts.googleSans(fontSize: 10, fontWeight: FontWeight.w800, color: const Color(0xFF1244A2)),
                         ),
                       ),
                     ],
                   ),
                   subtitle: Text(
                     '${patient.currentProblem} • ${patient.assignedDoctorName ?? "MetroHealth Cardiology"}',
-                    style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
+                    style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted),
                   ),
                   trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.textMuted),
                   onTap: () {

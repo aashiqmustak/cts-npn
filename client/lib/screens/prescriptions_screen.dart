@@ -53,7 +53,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                 icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
                 label: Text(
                   'Upload e-Rx Document',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -205,7 +205,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
         ),
         child: Text(
           label,
-          style: GoogleFonts.plusJakartaSans(
+          style: AppFonts.googleSans(
             fontSize: 12.5,
             fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
             color: isSelected ? Colors.white : AppColors.textDark,
@@ -250,7 +250,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                   children: [
                     Text(
                       id,
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppFonts.googleSans(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w800,
                         color: AppColors.textDark,
@@ -265,7 +265,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                       ),
                       child: Text(
                         status,
-                        style: GoogleFonts.plusJakartaSans(
+                        style: AppFonts.googleSans(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                           color: textStatus,
@@ -277,7 +277,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                 const SizedBox(height: 3),
                 Text(
                   doctor,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: AppColors.primaryTeal,
@@ -285,7 +285,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                 ),
                 Text(
                   dateDetails,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 11.5,
                     color: AppColors.textMuted,
                   ),
@@ -309,7 +309,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                 icon: const Icon(Icons.picture_as_pdf_rounded, size: 15, color: Color(0xFF1244A2)),
                 label: Text(
                   'Download PDF',
-                  style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w800),
+                  style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w800),
                 ),
               ),
               const SizedBox(width: 6),
@@ -327,7 +327,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                 ),
                 child: Text(
                   'Inspect Rx',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w800,
                   ),
@@ -369,11 +369,11 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                       children: [
                         Text(
                           'Official Clinical e-Prescription Document',
-                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.textDark),
+                          style: AppFonts.googleSans(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.textDark),
                         ),
                         Text(
                           'FHIR v4.0 Certified • DEA & NPI Signed',
-                          style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
+                          style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted),
                         ),
                       ],
                     ),
@@ -398,23 +398,23 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('ALTERNEA HEALTH CLINICAL NETWORK', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w900, color: const Color(0xFF1244A2))),
-                        Text('Rx ID: $id', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.textDark)),
+                        Text('ALTERNEA HEALTH CLINICAL NETWORK', style: AppFonts.googleSans(fontSize: 10, fontWeight: FontWeight.w900, color: const Color(0xFF1244A2))),
+                        Text('Rx ID: $id', style: AppFonts.googleSans(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.textDark)),
                       ],
                     ),
                     const SizedBox(height: 10),
-                    Text('Prescribing Physician:', style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
-                    Text(doctor, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark)),
+                    Text('Prescribing Physician:', style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted)),
+                    Text(doctor, style: AppFonts.googleSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark)),
                     const SizedBox(height: 8),
-                    Text('Patient & Date Details:', style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
-                    Text(dateDetails, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textDark)),
+                    Text('Patient & Date Details:', style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted)),
+                    Text(dateDetails, style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textDark)),
                     const SizedBox(height: 12),
                     const Divider(height: 1),
                     const SizedBox(height: 12),
-                    Text('Rx Regimen Payload:', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: const Color(0xFF1244A2))),
+                    Text('Rx Regimen Payload:', style: AppFonts.googleSans(fontSize: 11, fontWeight: FontWeight.w800, color: const Color(0xFF1244A2))),
                     const SizedBox(height: 4),
-                    Text('1. Amantadine 100mg Capsule — 1 Cap Oral QD (30 Days)', style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600)),
-                    Text('2. Lipitor (Atorvastatin) 20mg Tablet — 1 Tab QHS (90 Days)', style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600)),
+                    Text('1. Amantadine 100mg Capsule — 1 Cap Oral QD (30 Days)', style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w600)),
+                    Text('2. Lipitor (Atorvastatin) 20mg Tablet — 1 Tab QHS (90 Days)', style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -426,7 +426,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                         children: [
                           const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF10B981)),
                           const SizedBox(width: 6),
-                          Text('SHA-256 Signature Stamp: Verified & Encrypted', style: GoogleFonts.inter(fontSize: 10.5, fontWeight: FontWeight.w800, color: const Color(0xFF10B981))),
+                          Text('SHA-256 Signature Stamp: Verified & Encrypted', style: AppFonts.googleSans(fontSize: 10.5, fontWeight: FontWeight.w800, color: const Color(0xFF10B981))),
                         ],
                       ),
                     ),
@@ -439,7 +439,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.pop(ctx),
-                    child: Text('Close', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textMuted)),
+                    child: Text('Close', style: AppFonts.googleSans(fontWeight: FontWeight.w700, color: AppColors.textMuted)),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
@@ -449,7 +449,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     ),
                     icon: const Icon(Icons.download_rounded, size: 16, color: Colors.white),
-                    label: Text('Save / Download PDF', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: Colors.white)),
+                    label: Text('Save / Download PDF', style: AppFonts.googleSans(fontWeight: FontWeight.w800, color: Colors.white)),
                     onPressed: () {
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -510,7 +510,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
               const SizedBox(width: 10),
               Text(
                 label,
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textDark,
@@ -520,7 +520,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
           ),
           Text(
             value,
-            style: GoogleFonts.plusJakartaSans(
+            style: AppFonts.googleSans(
               fontSize: 12.5,
               fontWeight: FontWeight.w800,
               color: AppColors.textDark,
@@ -577,7 +577,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
                     color: AppColors.textDark,
@@ -586,7 +586,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 11,
                     color: AppColors.textMuted,
                     height: 1.3,
@@ -607,7 +607,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
           'Upload e-Prescription (PDF/HL7)',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 16),
+          style: AppFonts.googleSans(fontWeight: FontWeight.w800, fontSize: 16),
         ),
         content: SizedBox(
           width: 440,
@@ -633,7 +633,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                       const SizedBox(height: 8),
                       Text(
                         'Drag & Drop FHIR/HL7 Document here',
-                        style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600),
+                        style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -645,7 +645,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+            child: Text('Cancel', style: AppFonts.googleSans(fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryTeal),
@@ -658,7 +658,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                 ),
               );
             },
-            child: Text('Process e-Rx', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+            child: Text('Process e-Rx', style: AppFonts.googleSans(fontWeight: FontWeight.w700)),
           ),
         ],
       ),

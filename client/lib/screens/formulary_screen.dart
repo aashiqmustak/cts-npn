@@ -35,7 +35,7 @@ class FormularyScreen extends StatelessWidget {
               ),
               child: Text(
                 '${drugs.length} Drugs Available',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   color: AppColors.primaryTeal,
                   fontWeight: FontWeight.w800,
                   fontSize: 12,
@@ -64,7 +64,7 @@ class FormularyScreen extends StatelessWidget {
                     child: Center(
                       child: Text(
                         'No formulary drugs match your search and filter criteria.',
-                        style: GoogleFonts.plusJakartaSans(color: AppColors.textMuted),
+                        style: AppFonts.googleSans(color: AppColors.textMuted),
                       ),
                     ),
                   )
@@ -101,7 +101,7 @@ class FormularyScreen extends StatelessWidget {
                                     children: [
                                       Text(
                                         drug.name,
-                                        style: GoogleFonts.plusJakartaSans(
+                                        style: AppFonts.googleSans(
                                           fontWeight: FontWeight.w800,
                                           fontSize: 14,
                                           color: AppColors.textDark,
@@ -117,7 +117,7 @@ class FormularyScreen extends StatelessWidget {
                                           ),
                                           child: Text(
                                             'GENERIC',
-                                            style: GoogleFonts.plusJakartaSans(
+                                            style: AppFonts.googleSans(
                                               fontSize: 9.5,
                                               fontWeight: FontWeight.w800,
                                               color: AppColors.successText,
@@ -130,7 +130,7 @@ class FormularyScreen extends StatelessWidget {
                                   const SizedBox(height: 3),
                                   Text(
                                     'NDC: ${drug.ndc} • ${drug.drugClass}',
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: AppFonts.googleSans(
                                       fontSize: 11.5,
                                       color: AppColors.textMuted,
                                     ),
@@ -166,7 +166,7 @@ class FormularyScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     '${fmt.format(drug.estMonthlyCost)}/mo',
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: AppFonts.googleSans(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 13.5,
                                       color: AppColors.textDark,
@@ -174,7 +174,7 @@ class FormularyScreen extends StatelessWidget {
                                   ),
                                   Text(
                                     'Avg. Retail Price',
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: AppFonts.googleSans(
                                       fontSize: 10.5,
                                       color: AppColors.textMuted,
                                     ),
@@ -199,7 +199,7 @@ class FormularyScreen extends StatelessWidget {
                                 alternatives.isNotEmpty
                                     ? 'Alternatives (${alternatives.length})'
                                     : 'Specs',
-                                style: GoogleFonts.plusJakartaSans(
+                                style: AppFonts.googleSans(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -229,7 +229,7 @@ class FormularyScreen extends StatelessWidget {
             child: SizedBox(
               height: 42,
               child: TextField(
-                style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                style: AppFonts.googleSans(fontSize: 13),
                 decoration: InputDecoration(
                   hintText: 'Search drug name, NDC, or therapeutic class...',
                   prefixIcon: const Icon(Icons.search_rounded, size: 19, color: AppColors.primaryTeal),
@@ -250,7 +250,7 @@ class FormularyScreen extends StatelessWidget {
             child: DropdownButtonFormField<int?>(
               value: appState.selectedTierFilter,
               isExpanded: true,
-              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textDark),
+              style: AppFonts.googleSans(fontSize: 13, color: AppColors.textDark),
               decoration: const InputDecoration(labelText: 'Formulary Tier'),
               items: const [
                 DropdownMenuItem(value: null, child: Text('All Tiers (1 - 5)', overflow: TextOverflow.ellipsis, maxLines: 1)),
@@ -272,7 +272,7 @@ class FormularyScreen extends StatelessWidget {
             child: DropdownButtonFormField<String?>(
               value: appState.selectedRestrictionFilter,
               isExpanded: true,
-              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textDark),
+              style: AppFonts.googleSans(fontSize: 13, color: AppColors.textDark),
               decoration: const InputDecoration(labelText: 'Restrictions'),
               items: const [
                 DropdownMenuItem(value: null, child: Text('All Restrictions', overflow: TextOverflow.ellipsis, maxLines: 1)),
@@ -327,7 +327,7 @@ class FormularyScreen extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: GoogleFonts.plusJakartaSans(
+        style: AppFonts.googleSans(
           color: text,
           fontWeight: FontWeight.w800,
           fontSize: 11.5,
@@ -345,7 +345,7 @@ class FormularyScreen extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: GoogleFonts.plusJakartaSans(
+        style: AppFonts.googleSans(
           color: text,
           fontSize: 10.5,
           fontWeight: FontWeight.w700,
@@ -369,7 +369,7 @@ class FormularyScreen extends StatelessWidget {
             Expanded(
               child: Text(
                 drug.name,
-                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 17),
+                style: AppFonts.googleSans(fontWeight: FontWeight.w800, fontSize: 17),
               ),
             ),
           ],
@@ -383,7 +383,7 @@ class FormularyScreen extends StatelessWidget {
               children: [
                 Text(
                   'Therapeutic Class: ${drug.drugClass} • NDC: ${drug.ndc}',
-                  style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: AppColors.textMuted),
+                  style: AppFonts.googleSans(fontSize: 12.5, color: AppColors.textMuted),
                 ),
                 const SizedBox(height: 14),
                 Container(
@@ -396,21 +396,21 @@ class FormularyScreen extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Tier ${drug.tier} • ${drug.tierLabel}', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
-                      Text('Est. Monthly Cost: ${fmt.format(drug.estMonthlyCost)}/mo', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.primaryTeal)),
+                      Text('Tier ${drug.tier} • ${drug.tierLabel}', style: AppFonts.googleSans(fontWeight: FontWeight.w700)),
+                      Text('Est. Monthly Cost: ${fmt.format(drug.estMonthlyCost)}/mo', style: AppFonts.googleSans(fontWeight: FontWeight.w800, color: AppColors.primaryTeal)),
                     ],
                   ),
                 ),
                 const SizedBox(height: 18),
                 Text(
                   'Bioequivalent Lower-Tier Alternatives (Cost Savings):',
-                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 13.5),
+                  style: AppFonts.googleSans(fontWeight: FontWeight.w800, fontSize: 13.5),
                 ),
                 const SizedBox(height: 10),
                 if (alternatives.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text('This drug is already at the optimal formulary tier.', style: GoogleFonts.plusJakartaSans(color: AppColors.textMuted, fontSize: 12)),
+                    child: Text('This drug is already at the optimal formulary tier.', style: AppFonts.googleSans(color: AppColors.textMuted, fontSize: 12)),
                   )
                 else
                   ...alternatives.map((alt) {
@@ -428,8 +428,8 @@ class FormularyScreen extends StatelessWidget {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(alt.altDrugName, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 13)),
-                              Text('Moves to Tier ${alt.altTier} • ${alt.clinicalNotes}', style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted)),
+                              Text(alt.altDrugName, style: AppFonts.googleSans(fontWeight: FontWeight.w800, fontSize: 13)),
+                              Text('Moves to Tier ${alt.altTier} • ${alt.clinicalNotes}', style: AppFonts.googleSans(fontSize: 11, color: AppColors.textMuted)),
                             ],
                           ),
                           Container(
@@ -437,7 +437,7 @@ class FormularyScreen extends StatelessWidget {
                             decoration: BoxDecoration(color: AppColors.successGreen, borderRadius: BorderRadius.circular(10)),
                             child: Text(
                               'Save ${fmt.format(alt.estMonthlySavings)}/mo',
-                              style: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11.5),
+                              style: AppFonts.googleSans(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11.5),
                             ),
                           ),
                         ],
@@ -451,7 +451,7 @@ class FormularyScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Close', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+            child: Text('Close', style: AppFonts.googleSans(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
