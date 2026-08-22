@@ -289,9 +289,17 @@ patient_history_router = Router(
 # =====================================================================
 @get("/health")
 async def ml_health() -> dict[str, Any]:
+    remote = ml_service.check_remote_health()
     return {
-        "status": "healthy",
-        "models": {
+        "status": "healthy"
+        if remote.get("connected") or ml_service.adherence_model is not None
+        else "degraded",
+        "service_type": "AWS EC2 ML Inference Service"
+        if remote.get("connected")
+        else "Local ML Fallback",
+        "endpoint_url": ml_service.base_url,
+        "remote_service": remote,
+        "local_models": {
             "adherence": ml_service.adherence_model is not None,
             "abandonment": ml_service.abandonment_model is not None,
         },
@@ -430,6 +438,12 @@ async def root() -> dict[str, Any]:
 
 @get("/health")
 async def system_health() -> dict[str, Any]:
+    remote_ml = ml_service.check_remote_health()
+    ml_status = (
+        f"healthy (AWS EC2 @ {ml_service.base_url})"
+        if remote_ml.get("connected")
+        else "healthy (local fallback)"
+    )
     return {
         "system_status": "healthy",
         "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
@@ -438,7 +452,7 @@ async def system_health() -> dict[str, Any]:
             "formulary": f"healthy ({len(formulary_repo.records)} records)",
             "prior_authorization": f"healthy ({len(pa_repo.records)} records)",
             "patient_history": f"healthy ({len(patient_history_repo.records)} records)",
-            "ml_models": "healthy",
+            "ml_models": ml_status,
             "alternative_discovery": f"healthy ({len(alt_repo.records)} records)",
             "ranking_agent": "healthy",
         },
