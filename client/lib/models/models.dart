@@ -67,11 +67,91 @@ enum FrictionStatus { blocked, inReview, appealed, resolved }
 
 enum BarrierType { paRequired, stepTherapyFailed, quantityLimit }
 
+class PatientProfile {
+  final String patientId;
+  final String name;
+  final DateTime? dateOfBirth;
+  final int age;
+  final String gender;
+  final String phone;
+  final String email;
+  final String height;
+  final String weight;
+  final String address;
+  final String city;
+  final String bloodGroup;
+  final String allergies;
+  final String chronicConditions;
+
+  const PatientProfile({
+    required this.patientId,
+    required this.name,
+    this.dateOfBirth,
+    required this.age,
+    required this.gender,
+    required this.phone,
+    required this.email,
+    required this.height,
+    required this.weight,
+    required this.address,
+    required this.city,
+    required this.bloodGroup,
+    required this.allergies,
+    required this.chronicConditions,
+  });
+
+  factory PatientProfile.fromJson(Map<String, dynamic> json) {
+    final dobString = json['dob']?.toString();
+    return PatientProfile(
+      patientId: json['patient_id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      dateOfBirth: dobString != null && dobString.isNotEmpty ? DateTime.tryParse(dobString) : null,
+      age: int.tryParse(json['age']?.toString() ?? '') ?? 0,
+      gender: json['gender']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      height: json['height']?.toString() ?? '',
+      weight: json['weight']?.toString() ?? '',
+      address: json['address']?.toString() ?? '',
+      city: json['city']?.toString() ?? '',
+      bloodGroup: json['blood_group']?.toString() ?? '',
+      allergies: json['allergies']?.toString() ?? '',
+      chronicConditions: json['chronic_conditions']?.toString() ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'patient_id': patientId,
+        'name': name,
+        'dob': dateOfBirth?.toIso8601String(),
+        'age': age,
+        'gender': gender,
+        'phone': phone,
+        'email': email,
+        'height': height,
+        'weight': weight,
+        'address': address,
+        'city': city,
+        'blood_group': bloodGroup,
+        'allergies': allergies,
+        'chronic_conditions': chronicConditions,
+      };
+
+  bool get isComplete =>
+      patientId.isNotEmpty &&
+      name.isNotEmpty &&
+      (dateOfBirth != null || age > 0) &&
+      gender.isNotEmpty;
+}
+
 class User {
   final String id;
   final String name;
   final String email;
   final String? phone;
+  final String? googleAccountId;
+  final String? googleEmail;
+  final String? googleAvatarUrl;
   final UserRole role;
   final List<String> assignedPatientIds;
   final String avatarUrl;
@@ -80,6 +160,7 @@ class User {
   final String? hospitalName;
   final String? doctorId;
   final String? patientId;
+  final PatientProfile? patientProfile;
   final String? insuranceCompany;
   final List<String> insurancePlans;
   final List<String> insuranceMedicines;
@@ -90,6 +171,9 @@ class User {
     required this.name,
     required this.email,
     this.phone,
+    this.googleAccountId,
+    this.googleEmail,
+    this.googleAvatarUrl,
     required this.role,
     this.assignedPatientIds = const [],
     this.avatarUrl = '',
@@ -98,6 +182,7 @@ class User {
     this.hospitalName,
     this.doctorId,
     this.patientId,
+    this.patientProfile,
     this.insuranceCompany,
     this.insurancePlans = const [],
     this.insuranceMedicines = const [],
@@ -117,6 +202,7 @@ class User {
     String? hospitalName,
     String? doctorId,
     String? patientId,
+    PatientProfile? patientProfile,
     String? insuranceCompany,
     List<String>? insurancePlans,
     List<String>? insuranceMedicines,
@@ -135,6 +221,7 @@ class User {
       hospitalName: hospitalName ?? this.hospitalName,
       doctorId: doctorId ?? this.doctorId,
       patientId: patientId ?? this.patientId,
+      patientProfile: patientProfile ?? this.patientProfile,
       insuranceCompany: insuranceCompany ?? this.insuranceCompany,
       insurancePlans: insurancePlans ?? this.insurancePlans,
       insuranceMedicines: insuranceMedicines ?? this.insuranceMedicines,
@@ -151,11 +238,16 @@ class User {
     if (rStr == 'admin') parsedRole = UserRole.admin;
     if (rStr == 'pharmacist') parsedRole = UserRole.pharmacist;
 
+    final patientProfileJson = json['patient_profile'];
+
     return User(
       id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       email: json['email'] ?? '',
       phone: json['phone']?.toString(),
+      googleAccountId: json['google_account_id']?.toString(),
+      googleEmail: json['google_email']?.toString() ?? json['email']?.toString(),
+      googleAvatarUrl: json['google_avatar_url']?.toString(),
       role: parsedRole,
       assignedPatientIds: (json['assigned_patient_ids'] as List?)
               ?.map((e) => e.toString())
@@ -167,6 +259,9 @@ class User {
       hospitalName: json['hospital_name']?.toString() ?? json['hospitals']?['name']?.toString(),
       doctorId: json['doctor_id']?.toString(),
       patientId: json['patient_id']?.toString(),
+        patientProfile: patientProfileJson is Map<String, dynamic>
+          ? PatientProfile.fromJson(patientProfileJson)
+          : null,
       insuranceCompany: json['insurance_company']?.toString(),
       insurancePlans: (json['insurance_plans'] as List?)
               ?.map((e) => e.toString())
@@ -188,12 +283,16 @@ class User {
         'name': name,
         'email': email,
         'phone': phone,
+      'google_account_id': googleAccountId,
+      'google_email': googleEmail ?? email,
+      'google_avatar_url': googleAvatarUrl,
         'role': role.name,
         'title': title,
         'hospital_id': hospitalId,
         'hospital_name': hospitalName,
         'doctor_id': doctorId,
         'patient_id': patientId,
+        'patient_profile': patientProfile?.toJson(),
         'insurance_company': insuranceCompany,
         'insurance_plans': insurancePlans,
         'insurance_medicines': insuranceMedicines,
@@ -763,6 +862,53 @@ class Prescription {
       notes: json['notes']?.toString(),
     );
   }
+
+  Prescription copyWith({
+    String? id,
+    String? patientId,
+    String? patientName,
+    String? drugId,
+    String? drugName,
+    String? drugClass,
+    String? diagnosis,
+    List<DateTime>? fillDates,
+    List<FillRecord>? fillRecords,
+    double? pdcScore,
+    String? status,
+    DateTime? lastFillDate,
+    DateTime? nextDueDate,
+    String? prescriberName,
+    String? hospitalName,
+    String? hospitalAddress,
+    String? doctorId,
+    DateTime? prescribedDate,
+    String? notes,
+  }) {
+    return Prescription(
+      id: id ?? this.id,
+      patientId: patientId ?? this.patientId,
+      patientName: patientName ?? this.patientName,
+      drugId: drugId ?? this.drugId,
+      drugName: drugName ?? this.drugName,
+      drugClass: drugClass ?? this.drugClass,
+      diagnosis: diagnosis ?? this.diagnosis,
+      fillDates: fillDates ?? this.fillDates,
+      fillRecords: fillRecords ?? this.fillRecords,
+      pdcScore: pdcScore ?? this.pdcScore,
+      status: status ?? this.status,
+      lastFillDate: lastFillDate ?? this.lastFillDate,
+      nextDueDate: nextDueDate ?? this.nextDueDate,
+      prescriberName: prescriberName ?? this.prescriberName,
+      hospitalName: hospitalName ?? this.hospitalName,
+      hospitalAddress: hospitalAddress ?? this.hospitalAddress,
+      doctorId: doctorId ?? this.doctorId,
+      prescribedDate: prescribedDate ?? this.prescribedDate,
+      notes: notes ?? this.notes,
+    );
+  }
+
+  bool get isBought => status.toLowerCase() == 'bought';
+  bool get isNotBought => status.toLowerCase() == 'not bought';
 }
 
 class AdherenceFlag {

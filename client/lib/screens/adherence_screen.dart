@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
@@ -303,7 +302,7 @@ class AdherenceScreen extends StatelessWidget {
             child: SizedBox(
               height: 40,
               child: DropdownButtonFormField<RiskLevel?>(
-                value: appState.selectedRiskFilter,
+                initialValue: appState.selectedRiskFilter,
                 isExpanded: true,
                 style: AppFonts.googleSans(
                     fontSize: 12.5, color: AppColors.textDark),
