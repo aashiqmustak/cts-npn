@@ -1,7 +1,11 @@
 import datetime
+import os
 import pathlib
 import sys
 from typing import Any
+
+import httpx
+from groq import Groq
 
 # Ensure server/src is in sys.path
 _current = pathlib.Path(__file__).resolve().parent
@@ -563,9 +567,6 @@ async def chat_message(data: ChatMessagePayload) -> dict[str, Any]:
 
         # Generate intelligent LLM response if Groq is available
         llm_reply = None
-        import os
-        from groq import Groq
-
         groq_key = os.getenv("GROQ_API_KEY")
         if groq_key:
             try:
@@ -605,7 +606,7 @@ async def chat_message(data: ChatMessagePayload) -> dict[str, Any]:
                     temperature=0.2,
                 )
                 llm_reply = completion.choices[0].message.content.strip()
-            except Exception as _llm_err:
+            except Exception:  # noqa: BLE001
                 llm_reply = None
 
         if llm_reply:
@@ -675,7 +676,6 @@ async def chat_message(data: ChatMessagePayload) -> dict[str, Any]:
         sarvam_key = os.getenv("SARVAM_API_KEY")
         if sarvam_key:
             try:
-                import httpx
                 # Clean spoken text for clear voice audio
                 spoken_text = reply.split("Clinical Rationale:")[0].replace("\n", " ").strip()
                 if len(spoken_text) > 400:
@@ -699,7 +699,7 @@ async def chat_message(data: ChatMessagePayload) -> dict[str, Any]:
                             tts_json = tts_res.json()
                             if tts_json.get("audios"):
                                 audio_base64 = tts_json["audios"][0]
-            except Exception as _tts_err:
+            except Exception:  # noqa: BLE001
                 audio_base64 = None
 
         return {
@@ -726,7 +726,6 @@ async def voice_tts(data: dict[str, Any]) -> dict[str, Any]:
     if not sarvam_key or not text:
         return {"status": "error", "message": "Missing API key or text"}
     try:
-        import httpx
         clean_text = text.replace("\n", " ").strip()[:400]
         async with httpx.AsyncClient(timeout=8.0) as client:
             tts_res = await client.post(
@@ -745,7 +744,7 @@ async def voice_tts(data: dict[str, Any]) -> dict[str, Any]:
             if tts_res.status_code == 200:
                 res_data = tts_res.json()
                 return {"status": "success", "audio_base64": res_data.get("audios", [None])[0]}
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         return {"status": "error", "message": str(exc)}
     return {"status": "error", "message": "TTS synthesis failed"}
 
@@ -753,8 +752,8 @@ async def voice_tts(data: dict[str, Any]) -> dict[str, Any]:
 # =====================================================================
 # WEBRTC VOICE BOT PROXY (PORT 8000 -> 7860)
 # =====================================================================
-import httpx
 PIPECAT_VOICE_URL = "http://127.0.0.1:7860"
+
 
 @post("/start")
 async def voice_start(data: dict[str, Any]) -> dict[str, Any]:
@@ -763,7 +762,8 @@ async def voice_start(data: dict[str, Any]) -> dict[str, Any]:
             res = await client.post(f"{PIPECAT_VOICE_URL}/start", json=data)
             return res.json()
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Voice runner error on port 7860: {exc}")
+        raise HTTPException(status_code=502, detail=f"Voice runner error on port 7860: {exc}") from exc
+
 
 @post("/sessions/{session_id:str}/api/offer")
 async def voice_offer(session_id: str, data: dict[str, Any]) -> dict[str, Any]:
@@ -772,7 +772,8 @@ async def voice_offer(session_id: str, data: dict[str, Any]) -> dict[str, Any]:
             res = await client.post(f"{PIPECAT_VOICE_URL}/sessions/{session_id}/api/offer", json=data)
             return res.json()
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Voice runner offer error: {exc}")
+        raise HTTPException(status_code=502, detail=f"Voice runner offer error: {exc}") from exc
+
 
 @patch("/sessions/{session_id:str}/api/offer")
 async def voice_ice_patch(session_id: str, data: dict[str, Any]) -> dict[str, Any]:
@@ -780,7 +781,7 @@ async def voice_ice_patch(session_id: str, data: dict[str, Any]) -> dict[str, An
         async with httpx.AsyncClient(timeout=10.0) as client:
             res = await client.patch(f"{PIPECAT_VOICE_URL}/sessions/{session_id}/api/offer", json=data)
             return res.json()
-    except Exception as exc:
+    except Exception:  # noqa: BLE001
         return {"status": "ok"}
 
 

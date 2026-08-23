@@ -18,6 +18,7 @@ from pipecat.audio.vad.vad_analyzer import VADParams
 from pipecat.frames.frames import (
     Frame,
     LLMMessagesAppendFrame,
+    OutputTransportMessageUrgentFrame,
     TranscriptionFrame,
     TTSSpeakFrame,
 )
@@ -90,16 +91,6 @@ def load_project_env_and_metadata() -> dict[str, Any]:
 
 
 project_metadata = load_project_env_and_metadata()
-import json
-from pipecat.frames.frames import (
-    Frame,
-    LLMMessagesAppendFrame,
-    OutputTransportMessageUrgentFrame,
-    TextFrame,
-    TranscriptionFrame,
-    TTSSpeakFrame,
-)
-
 backend_orchestrator = MultiAgentOrchestrator()
 
 
