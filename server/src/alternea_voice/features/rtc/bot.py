@@ -398,17 +398,29 @@ async def run_bot(
 
         context = LLMContext(messages, tools=agent_tools)
 
+        # Smart turn detection with graceful fallback
+        turn_analyzer = None
+        try:
+            turn_analyzer = LocalSmartTurnAnalyzerV3()
+        except (ImportError, RuntimeError, OSError, ValueError) as exc:
+            logger.warning("LocalSmartTurnAnalyzerV3 unavailable: %s", exc)
+
+        stop_strategies = (
+            [TurnAnalyzerUserTurnStopStrategy(turn_analyzer=turn_analyzer)]
+            if turn_analyzer
+            else []
+        )
+        user_params = (
+            LLMUserAggregatorParams(
+                user_turn_strategies=UserTurnStrategies(stop=stop_strategies)
+            )
+            if stop_strategies
+            else LLMUserAggregatorParams()
+        )
+
         user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
             context,
-            user_params=LLMUserAggregatorParams(
-                user_turn_strategies=UserTurnStrategies(
-                    stop=[
-                        TurnAnalyzerUserTurnStopStrategy(
-                            turn_analyzer=(LocalSmartTurnAnalyzerV3())
-                        )
-                    ]
-                )
-            ),
+            user_params=user_params,
         )
 
         transcription_logger = TranscriptionLogger()
