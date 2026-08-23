@@ -7,14 +7,40 @@ import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bento_card.dart';
 
-class FrictionScreen extends StatelessWidget {
+class FrictionScreen extends StatefulWidget {
   const FrictionScreen({super.key});
+
+  @override
+  State<FrictionScreen> createState() => _FrictionScreenState();
+}
+
+class _FrictionScreenState extends State<FrictionScreen> {
+  int _currentPage = 1;
+  static const int _itemsPerPage = 10;
 
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final events = appState.filteredFrictionEvents;
     final fmt = NumberFormat.currency(symbol: '\$', decimalDigits: 0);
+
+    // Calculate total pages dynamically
+    final totalPages = (events.length / _itemsPerPage).ceil();
+    // Ensure _currentPage is bounded correctly
+    int activePage = _currentPage;
+    if (activePage > totalPages && totalPages > 0) {
+      activePage = totalPages;
+    }
+    if (activePage < 1) {
+      activePage = 1;
+    }
+
+    final startIndex = (activePage - 1) * _itemsPerPage;
+    final endIndex = startIndex + _itemsPerPage;
+    final paginatedEvents = events.sublist(
+      startIndex,
+      endIndex > events.length ? events.length : endIndex,
+    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
@@ -67,17 +93,17 @@ class FrictionScreen extends StatelessWidget {
                       ),
                     ),
                   )
-                else
+                else ...[
                   ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: events.length,
+                    itemCount: paginatedEvents.length,
                     separatorBuilder: (context, index) => const Divider(
                       height: 1,
                       color: AppColors.borderLight,
                     ),
                     itemBuilder: (context, index) {
-                      final event = events[index];
+                      final event = paginatedEvents[index];
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         child: Row(
@@ -173,6 +199,35 @@ class FrictionScreen extends StatelessWidget {
                       );
                     },
                   ),
+                  if (totalPages > 1) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        OutlinedButton(
+                          onPressed: activePage > 1
+                              ? () => setState(() => _currentPage--)
+                              : null,
+                          child: const Text('Previous'),
+                        ),
+                        Text(
+                          'Page $activePage of $totalPages',
+                          style: AppFonts.googleSans(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        OutlinedButton(
+                          onPressed: activePage < totalPages
+                              ? () => setState(() => _currentPage++)
+                              : null,
+                          child: const Text('Next'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
               ],
             ),
           ),

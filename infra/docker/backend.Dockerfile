@@ -11,6 +11,7 @@ COPY pyproject.toml uv.lock ./
 
 # Install dependencies (system libraries needed for building some python extension can go here if needed)
 # Since we are on debian/slim, we might need a compiler/git for some deps, but uv sync can try directly first.
+RUN sed -i 's/http:/https:/g' /etc/apt/sources.list.d/debian.sources 2>/dev/null || sed -i 's/http:/https:/g' /etc/apt/sources.list 2>/dev/null || true
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     git \

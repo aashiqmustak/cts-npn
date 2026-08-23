@@ -80,6 +80,10 @@ class User {
   final String? hospitalName;
   final String? doctorId;
   final String? patientId;
+  final String? insuranceCompany;
+  final List<String> insurancePlans;
+  final List<String> insuranceMedicines;
+  final List<String> insuranceHospitals;
 
   const User({
     required this.id,
@@ -94,7 +98,49 @@ class User {
     this.hospitalName,
     this.doctorId,
     this.patientId,
+    this.insuranceCompany,
+    this.insurancePlans = const [],
+    this.insuranceMedicines = const [],
+    this.insuranceHospitals = const [],
   });
+
+  User copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? phone,
+    UserRole? role,
+    List<String>? assignedPatientIds,
+    String? avatarUrl,
+    String? title,
+    String? hospitalId,
+    String? hospitalName,
+    String? doctorId,
+    String? patientId,
+    String? insuranceCompany,
+    List<String>? insurancePlans,
+    List<String>? insuranceMedicines,
+    List<String>? insuranceHospitals,
+  }) {
+    return User(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      role: role ?? this.role,
+      assignedPatientIds: assignedPatientIds ?? this.assignedPatientIds,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      title: title ?? this.title,
+      hospitalId: hospitalId ?? this.hospitalId,
+      hospitalName: hospitalName ?? this.hospitalName,
+      doctorId: doctorId ?? this.doctorId,
+      patientId: patientId ?? this.patientId,
+      insuranceCompany: insuranceCompany ?? this.insuranceCompany,
+      insurancePlans: insurancePlans ?? this.insurancePlans,
+      insuranceMedicines: insuranceMedicines ?? this.insuranceMedicines,
+      insuranceHospitals: insuranceHospitals ?? this.insuranceHospitals,
+    );
+  }
 
   factory User.fromJson(Map<String, dynamic> json) {
     UserRole parsedRole = UserRole.pharmacist;
@@ -121,6 +167,19 @@ class User {
       hospitalName: json['hospital_name']?.toString() ?? json['hospitals']?['name']?.toString(),
       doctorId: json['doctor_id']?.toString(),
       patientId: json['patient_id']?.toString(),
+      insuranceCompany: json['insurance_company']?.toString(),
+      insurancePlans: (json['insurance_plans'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+      insuranceMedicines: (json['insurance_medicines'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+      insuranceHospitals: (json['insurance_hospitals'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
     );
   }
 
@@ -135,6 +194,10 @@ class User {
         'hospital_name': hospitalName,
         'doctor_id': doctorId,
         'patient_id': patientId,
+        'insurance_company': insuranceCompany,
+        'insurance_plans': insurancePlans,
+        'insurance_medicines': insuranceMedicines,
+        'insurance_hospitals': insuranceHospitals,
       };
 
   bool get isAdmin => role == UserRole.admin;

@@ -30,10 +30,49 @@ import '../screens/pharmacist_insurance_screen.dart';
 import '../screens/insurance_pharmacy_connections_screen.dart';
 import '../screens/alternate_agent_screen.dart';
 
-class MainLayout extends StatelessWidget {
+class MainLayout extends StatefulWidget {
   final Widget? child;
 
   const MainLayout({super.key, this.child});
+
+  @override
+  State<MainLayout> createState() => _MainLayoutState();
+}
+
+class _MainLayoutState extends State<MainLayout> {
+  bool _checkedInsuranceSetup = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkInsuranceSetup();
+    });
+  }
+
+  void _checkInsuranceSetup() {
+    if (!mounted) return;
+    final appState = Provider.of<AppState>(context, listen: false);
+    final user = appState.currentUser;
+    if (user.role == UserRole.insuranceAgent &&
+        (user.insuranceCompany == null || user.insuranceCompany!.isEmpty || user.insurancePlans.isEmpty) &&
+        !_checkedInsuranceSetup) {
+      _checkedInsuranceSetup = true;
+      _showInsuranceAgentSetupDialog(context, appState, user);
+    }
+  }
+
+  void _showInsuranceAgentSetupDialog(BuildContext context, AppState appState, User user) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => _InsuranceAgentSetupDialog(
+        appState: appState,
+        initialCompany: user.insuranceCompany,
+        initialPlans: user.insurancePlans,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +112,7 @@ class MainLayout extends StatelessWidget {
                             horizontal: 24.0,
                             vertical: 16.0,
                           ),
-                          child: child ?? _RoleScreenStack(appState: appState, user: user),
+                          child: widget.child ?? _RoleScreenStack(appState: appState, user: user),
                         ),
                       ),
                     ),
@@ -83,8 +122,10 @@ class MainLayout extends StatelessWidget {
             ],
           ),
 
-          // Interactive Draggable Floating e-Rx Notification Card Overlay
-          if (appState.notifications.isNotEmpty)
+          // Interactive Draggable Floating e-Rx Notification Card Overlay (Only shown for Patient and Doctor)
+          if (appState.notifications.isNotEmpty &&
+              (appState.currentUser.role == UserRole.patient ||
+               appState.currentUser.role == UserRole.doctor))
             _DraggableNotificationCard(appState: appState),
         ],
       ),
@@ -549,42 +590,50 @@ class MainLayout extends StatelessWidget {
 
           const SizedBox(width: 12),
 
-          // Locked Facility Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFCBD5E1)),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.lock_rounded,
-                  color: Color(0xFF64748B),
-                  size: 14,
+          // Locked Facility / Insurance Carrier Badge
+          GestureDetector(
+            onTap: user.isInsuranceAgent
+                ? () => _showInsuranceAgentSetupDialog(context, appState, user)
+                : null,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: user.isInsuranceAgent ? const Color(0xFFEFF6FF) : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: user.isInsuranceAgent ? const Color(0xFF93C5FD) : const Color(0xFFCBD5E1),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  user.hospitalName ?? 'MetroHealth Medical Center',
-                  style: AppFonts.googleSans(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF334155),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    user.isInsuranceAgent ? Icons.business_rounded : Icons.lock_rounded,
+                    color: user.isInsuranceAgent ? const Color(0xFF1D4ED8) : const Color(0xFF64748B),
+                    size: 14,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  Text(
+                    user.isInsuranceAgent
+                        ? (user.insuranceCompany != null && user.insuranceCompany!.isNotEmpty
+                            ? '${user.insuranceCompany} (${user.insurancePlans.length} Plans)'
+                            : 'Set Insurance Company & Plans')
+                        : (user.hospitalName ?? 'MetroHealth Medical Center'),
+                    style: AppFonts.googleSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: user.isInsuranceAgent ? const Color(0xFF1E40AF) : const Color(0xFF334155),
+                    ),
+                  ),
+                  if (user.isInsuranceAgent) ...[
+                    const SizedBox(width: 6),
+                    const Icon(Icons.edit_note_rounded, size: 16, color: Color(0xFF1D4ED8)),
+                  ],
+                ],
+              ),
             ),
           ),
 
-          const SizedBox(width: 24),
-
-          // Live Patient Search Bar by ID & Name
-          Expanded(
-            child: _PatientSearchBar(appState: appState),
-          ),
-
-          const SizedBox(width: 16),
+          const Spacer(),
 
           // Clinical Notifications Bell Action Button
           _NotificationIconButton(user: user),
@@ -1099,6 +1148,7 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
                   icon: widget.icon,
                   isSelected: isSelected,
                   isHovered: _isHovered,
+                  appState: widget.appState,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -1146,11 +1196,13 @@ class _AnimatedSidebarIcon extends StatefulWidget {
   final IconData icon;
   final bool isSelected;
   final bool isHovered;
+  final AppState appState;
 
   const _AnimatedSidebarIcon({
     required this.icon,
     required this.isSelected,
     required this.isHovered,
+    required this.appState,
   });
 
   @override
@@ -1166,11 +1218,11 @@ class _AnimatedSidebarIconState extends State<_AnimatedSidebarIcon>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 600),
     );
 
-    if (widget.isHovered) {
-      _controller.forward();
+    if (!widget.isSelected) {
+      _controller.repeat(reverse: true);
     }
   }
 
@@ -1203,11 +1255,11 @@ class _AnimatedSidebarIconState extends State<_AnimatedSidebarIcon>
   @override
   void didUpdateWidget(covariant _AnimatedSidebarIcon oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isHovered != oldWidget.isHovered) {
-      if (widget.isHovered) {
-        _controller.forward();
+    if (widget.isSelected != oldWidget.isSelected) {
+      if (widget.isSelected) {
+        _controller.stop();
       } else {
-        _controller.reverse();
+        _controller.repeat(reverse: true);
       }
     }
   }
@@ -2103,6 +2155,541 @@ class _PatientSearchBarState extends State<_PatientSearchBar> {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// Insurance Organization & Benefit Plans Setup Dialog for Insurance Agents
+class _InsuranceAgentSetupDialog extends StatefulWidget {
+  final AppState appState;
+  final String? initialCompany;
+  final List<String> initialPlans;
+
+  const _InsuranceAgentSetupDialog({
+    required this.appState,
+    this.initialCompany,
+    this.initialPlans = const [],
+  });
+
+  @override
+  State<_InsuranceAgentSetupDialog> createState() => _InsuranceAgentSetupDialogState();
+}
+
+class _InsuranceAgentSetupDialogState extends State<_InsuranceAgentSetupDialog> {
+  late String _selectedCompany;
+  late final Set<String> _selectedPlans;
+  late final Set<String> _selectedMedicines;
+  late final Set<String> _selectedHospitals;
+
+  final Map<String, List<String>> _companyPlansMap = {
+    'Blue Cross Blue Shield': [
+      'Blue Cross PPO Premier',
+      'Blue Cross Advantage Plus',
+      'Blue Cross Rx Comprehensive',
+      'Blue Care HMO Gold',
+    ],
+    'UnitedHealthcare (UHC)': [
+      'UHC Choice Plus Comprehensive',
+      'UHC Medicare Part D Standard',
+      'UHC Dual Complete (HMO-POS)',
+      'Optum Rx Preferred',
+    ],
+    'Medicare Part D (CMS)': [
+      'SilverScript Choice (PDP)',
+      'Medicare Advantage Part D Gold',
+      'WellCare Value Script (PDP)',
+      'Humana Premier Rx (PDP)',
+    ],
+    'Aetna Health': [
+      'Aetna Medicare Part D Value',
+      'Aetna Open Access PPO',
+      'Aetna Premier Rx Tier 1-5',
+    ],
+    'Cigna Healthcare': [
+      'Cigna Secure Rx (PDP)',
+      'Cigna Total Care Plus',
+      'Cigna Essential Rx Plan',
+    ],
+    'Humana Rx': [
+      'Humana Walmart Value Rx',
+      'Humana Gold Plus (HMO)',
+      'Humana Premier Part D',
+    ],
+    'Kaiser Permanente': [
+      'Kaiser Senior Advantage',
+      'Kaiser Permanente Deductible Plan',
+      'Kaiser Specialty Rx',
+    ],
+  };
+
+  final List<String> _availableMedicinesList = [
+    'Atorvastatin (Lipitor) 20mg',
+    'Metformin HCl 500mg',
+    'Lisinopril 10mg',
+    'Ozempic (Semaglutide) 2mg/3mL',
+    'Eliquis (Apixaban) 5mg',
+    'Levothyroxine 50mcg',
+    'Amlodipine Besylate 5mg',
+    'Omeprazole 20mg',
+    'Losartan Potassium 50mg',
+    'Jardiance (Empagliflozin) 10mg',
+    'Gabapentin 300mg',
+    'Hydrochlorothiazide 25mg',
+  ];
+
+  final List<String> _availableHospitalsList = [
+    'MetroHealth Medical Center (Cleveland, OH)',
+    'St. Jude Memorial Hospital (Fullerton, CA)',
+    'Johns Hopkins Hospital (Baltimore, MD)',
+    'Cleveland Clinic Main Campus (Cleveland, OH)',
+    'Duke University Hospital (Durham, NC)',
+    'Mayo Clinic Hospital (Rochester, MN)',
+    'Massachusetts General Hospital (Boston, MA)',
+    'Northwestern Memorial Hospital (Chicago, IL)',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialCompany != null &&
+        widget.initialCompany!.isNotEmpty &&
+        _companyPlansMap.containsKey(widget.initialCompany)) {
+      _selectedCompany = widget.initialCompany!;
+    } else {
+      _selectedCompany = 'Blue Cross Blue Shield';
+    }
+
+    if (widget.initialPlans.isNotEmpty) {
+      _selectedPlans = Set<String>.from(widget.initialPlans);
+    } else {
+      _selectedPlans = Set<String>.from(
+          _companyPlansMap[_selectedCompany]?.take(2) ?? ['Comprehensive Rx Plan']);
+    }
+
+    _selectedMedicines = Set<String>.from(
+      widget.appState.currentUser.insuranceMedicines.isNotEmpty
+          ? widget.appState.currentUser.insuranceMedicines
+          : ['Atorvastatin (Lipitor) 20mg', 'Metformin HCl 500mg', 'Eliquis (Apixaban) 5mg'],
+    );
+
+    _selectedHospitals = Set<String>.from(
+      widget.appState.currentUser.insuranceHospitals.isNotEmpty
+          ? widget.appState.currentUser.insuranceHospitals
+          : ['MetroHealth Medical Center (Cleveland, OH)', 'Cleveland Clinic Main Campus (Cleveland, OH)'],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currentPlans = _companyPlansMap[_selectedCompany] ?? _companyPlansMap['Blue Cross Blue Shield']!;
+
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Container(
+        width: 620,
+        padding: const EdgeInsets.all(26),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1D4ED8).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(Icons.verified_user_rounded, color: Color(0xFF1D4ED8), size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Insurance Agency Portfolio Setup',
+                          style: AppFonts.googleSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Select your payer company, covered benefit plans, formulary medicines, and in-network hospitals.',
+                          style: AppFonts.googleSans(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 26),
+
+              // 1. Company Dropdown
+              Text(
+                '1. SELECT INSURANCE PAYER COMPANY',
+                style: AppFonts.googleSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedCompany,
+                    isExpanded: true,
+                    icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF1D4ED8)),
+                    style: AppFonts.googleSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textDark,
+                    ),
+                    items: _companyPlansMap.keys.map((c) {
+                      return DropdownMenuItem<String>(
+                        value: c,
+                        child: Text(c),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          _selectedCompany = val;
+                          _selectedPlans.clear();
+                          final defaults = _companyPlansMap[val];
+                          if (defaults != null && defaults.isNotEmpty) {
+                            _selectedPlans.addAll(defaults.take(2));
+                          }
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // 2. Plans Dropdown & Chips
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '2. BENEFIT PLANS MANAGED (${_selectedPlans.length} Selected)',
+                    style: AppFonts.googleSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF1E293B),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    hint: Text('Select plan to toggle on/off...', style: AppFonts.googleSans(fontSize: 12, color: const Color(0xFF94A3B8))),
+                    icon: const Icon(Icons.playlist_add_check_rounded, color: Color(0xFF1D4ED8), size: 18),
+                    items: currentPlans.map((p) {
+                      final isSelected = _selectedPlans.contains(p);
+                      return DropdownMenuItem<String>(
+                        value: p,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(p, style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w600)),
+                            Icon(
+                              isSelected ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
+                              size: 16,
+                              color: isSelected ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          if (_selectedPlans.contains(val)) {
+                            _selectedPlans.remove(val);
+                          } else {
+                            _selectedPlans.add(val);
+                          }
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ),
+              if (_selectedPlans.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: _selectedPlans.map((plan) {
+                    return Chip(
+                      label: Text(plan),
+                      backgroundColor: const Color(0xFFDBEAFE),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: const BorderSide(color: Color(0xFF3B82F6)),
+                      ),
+                      labelStyle: AppFonts.googleSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1E40AF),
+                      ),
+                      deleteIcon: const Icon(Icons.close_rounded, size: 14, color: Color(0xFF1E40AF)),
+                      onDeleted: () => setState(() => _selectedPlans.remove(plan)),
+                    );
+                  }).toList(),
+                ),
+              ],
+
+              const SizedBox(height: 16),
+
+              // 3. Medicines Dropdown & Chips
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '3. COVERED MEDICINES (${_selectedMedicines.length} Selected)',
+                    style: AppFonts.googleSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF1E293B),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    hint: Text('Select medicine to add/remove...', style: AppFonts.googleSans(fontSize: 12, color: const Color(0xFF94A3B8))),
+                    icon: const Icon(Icons.medication_rounded, color: Color(0xFF1D4ED8), size: 18),
+                    items: _availableMedicinesList.map((med) {
+                      final isSelected = _selectedMedicines.contains(med);
+                      return DropdownMenuItem<String>(
+                        value: med,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(med, style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w600)),
+                            Icon(
+                              isSelected ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
+                              size: 16,
+                              color: isSelected ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          if (_selectedMedicines.contains(val)) {
+                            _selectedMedicines.remove(val);
+                          } else {
+                            _selectedMedicines.add(val);
+                          }
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ),
+              if (_selectedMedicines.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: _selectedMedicines.map((med) {
+                    return Chip(
+                      label: Text(med),
+                      backgroundColor: const Color(0xFFE0F2FE),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: const BorderSide(color: Color(0xFF38BDF8)),
+                      ),
+                      labelStyle: AppFonts.googleSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF0369A1),
+                      ),
+                      deleteIcon: const Icon(Icons.close_rounded, size: 14, color: Color(0xFF0369A1)),
+                      onDeleted: () => setState(() => _selectedMedicines.remove(med)),
+                    );
+                  }).toList(),
+                ),
+              ],
+
+              const SizedBox(height: 16),
+
+              // 4. Hospitals Dropdown & Chips
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '4. IN-NETWORK HOSPITALS (${_selectedHospitals.length} Selected)',
+                    style: AppFonts.googleSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF1E293B),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    hint: Text('Select hospital to add/remove...', style: AppFonts.googleSans(fontSize: 12, color: const Color(0xFF94A3B8))),
+                    icon: const Icon(Icons.local_hospital_rounded, color: Color(0xFF1D4ED8), size: 18),
+                    items: _availableHospitalsList.map((hosp) {
+                      final isSelected = _selectedHospitals.contains(hosp);
+                      return DropdownMenuItem<String>(
+                        value: hosp,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(child: Text(hosp, style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
+                            Icon(
+                              isSelected ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
+                              size: 16,
+                              color: isSelected ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          if (_selectedHospitals.contains(val)) {
+                            _selectedHospitals.remove(val);
+                          } else {
+                            _selectedHospitals.add(val);
+                          }
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ),
+              if (_selectedHospitals.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: _selectedHospitals.map((hosp) {
+                    return Chip(
+                      label: Text(hosp),
+                      backgroundColor: const Color(0xFFECFDF5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: const BorderSide(color: Color(0xFF34D399)),
+                      ),
+                      labelStyle: AppFonts.googleSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF047857),
+                      ),
+                      deleteIcon: const Icon(Icons.close_rounded, size: 14, color: Color(0xFF047857)),
+                      onDeleted: () => setState(() => _selectedHospitals.remove(hosp)),
+                    );
+                  }).toList(),
+                ),
+              ],
+
+              const SizedBox(height: 24),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      'Cancel',
+                      style: AppFonts.googleSans(fontWeight: FontWeight.w700, color: AppColors.textMuted),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: () {
+                      String finalCompany = _selectedCompany;
+                      List<String> finalPlans = _selectedPlans.toList();
+                      if (finalPlans.isEmpty) {
+                        finalPlans = ['Comprehensive Rx Plan'];
+                      }
+
+                      widget.appState.updateInsuranceAgentDetails(
+                        company: finalCompany,
+                        plans: finalPlans,
+                        medicines: _selectedMedicines.toList(),
+                        hospitals: _selectedHospitals.toList(),
+                      );
+
+                      Navigator.pop(context);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Insurance Portfolio Configured: $finalCompany (${finalPlans.length} Plans, ${_selectedMedicines.length} Drugs, ${_selectedHospitals.length} Hospitals)'),
+                          backgroundColor: const Color(0xFF1D4ED8),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1D4ED8),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text(
+                      'Save Agency Portfolio →',
+                      style: AppFonts.googleSans(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
