@@ -2,6 +2,7 @@
 FROM dart:stable AS build
 
 # Install tools required for Flutter
+RUN sed -i 's/deb.debian.org/mirrors.kernel.org/g' /etc/apt/sources.list.d/debian.sources 2>/dev/null || sed -i 's/deb.debian.org/mirrors.kernel.org/g' /etc/apt/sources.list 2>/dev/null || true
 RUN apt-get update && apt-get install -y \
     git \
     curl \
