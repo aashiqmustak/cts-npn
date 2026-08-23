@@ -55,6 +55,8 @@ class AppState extends ChangeNotifier {
 
   // Navigation Index
   int _currentNavIndex = 0;
+  bool _hasInteractedWithNav = false;
+  bool get hasInteractedWithNav => _hasInteractedWithNav;
   int _activeSubTabIndex = 0;
   String? _selectedPrescriptionId;
 
@@ -102,12 +104,23 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void dismissNotification(String id) {
+  void dismissNotification(String id) async {
     final idx = _userNotifications.indexWhere((n) => n.id == id);
     if (idx != -1) {
       _userNotifications[idx].isDismissed = true;
       _userNotifications[idx].isRead = true;
       notifyListeners();
+
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final dismissed = prefs.getStringList('dismissed_notifications') ?? [];
+        if (!dismissed.contains(id)) {
+          dismissed.add(id);
+          await prefs.setStringList('dismissed_notifications', dismissed);
+        }
+      } catch (e) {
+        debugPrint('Error persisting dismissed notification: $e');
+      }
     }
   }
 
@@ -148,10 +161,18 @@ class AppState extends ChangeNotifier {
         final map = jsonDecode(sessionJson) as Map<String, dynamic>;
         _currentUser = User.fromJson(map);
         _isLoggedIn = true;
-        notifyListeners();
       }
+
+      final dismissed = prefs.getStringList('dismissed_notifications') ?? [];
+      for (final n in _userNotifications) {
+        if (dismissed.contains(n.id)) {
+          n.isDismissed = true;
+          n.isRead = true;
+        }
+      }
+      notifyListeners();
     } catch (e) {
-      debugPrint('Error restoring user session: $e');
+      debugPrint('Error restoring user session or dismissed notifications: $e');
     }
   }
 
@@ -854,6 +875,10 @@ class AppState extends ChangeNotifier {
     required String email,
     required String password,
     required UserRole role,
+    String? insuranceCompany,
+    List<String> insurancePlans = const [],
+    List<String> insuranceMedicines = const [],
+    List<String> insuranceHospitals = const [],
   }) async {
     if (dataService.supabaseService.isInitialized && password.isNotEmpty) {
       try {
@@ -872,6 +897,10 @@ class AppState extends ChangeNotifier {
             assignedPatientIds: const ['PT-301', 'PT-302'],
             avatarUrl: '',
             title: _getRoleTitle(role),
+            insuranceCompany: insuranceCompany,
+            insurancePlans: insurancePlans,
+            insuranceMedicines: insuranceMedicines,
+            insuranceHospitals: insuranceHospitals,
           );
           login(profile);
           return true;
@@ -881,7 +910,15 @@ class AppState extends ChangeNotifier {
       }
     }
 
-    register(name: name, email: email, role: role);
+    register(
+      name: name,
+      email: email,
+      role: role,
+      insuranceCompany: insuranceCompany,
+      insurancePlans: insurancePlans,
+      insuranceMedicines: insuranceMedicines,
+      insuranceHospitals: insuranceHospitals,
+    );
     return true;
   }
 
@@ -889,6 +926,10 @@ class AppState extends ChangeNotifier {
     required String name,
     required String email,
     required UserRole role,
+    String? insuranceCompany,
+    List<String> insurancePlans = const [],
+    List<String> insuranceMedicines = const [],
+    List<String> insuranceHospitals = const [],
   }) {
     final newUser = User(
       id: 'U_${DateTime.now().millisecondsSinceEpoch}',
@@ -898,11 +939,30 @@ class AppState extends ChangeNotifier {
       assignedPatientIds: const ['PT-301', 'PT-302'],
       avatarUrl: '',
       title: _getRoleTitle(role),
+      insuranceCompany: insuranceCompany,
+      insurancePlans: insurancePlans,
+      insuranceMedicines: insuranceMedicines,
+      insuranceHospitals: insuranceHospitals,
     );
     dataService.addUser(newUser);
     _currentUser = newUser;
     _isLoggedIn = true;
     _currentNavIndex = 0;
+    notifyListeners();
+  }
+
+  void updateInsuranceAgentDetails({
+    required String company,
+    required List<String> plans,
+    List<String> medicines = const [],
+    List<String> hospitals = const [],
+  }) {
+    _currentUser = _currentUser.copyWith(
+      insuranceCompany: company,
+      insurancePlans: plans,
+      insuranceMedicines: medicines,
+      insuranceHospitals: hospitals,
+    );
     notifyListeners();
   }
 
@@ -960,11 +1020,13 @@ class AppState extends ChangeNotifier {
   void setCurrentUser(User user) {
     _currentUser = user;
     _currentNavIndex = 0;
+    _hasInteractedWithNav = false;
     notifyListeners();
   }
 
   void setNavIndex(int index) {
     _currentNavIndex = index;
+    _hasInteractedWithNav = true;
     notifyListeners();
   }
 

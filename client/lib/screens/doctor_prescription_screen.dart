@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
+import '../services/prescription_ocr_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bento_card.dart';
 
@@ -268,165 +268,95 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Extracting EHR details via OCR/AI normalization...',
+                    'Extracting EHR details via Client-Side OCR/AI Engine...',
                     style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
             ),
-            duration: const Duration(seconds: 4),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
 
-      // Determine backend URL dynamically based on base host
-      final host = Uri.base.host;
-      const port = 8000;
-      final finalHost = host.isEmpty ? 'localhost' : host;
-      final backendUrl = 'http://$finalHost:$port/api/v1/prescription/upload-ocr';
-
-      final response = await http.post(
-        Uri.parse(backendUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'file_name': file.name,
-          'file_content_base64': base64String,
-          'patient_id': _selectedPatientId ?? 'PAT_00001',
-          'doctor_id': 'DOC_001',
-        }),
+      // Process directly in Flutter via PrescriptionOcrService
+      final parsed = await PrescriptionOcrService.processPrescription(
+        fileName: file.name,
+        bytes: bytes,
+        patientId: _selectedPatientId,
+        doctorId: 'DOC_001',
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        final rawText = data['raw_text'] as String?;
-        final normalized = data['normalized'] as Map<String, dynamic>?;
+      setState(() {
+        _createNewPatient = true;
 
-        if (normalized != null) {
-          final drug = normalized['drug'] as Map<String, dynamic>?;
-          final drugName = drug?['name'] as String?;
-          final strength = drug?['strength'] as String?;
-          final dose = drug?['dose'] as String?;
-          final frequency = drug?['frequency'] as String?;
-          final durationDays = drug?['duration_days'] as int?;
-          final indication = normalized['indication'] as String?;
-          
-          String? ocrPatientName;
-          int? ocrPatientAge;
-          String? ocrPatientId;
-          
-          if (rawText != null) {
-            final patientNameReg = RegExp(r"(?:Patient Name|Name)\s*:\s*([^\n\r]+)", caseSensitive: false);
-            final patientNameMatch = patientNameReg.firstMatch(rawText);
-            if (patientNameMatch != null) {
-              ocrPatientName = patientNameMatch.group(1)?.trim();
-            }
-            
-            final patientAgeReg = RegExp(r"(?:Patient Age|Age)\s*:\s*(\d+)", caseSensitive: false);
-            final patientAgeMatch = patientAgeReg.firstMatch(rawText);
-            if (patientAgeMatch != null) {
-              ocrPatientAge = int.tryParse(patientAgeMatch.group(1) ?? "");
-            }
-
-            final patientIdReg = RegExp(r"(?:Patient ID|ID)\s*:\s*([^\n\r\s]+)", caseSensitive: false);
-            final patientIdMatch = patientIdReg.firstMatch(rawText);
-            if (patientIdMatch != null) {
-              ocrPatientId = patientIdMatch.group(1)?.trim();
-            }
-          }
-
-          setState(() {
-            _createNewPatient = true; 
-            
-            if (ocrPatientName != null && ocrPatientName.isNotEmpty) {
-              _patientNameController.text = ocrPatientName;
-            } else {
-              _patientNameController.text = "Eleanor Vance";
-            }
-            
-            if (ocrPatientAge != null) {
-              _patientAgeController.text = ocrPatientAge.toString();
-            } else {
-              _patientAgeController.text = "38";
-            }
-            
-            if (ocrPatientId != null && ocrPatientId.isNotEmpty) {
-              _selectedPatientId = ocrPatientId;
-            } else {
-              _selectedPatientId = "PAT_00001";
-            }
-
-            if (indication != null && indication.isNotEmpty) {
-              _currentProblemController.text = indication;
-              _diagnosisController.text = indication;
-            } else {
-              _currentProblemController.text = "Type 2 Diabetes Mellitus";
-              _diagnosisController.text = "E11.9 (Type 2 Diabetes Without Complications)";
-            }
-
-             if (drugName != null && drugName.isNotEmpty) {
-              String nameAndStrength = drugName;
-              if (strength != null && strength.isNotEmpty && !drugName.contains(strength)) {
-                nameAndStrength += " $strength";
-              }
-              _medNameController.value = TextEditingValue(
-                text: nameAndStrength,
-                selection: TextSelection.collapsed(offset: nameAndStrength.length),
-              );
-            } else {
-              _medNameController.value = const TextEditingValue(
-                text: "Metformin HCL 500mg",
-                selection: TextSelection.collapsed(offset: "Metformin HCL 500mg".length),
-              );
-            }
-
-            if (dose != null && dose.isNotEmpty) {
-              _dosageController.text = dose;
-            } else {
-              _dosageController.text = "1 Tablet (Oral)";
-            }
-
-            if (frequency != null && frequency.isNotEmpty) {
-              String freqLabel = frequency;
-              if (frequency == 'once_daily') freqLabel = 'Once daily';
-              else if (frequency == 'twice_daily') freqLabel = 'Twice daily';
-              else if (frequency == 'three_times_daily') freqLabel = 'Three times daily';
-              else if (frequency == 'at_bedtime') freqLabel = 'At bedtime';
-              _frequencyController.text = freqLabel;
-            } else {
-              _frequencyController.text = "Twice daily";
-            }
-
-            if (durationDays != null) {
-              _selectedDurationDays = durationDays;
-            } else {
-              _selectedDurationDays = 30;
-            }
-            
-            if (rawText != null) {
-              final notesReg = RegExp(r"(?:Notes|Instructions)\s*:\s*([^\n\r]+)", caseSensitive: false);
-              final notesMatch = notesReg.firstMatch(rawText);
-              if (notesMatch != null) {
-                _notesController.text = notesMatch.group(1)?.trim() ?? "";
-              } else {
-                _notesController.text = "Take with meals, monitor blood glucose daily.";
-              }
-            }
-          });
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: AppColors.successGreen,
-                content: Text(
-                  'Successfully parsed EHR and auto-filled prescription regimen!',
-                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, color: Colors.white),
-                ),
-              ),
-            );
-          }
+        if (parsed.patientName.isNotEmpty) {
+          _patientNameController.text = parsed.patientName;
         }
-      } else {
-        throw Exception("Server returned status ${response.statusCode}");
+        _patientAgeController.text = parsed.patientAge.toString();
+        _selectedPatientId = parsed.patientId;
+
+        if (parsed.indication.isNotEmpty) {
+          _currentProblemController.text = parsed.indication;
+          _diagnosisController.text = parsed.indication;
+        }
+
+        String nameAndStrength = parsed.drugName;
+        if (parsed.strength.isNotEmpty && !parsed.drugName.contains(parsed.strength)) {
+          nameAndStrength += " ${parsed.strength}";
+        }
+        _medNameController.value = TextEditingValue(
+          text: nameAndStrength,
+          selection: TextSelection.collapsed(offset: nameAndStrength.length),
+        );
+
+        if (parsed.dose.isNotEmpty) {
+          _dosageController.text = parsed.dose;
+        } else {
+          _dosageController.text = "1 Tablet (Oral)";
+        }
+
+        if (parsed.frequency.isNotEmpty) {
+          String freqLabel = parsed.frequency;
+          switch (parsed.frequency) {
+            case 'once_daily':
+              freqLabel = 'Once daily';
+              break;
+            case 'twice_daily':
+              freqLabel = 'Twice daily';
+              break;
+            case 'three_times_daily':
+              freqLabel = 'Three times daily';
+              break;
+            case 'at_bedtime':
+              freqLabel = 'At bedtime';
+              break;
+            case 'once_weekly':
+              freqLabel = 'Once weekly';
+              break;
+          }
+          _frequencyController.text = freqLabel;
+        } else {
+          _frequencyController.text = "Twice daily";
+        }
+
+        _selectedDurationDays = parsed.durationDays > 0 ? parsed.durationDays : 30;
+
+        if (parsed.notes.isNotEmpty) {
+          _notesController.text = parsed.notes;
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.successGreen,
+            content: Text(
+              'Successfully parsed EHR and auto-filled prescription regimen!',
+              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, color: Colors.white),
+            ),
+          ),
+        );
       }
     } catch (e) {
       debugPrint("OCR/AI upload failed: $e");

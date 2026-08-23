@@ -34,8 +34,14 @@ from agents.pa_agent.app.service import PAService
 from agents.patient_history_agent.app.agent import PatientHistoryAgent
 from agents.patient_history_agent.app.repository import PatientHistoryRepository
 from agents.patient_history_agent.app.schemas import (
+    BatchIngestRequest,
+    BatchIngestResponse,
     PatientHistoryRequest,
     PatientHistoryResponse,
+    PatientRecordIngestResponse,
+    PatientRecordInput,
+    RAGQueryRequest,
+    RAGQueryResponse,
 )
 from agents.patient_history_agent.app.service import PatientHistoryService
 from agents.prescription_agent.app.agent import PrescriptionAgent
@@ -392,14 +398,16 @@ pa_router = Router(
 
 
 # =====================================================================
-# 4. PATIENT HISTORY AGENT ROUTER
+# 4. PATIENT HISTORY AGENT ROUTER (Pinecone RAG + Client Ingest)
 # =====================================================================
 @get("/health")
 async def history_health() -> dict[str, Any]:
+    pinecone_stats = patient_history_repo.pinecone.get_stats()
     return {
         "status": "healthy",
         "agent": "patient_history",
         "dataset_records": len(patient_history_repo.records),
+        "pinecone_rag": pinecone_stats,
     }
 
 
@@ -415,10 +423,61 @@ async def get_patient_history(
         ) from exc
 
 
+@post("/record")
+async def ingest_patient_record_route(
+    data: PatientRecordInput,
+) -> PatientRecordIngestResponse:
+    try:
+        return patient_history_agent.ingest_patient_record(data)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to ingest patient record: {exc}"
+        ) from exc
+
+
+@post("/records/batch")
+async def ingest_patient_records_batch_route(
+    data: BatchIngestRequest,
+) -> BatchIngestResponse:
+    try:
+        return patient_history_agent.ingest_batch(data)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to batch ingest records: {exc}"
+        ) from exc
+
+
+@post("/rag-query")
+async def rag_query_patient_history_route(
+    data: RAGQueryRequest,
+) -> RAGQueryResponse:
+    try:
+        return patient_history_agent.query_rag(data)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"RAG query failed: {exc}") from exc
+
+
+@post("/sync-dataset")
+async def sync_dataset_to_pinecone_route() -> dict[str, Any]:
+    try:
+        return patient_history_agent.sync_dataset_to_pinecone()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to sync dataset to Pinecone: {exc}"
+        ) from exc
+
+
 patient_history_router = Router(
     path="/api/v1/patient-history",
-    route_handlers=[history_health, get_patient_history],
-    tags=["4. Patient History Agent"],
+    route_handlers=[
+        history_health,
+        get_patient_history,
+        ingest_patient_record_route,
+        ingest_patient_records_batch_route,
+        rag_query_patient_history_route,
+        sync_dataset_to_pinecone_route,
+    ],
+    tags=["4. Patient History Agent (Pinecone RAG)"],
 )
 
 

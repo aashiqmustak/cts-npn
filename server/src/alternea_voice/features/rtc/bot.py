@@ -1,8 +1,11 @@
+import inspect
+import json
 import logging
 import os
 import pathlib
 import sys
 import tomllib
+from typing import Any
 
 import aiohttp
 from dotenv import load_dotenv
@@ -55,16 +58,16 @@ from orchestrator.workflow import MultiAgentOrchestrator
 logger = logging.getLogger(__name__)
 
 
-def load_project_env_and_metadata():
+def load_project_env_and_metadata() -> dict[str, Any]:
     current_dir = pathlib.Path(__file__).resolve().parent
     pyproject_path = None
-    for parent in [current_dir] + list(current_dir.parents):
+    for parent in [current_dir, *list(current_dir.parents)]:
         if (parent / "pyproject.toml").exists():
             pyproject_path = parent / "pyproject.toml"
             break
 
     env_path = None
-    for parent in [current_dir] + list(current_dir.parents):
+    for parent in [current_dir, *list(current_dir.parents)]:
         if (parent / ".env").exists():
             env_path = parent / ".env"
             break
@@ -74,14 +77,14 @@ def load_project_env_and_metadata():
     else:
         load_dotenv()
 
-    metadata = {}
+    metadata: dict[str, Any] = {}
     if pyproject_path:
         try:
             with open(pyproject_path, "rb") as f:
                 data = tomllib.load(f)
                 metadata = data.get("project", {})
         except (OSError, tomllib.TOMLDecodeError) as e:
-            print(f"Warning: Could not read pyproject.toml: {e}")
+            logger.warning("Could not read pyproject.toml: %s", e)
 
     return metadata
 
@@ -99,7 +102,7 @@ class TranscriptionLogger(FrameProcessor):
         await super().process_frame(frame, direction)
 
         if isinstance(frame, TranscriptionFrame):
-            print(f"\n[STT Heard User]: {frame.text}\n")
+            logger.info("[STT Heard User]: %s", frame.text)
 
         await self.push_frame(frame, direction)
 
@@ -118,27 +121,66 @@ transport_params = {
 }
 
 
+async def _safe_execute_callback(result_callback: Any, payload: dict[str, Any]) -> None:
+    """Safely invoke async or sync result callback."""
+    if not result_callback:
+        return
+    try:
+        if inspect.iscoroutinefunction(result_callback):
+            await result_callback(payload)
+        elif callable(result_callback):
+            result_callback(payload)
+    except (RuntimeError, ValueError, TypeError, OSError) as exc:
+        logger.error("Error executing result callback: %s", exc)
+
+
 # =====================================================================
 # AGENT BACKEND TOOL HANDLER (Called by LLM)
 # =====================================================================
 async def handle_evaluate_prescription(*args_list, **kwargs):
     """Executes the 7-stage Clinical Agent pipeline and returns the Top-1 drug."""
-    # Handle Pipecat 1.7+ FunctionCallParams single object or legacy positional args
+    args: dict[str, Any] = {}
+    result_callback = None
+
+    # Handle Pipecat 1.7+ FunctionCallParams single object or positional args
     if len(args_list) == 1 and hasattr(args_list[0], "arguments"):
         params = args_list[0]
-        args = params.arguments or {}
-        result_callback = params.result_callback
+        raw_args = params.arguments
+        result_callback = getattr(params, "result_callback", None)
+        if isinstance(raw_args, str):
+            try:
+                args = json.loads(raw_args)
+            except (json.JSONDecodeError, ValueError):
+                args = {}
+        elif isinstance(raw_args, dict):
+            args = raw_args
     elif len(args_list) >= 6:
-        _function_name, _tool_call_id, args, _llm, _context, result_callback = (
+        _function_name, _tool_call_id, raw_args, _llm, _context, result_callback = (
             args_list[:6]
         )
+        if isinstance(raw_args, str):
+            try:
+                args = json.loads(raw_args)
+            except (json.JSONDecodeError, ValueError):
+                args = {}
+        elif isinstance(raw_args, dict):
+            args = raw_args
     else:
-        args = kwargs.get("args") or kwargs.get("arguments") or {}
+        raw_args = kwargs.get("args") or kwargs.get("arguments") or {}
+        if isinstance(raw_args, str):
+            try:
+                args = json.loads(raw_args)
+            except (json.JSONDecodeError, ValueError):
+                args = {}
+        elif isinstance(raw_args, dict):
+            args = raw_args
         result_callback = kwargs.get("result_callback")
 
-    prescription_text = args.get("prescription_text", "")
-    patient_id = args.get("patient_id", "PAT_001")
-    allergies = args.get("allergies", [])
+    prescription_text = str(args.get("prescription_text") or "").strip()
+    patient_id = str(args.get("patient_id") or "PAT_001").strip()
+    allergies = args.get("allergies") or []
+    current_medications = args.get("current_medications") or []
+
     # Infer condition from drug name if not explicitly provided
     inferred_cond = ["Hypertension"]
     d_low = prescription_text.lower()
@@ -152,6 +194,8 @@ async def handle_evaluate_prescription(*args_list, **kwargs):
             "amlodipine",
             "telmisartan",
             "enalapril",
+            "carvedilol",
+            "metoprolol",
         ]
     ):
         inferred_cond = ["Hypertension", "Heart Failure"]
@@ -164,6 +208,7 @@ async def handle_evaluate_prescription(*args_list, **kwargs):
             "glipizide",
             "glimepiride",
             "sitagliptin",
+            "insulin",
         ]
     ):
         inferred_cond = ["Type 2 Diabetes Mellitus"]
@@ -176,10 +221,11 @@ async def handle_evaluate_prescription(*args_list, **kwargs):
         inferred_cond = ["Asthma", "COPD"]
 
     conditions = args.get("conditions") or inferred_cond
-    current_medications = args.get("current_medications", [])
 
-    print(
-        f"\n[Alternea Agent Bridge] Running Multi-Agent Pipeline for '{prescription_text}'..."
+    logger.info(
+        "[Alternea Agent Bridge] Running Multi-Agent Pipeline for '%s' (Patient: %s)...",
+        prescription_text,
+        patient_id,
     )
 
     try:
@@ -235,13 +281,17 @@ async def handle_evaluate_prescription(*args_list, **kwargs):
             "executive_summary": report.ranking_result.ranking_summary,
         }
 
-        print(
-            f"[Alternea Agent Bridge] Multi-Agent Evaluation Complete. Winning Drug: {top_name} (Score: {top_score}/100)\n"
+        logger.info(
+            "[Alternea Agent Bridge] Multi-Agent Evaluation Complete. Winning Drug: %s (Score: %s/100)",
+            top_name,
+            top_score,
         )
-        await result_callback(result_payload)
-    except Exception as exc:
+        await _safe_execute_callback(result_callback, result_payload)
+    except (RuntimeError, ValueError, TypeError, KeyError, OSError) as exc:
         logger.exception("Error executing backend multi-agent pipeline")
-        await result_callback({"status": "error", "message": str(exc)})
+        await _safe_execute_callback(
+            result_callback, {"status": "error", "message": str(exc)}
+        )
 
 
 # Define Tools Schema for Groq LLM using Pipecat's FunctionSchema
@@ -285,19 +335,19 @@ async def run_bot(
 ):
     project_name = project_metadata.get("name", "Alternea-Voice")
     project_version = project_metadata.get("version", "0.1.0")
-    print(f"Starting {project_name} (v{project_version})...")
+    logger.info("Starting %s (v%s)...", project_name, project_version)
 
     sarvam_key = os.getenv("SARVAM_API_KEY")
     groq_key = os.getenv("GROQ_API_KEY")
     groq_model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
     if not sarvam_key:
-        print(
-            "\n[Alternea Voice] WARNING: SARVAM_API_KEY is not set in .env! Voice STT/TTS requires a Sarvam API key."
+        logger.warning(
+            "SARVAM_API_KEY is not set in .env! Voice STT/TTS requires a Sarvam API key."
         )
     if not groq_key:
-        print(
-            "[Alternea Voice] WARNING: GROQ_API_KEY is not set in .env! Voice LLM requires a Groq API key.\n"
+        logger.warning(
+            "GROQ_API_KEY is not set in .env! Voice LLM requires a Groq API key."
         )
 
     async with aiohttp.ClientSession():
@@ -348,17 +398,29 @@ async def run_bot(
 
         context = LLMContext(messages, tools=agent_tools)
 
+        # Smart turn detection with graceful fallback
+        turn_analyzer = None
+        try:
+            turn_analyzer = LocalSmartTurnAnalyzerV3()
+        except (ImportError, RuntimeError, OSError, ValueError) as exc:
+            logger.warning("LocalSmartTurnAnalyzerV3 unavailable: %s", exc)
+
+        stop_strategies = (
+            [TurnAnalyzerUserTurnStopStrategy(turn_analyzer=turn_analyzer)]
+            if turn_analyzer
+            else []
+        )
+        user_params = (
+            LLMUserAggregatorParams(
+                user_turn_strategies=UserTurnStrategies(stop=stop_strategies)
+            )
+            if stop_strategies
+            else LLMUserAggregatorParams()
+        )
+
         user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
             context,
-            user_params=LLMUserAggregatorParams(
-                user_turn_strategies=UserTurnStrategies(
-                    stop=[
-                        TurnAnalyzerUserTurnStopStrategy(
-                            turn_analyzer=(LocalSmartTurnAnalyzerV3())
-                        )
-                    ]
-                )
-            ),
+            user_params=user_params,
         )
 
         transcription_logger = TranscriptionLogger()
@@ -390,7 +452,7 @@ async def run_bot(
             transport,
             client,
         ):
-            print("\n[Alternea Voice] Client connected! Sending spoken greeting...")
+            logger.info("Client connected! Sending spoken greeting...")
             greeting = "Hello! I am Alternea, your AI pharmacy and formulary assistant. How can I assist you with your prescriptions today?"
             await task.queue_frames(
                 [
@@ -411,7 +473,7 @@ async def run_bot(
             transport,
             client,
         ):
-            print("\n[Alternea Voice] Client disconnected.")
+            logger.info("Client disconnected.")
             await task.cancel()
 
         runner = PipelineRunner(handle_sigint=runner_args.handle_sigint)

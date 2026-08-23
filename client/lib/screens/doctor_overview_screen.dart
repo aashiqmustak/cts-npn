@@ -1,7 +1,6 @@
 import '../theme/app_theme.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../widgets/bento_card.dart';
@@ -80,34 +79,7 @@ class _DoctorOverviewDashboardScreenState
           const SizedBox(height: 20),
 
           // 4. Clinical Appointments & Live e-Rx Transmission Queue
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final isDesktop = constraints.maxWidth >= 940;
-              if (isDesktop) {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 7,
-                      child: _buildTodaysPatientQueue(appState),
-                    ),
-                    const SizedBox(width: 18),
-                    Expanded(
-                      flex: 5,
-                      child: _buildClinicalDecisionSupportCard(appState),
-                    ),
-                  ],
-                );
-              }
-              return Column(
-                children: [
-                  _buildTodaysPatientQueue(appState),
-                  const SizedBox(height: 18),
-                  _buildClinicalDecisionSupportCard(appState),
-                ],
-              );
-            },
-          ),
+          _buildTodaysPatientQueue(appState),
 
           const SizedBox(height: 24),
         ],
@@ -763,107 +735,6 @@ class _DoctorOverviewDashboardScreenState
                 );
               },
             ),
-        ],
-      ),
-    );
-  }
-
-  // --- AI Clinical Decision Support & Friction Assistant Card ---
-  Widget _buildClinicalDecisionSupportCard(AppState appState) {
-    return BentoCard(
-      title: 'AI Neural Voice & Clinical Telemetry Insights',
-      subtitle: 'Real-time co-pilot intelligence & prior auth flags',
-      icon: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: const Icon(Icons.auto_awesome_rounded,
-            color: Color(0xFF3B82F6), size: 18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 12),
-          _insightTile(
-            icon: Icons.verified_user_rounded,
-            iconColor: const Color(0xFF10B981),
-            title: '100% Preferred Generic Coverage',
-            description:
-                'Metformin HCL 500mg & Lisinopril 10mg fall under Tier 1 with 0 prior authorization barriers.',
-          ),
-          const SizedBox(height: 12),
-          _insightTile(
-            icon: Icons.shield_outlined,
-            iconColor: const Color(0xFF8B5CF6),
-            title: 'Zero Drug-Drug Interactions Detected',
-            description:
-                'Automatic cross-evaluation against active patient medication logs showed no high-severity contraindications.',
-          ),
-          const SizedBox(height: 12),
-          _insightTile(
-            icon: Icons.graphic_eq_rounded,
-            iconColor: const Color(0xFF1244A2),
-            title: 'Voice Assistant Ready',
-            description:
-                'Dictate prescriptions or query FHIR v4.0 patient charts hands-free using the AI Co-Pilot.',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _insightTile({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String description,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: iconColor, size: 18),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppFonts.googleSans(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  description,
-                  style: AppFonts.googleSans(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF64748B),
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );

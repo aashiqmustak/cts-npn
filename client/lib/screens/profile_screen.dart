@@ -690,7 +690,33 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
           const Divider(height: 28),
 
-          _buildStyledTileRow(Icons.shield_rounded, 'Insurance Payer Network', 'SilverScript Choice Insurance Corp'),
+          _buildStyledTileRow(
+            Icons.shield_rounded,
+            'Insurance Payer Network',
+            user.insuranceCompany != null && user.insuranceCompany!.isNotEmpty
+                ? user.insuranceCompany!
+                : 'SilverScript Choice Insurance Corp',
+            isHighlight: true,
+          ),
+          _buildStyledTileRow(
+            Icons.category_rounded,
+            'Managed Covered Plans (${user.insurancePlans.length})',
+            user.insurancePlans.isNotEmpty
+                ? user.insurancePlans.join(' • ')
+                : 'Medicare Part D SilverScript Choice',
+          ),
+          if (user.insuranceMedicines.isNotEmpty)
+            _buildStyledTileRow(
+              Icons.medication_rounded,
+              'Covered Formulary Medicines (${user.insuranceMedicines.length})',
+              user.insuranceMedicines.join(' • '),
+            ),
+          if (user.insuranceHospitals.isNotEmpty)
+            _buildStyledTileRow(
+              Icons.local_hospital_rounded,
+              'In-Network Hospital Network (${user.insuranceHospitals.length})',
+              user.insuranceHospitals.join(' • '),
+            ),
           _buildStyledTileRow(Icons.badge_rounded, 'Agent Identifier', 'AG-88291 (Senior Adjudication Officer)'),
           _buildStyledTileRow(Icons.gavel_rounded, 'License Registration', 'NC Insurance Commissioner #30291'),
           _buildStyledTileRow(Icons.trending_up_rounded, 'Prior Auth Approval Rate', '96.4% Decision Velocity'),

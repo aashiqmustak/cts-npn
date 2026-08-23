@@ -19,6 +19,15 @@ class PrescriptionsScreen extends StatefulWidget {
 
 class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
   int _activeFilterTab = 0; // 0: All, 1: Active, 2: Completed, 3: Expired, 4: Drafts
+  int _currentPage = 1;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   String _formatDate(DateTime date) {
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -143,6 +152,61 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
             ),
           ),
 
+          const SizedBox(height: 16),
+
+          // 2.5. Search Bar BentoCard
+          BentoCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.search_rounded,
+                  color: Color(0xFF1244A2),
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (val) {
+                      setState(() {
+                        _searchQuery = val;
+                        _currentPage = 1;
+                      });
+                    },
+                    style: AppFonts.googleSans(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textDark,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Search prescriptions by Patient, Doctor, ID, or Drug...',
+                      hintStyle: AppFonts.googleSans(
+                        fontSize: 13,
+                        color: AppColors.textMuted,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
+                ),
+                if (_searchQuery.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.textMuted),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() {
+                        _searchQuery = '';
+                        _currentPage = 1;
+                      });
+                    },
+                  ),
+              ],
+            ),
+          ),
+
           const SizedBox(height: 20),
 
           // 3. Asymmetric Bento 2-Column Grid
@@ -150,51 +214,109 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
             builder: (context, constraints) {
               final isDesktop = constraints.maxWidth >= 900;
 
+              final query = _searchQuery.trim().toLowerCase();
               final filteredRxList = appState.prescriptions.reversed.where((rx) {
-                if (_activeFilterTab == 0) return true;
-                if (_activeFilterTab == 1) return rx.status.toLowerCase() == 'active' || rx.status.toLowerCase() == 'prescribed';
-                if (_activeFilterTab == 2) return rx.status.toLowerCase() == 'completed';
-                if (_activeFilterTab == 3) return rx.status.toLowerCase() == 'expired';
-                if (_activeFilterTab == 4) return rx.status.toLowerCase() == 'draft';
-                return true;
+                // Tab filter first
+                bool matchesTab = true;
+                if (_activeFilterTab == 1) {
+                  matchesTab = rx.status.toLowerCase() == 'active' || rx.status.toLowerCase() == 'prescribed';
+                } else if (_activeFilterTab == 2) {
+                  matchesTab = rx.status.toLowerCase() == 'completed';
+                } else if (_activeFilterTab == 3) {
+                  matchesTab = rx.status.toLowerCase() == 'expired';
+                } else if (_activeFilterTab == 4) {
+                  matchesTab = rx.status.toLowerCase() == 'draft';
+                }
+                
+                if (!matchesTab) return false;
+                
+                // Search query match
+                if (query.isEmpty) return true;
+                final idMatch = rx.id.toLowerCase().contains(query);
+                final docMatch = rx.prescriberName.toLowerCase().contains(query);
+                final drugMatch = rx.drugName.toLowerCase().contains(query);
+                final patientMatch = rx.patientName.toLowerCase().contains(query);
+                return idMatch || docMatch || drugMatch || patientMatch;
               }).toList();
 
+              final totalPages = (filteredRxList.length / 10).ceil();
+              final pageToRender = _currentPage.clamp(1, totalPages > 0 ? totalPages : 1);
+              final paginatedRxList = filteredRxList.skip((pageToRender - 1) * 10).take(10).toList();
+
               final listColumn = Column(
-                children: filteredRxList.isEmpty
+                children: paginatedRxList.isEmpty
                   ? [
                       _buildEmptyState(),
                     ]
-                  : filteredRxList.map((rx) {
-                      final items = appState.prescriptionItems.where((i) => i.prescriptionId == rx.id).toList();
-                      final medsText = items.isEmpty
-                          ? '${rx.drugName.isNotEmpty ? rx.drugName : "1 Medicine"} Prescribed'
-                          : '${items.length} Medicine${items.length > 1 ? "s" : ""} Prescribed';
-                          
-                      Color bgStatus = AppColors.successBg;
-                      Color textStatus = AppColors.successText;
-                      if (rx.status.toLowerCase() == 'completed') {
-                        bgStatus = AppColors.purpleBg;
-                        textStatus = AppColors.purpleText;
-                      } else if (rx.status.toLowerCase() == 'expired') {
-                        bgStatus = AppColors.dangerBg;
-                        textStatus = AppColors.dangerText;
-                      }
-                      
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 14),
-                        child: _buildPrescriptionBentoCard(
-                          rx: rx,
-                          items: items,
-                          id: rx.id,
-                          doctor: 'Dr. ${rx.prescriberName}',
-                          dateDetails: '${_formatDate(rx.prescribedDate ?? rx.lastFillDate)} • $medsText',
-                          status: rx.status,
-                          bgStatus: bgStatus,
-                          textStatus: textStatus,
-                          onView: () => appState.setSelectedPrescriptionId(rx.id),
+                  : [
+                      ...paginatedRxList.map((rx) {
+                        final items = appState.prescriptionItems.where((i) => i.prescriptionId == rx.id).toList();
+                        final medsText = items.isEmpty
+                            ? '${rx.drugName.isNotEmpty ? rx.drugName : "1 Medicine"} Prescribed'
+                            : '${items.length} Medicine${items.length > 1 ? "s" : ""} Prescribed';
+                            
+                        Color bgStatus = AppColors.successBg;
+                        Color textStatus = AppColors.successText;
+                        if (rx.status.toLowerCase() == 'completed') {
+                          bgStatus = AppColors.purpleBg;
+                          textStatus = AppColors.purpleText;
+                        } else if (rx.status.toLowerCase() == 'expired') {
+                          bgStatus = AppColors.dangerBg;
+                          textStatus = AppColors.dangerText;
+                        }
+                        
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: _buildPrescriptionBentoCard(
+                            rx: rx,
+                            items: items,
+                            id: rx.id,
+                            doctor: 'Dr. ${rx.prescriberName}',
+                            dateDetails: '${_formatDate(rx.prescribedDate ?? rx.lastFillDate)} • $medsText',
+                            status: rx.status,
+                            bgStatus: bgStatus,
+                            textStatus: textStatus,
+                            onView: () => appState.setSelectedPrescriptionId(rx.id),
+                          ),
+                        );
+                      }),
+                      if (totalPages > 1) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildPageButton(
+                              icon: Icons.chevron_left_rounded,
+                              isEnabled: pageToRender > 1,
+                              onTap: () => setState(() => _currentPage = pageToRender - 1),
+                            ),
+                            const SizedBox(width: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.metallicBorder),
+                              ),
+                              child: Text(
+                                'Page $pageToRender of $totalPages',
+                                style: AppFonts.googleSans(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textDark,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            _buildPageButton(
+                              icon: Icons.chevron_right_rounded,
+                              isEnabled: pageToRender < totalPages,
+                              onTap: () => setState(() => _currentPage = pageToRender + 1),
+                            ),
+                          ],
                         ),
-                      );
-                    }).toList(),
+                      ],
+                    ],
               );
 
               final sideColumn = Column(
@@ -233,7 +355,10 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
   Widget _buildSubTabButton(int index, String label) {
     final isSelected = _activeFilterTab == index;
     return GestureDetector(
-      onTap: () => setState(() => _activeFilterTab = index),
+      onTap: () => setState(() {
+        _activeFilterTab = index;
+        _currentPage = 1;
+      }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
@@ -260,6 +385,29 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
             fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
             color: isSelected ? Colors.white : AppColors.textDark,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPageButton({
+    required IconData icon,
+    required bool isEnabled,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isEnabled ? Colors.white : Colors.white.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isEnabled ? AppColors.metallicBorder : AppColors.metallicBorder.withValues(alpha: 0.5),
+        ),
+      ),
+      child: IconButton(
+        icon: Icon(icon, size: 18, color: isEnabled ? AppColors.textDark : AppColors.textMuted),
+        onPressed: isEnabled ? onTap : null,
+        style: IconButton.styleFrom(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
     );
