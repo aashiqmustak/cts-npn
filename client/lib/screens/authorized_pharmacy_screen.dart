@@ -29,6 +29,8 @@ class _AuthorizedPharmacyScreenState extends State<AuthorizedPharmacyScreen> {
       'phone': '(336) 555-0192',
       'stockStatus': 'Full Medication & Emergency Supplies In Stock',
       'mapQuery': 'MetroHealth Medical Center, 124 Health Center Blvd, Winston-Salem, NC 27103',
+      'latitude': 36.0890,
+      'longitude': -80.2520,
     },
     {
       'id': 'FAC-02',
@@ -43,6 +45,8 @@ class _AuthorizedPharmacyScreenState extends State<AuthorizedPharmacyScreen> {
       'phone': '(336) 716-2011',
       'stockStatus': 'In-Network Authorized Hospital Pharmacy',
       'mapQuery': 'Wake Forest Baptist Medical Center, Medical Center Blvd, Winston-Salem, NC 27157',
+      'latitude': 36.0955,
+      'longitude': -80.2647,
     },
     {
       'id': 'FAC-03',
@@ -57,6 +61,8 @@ class _AuthorizedPharmacyScreenState extends State<AuthorizedPharmacyScreen> {
       'phone': '(336) 555-0402',
       'stockStatus': 'Active Prescriptions Ready for Pickup',
       'mapQuery': 'CVS Pharmacy, 805 Silas Creek Pkwy, Winston-Salem, NC 27107',
+      'latitude': 36.0746,
+      'longitude': -80.2789,
     },
     {
       'id': 'FAC-04',
@@ -71,6 +77,8 @@ class _AuthorizedPharmacyScreenState extends State<AuthorizedPharmacyScreen> {
       'phone': '(336) 718-5000',
       'stockStatus': 'Full Inpatient & Outpatient Pharmacy',
       'mapQuery': 'Novant Health Forsyth Medical Center, 3333 Silas Creek Pkwy, Winston-Salem, NC 27103',
+      'latitude': 36.0758,
+      'longitude': -80.2969,
     },
     {
       'id': 'FAC-05',
@@ -85,6 +93,8 @@ class _AuthorizedPharmacyScreenState extends State<AuthorizedPharmacyScreen> {
       'phone': '(336) 555-0108',
       'stockStatus': 'Tier 1 & Tier 2 Generics Available',
       'mapQuery': 'Walgreens Pharmacy, 2290 S Main St, Winston-Salem, NC 27127',
+      'latitude': 36.0602,
+      'longitude': -80.2464,
     },
   ];
 
@@ -239,6 +249,8 @@ class _AuthorizedPharmacyScreenState extends State<AuthorizedPharmacyScreen> {
                 address: selectedFacility['address'],
                 distance: selectedFacility['distance'],
                 driveTime: selectedFacility['driveTime'],
+                latitude: selectedFacility['latitude'],
+                longitude: selectedFacility['longitude'],
               ),
             ),
           ),

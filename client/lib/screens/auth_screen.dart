@@ -1,6 +1,6 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
@@ -27,6 +27,11 @@ class _AuthScreenState extends State<AuthScreen> {
   final _regNameController = TextEditingController();
   final _regEmailController = TextEditingController();
   final _regPasswordController = TextEditingController();
+  String _selectedInsuranceCompany = 'Blue Cross Blue Shield';
+  final Set<String> _selectedInsurancePlans = {
+    'Blue Cross PPO Premier',
+    'Blue Cross Advantage Plus',
+  };
   bool _obscureRegPassword = true;
   bool _agreeTerms = true;
   bool _isPatientLoginMode = false;
@@ -185,70 +190,136 @@ class _AuthScreenState extends State<AuthScreen> {
     AppState appState, {
     bool isMobile = false,
   }) {
-    return Container(
-      color: Colors.white,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 8 : 56,
-          vertical: isMobile ? 8 : 40,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (!isMobile) ...[
-              _buildBrandLogoHeader(),
-              const SizedBox(height: 20),
-            ],
-
-            Center(
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 420),
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      _activeTabIndex == 0
-                          ? 'Sign in to Alternea'
-                          : 'Create an Account',
-                      textAlign: TextAlign.center,
-                      style: AppFonts.googleSans(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF0F172A),
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _activeTabIndex == 0
-                          ? 'All Your Hospital & Pharmacy Needs in One Place.'
-                          : 'Join the Alternea Intelligent Healthcare Ecosystem.',
-                      textAlign: TextAlign.center,
-                      style: AppFonts.googleSans(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w400,
-                        color: const Color(0xFF64748B),
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-
-                    _activeTabIndex == 0
-                        ? _buildSignInTab(context, appState)
-                        : _buildRegisterTab(context, appState),
-                  ],
+    return Stack(
+      children: [
+        // Premium Ambient Glow Orbs in Background (Mesh Gradient style)
+        if (!isMobile) ...[
+          Positioned(
+            top: -120,
+            left: -120,
+            child: Container(
+              width: 360,
+              height: 360,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF0EA5E9).withValues(alpha: 0.12),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(180),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 90, sigmaY: 90),
+                  child: Container(color: Colors.transparent),
                 ),
               ),
             ),
+          ),
+          Positioned(
+            bottom: -80,
+            right: -80,
+            child: Container(
+              width: 320,
+              height: 320,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(160),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 95, sigmaY: 95),
+                  child: Container(color: Colors.transparent),
+                ),
+              ),
+            ),
+          ),
+        ],
 
-            if (!isMobile) ...[
-              const SizedBox(height: 20),
-              _buildTrustFooter(),
-            ],
-          ],
+        // Main Form Content Scroll Layer
+        Container(
+          color: Colors.transparent,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 12 : 56,
+              vertical: isMobile ? 16 : 40,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!isMobile) ...[
+                  _buildBrandLogoHeader(),
+                  const SizedBox(height: 20),
+                ],
+
+                Center(
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 440),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 16 : 32,
+                      vertical: isMobile ? 24 : 36,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.88),
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(
+                        color: const Color(0xFFE2E8F0).withValues(alpha: 0.7),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                          blurRadius: 32,
+                          offset: const Offset(0, 12),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          _activeTabIndex == 0
+                              ? 'Sign in to Alternea'
+                              : 'Create an Account',
+                          textAlign: TextAlign.center,
+                          style: AppFonts.googleSans(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF0F172A),
+                            letterSpacing: -0.6,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _activeTabIndex == 0
+                              ? 'All Your Hospital & Pharmacy Needs in One Place.'
+                              : 'Join the Alternea Intelligent Healthcare Ecosystem.',
+                          textAlign: TextAlign.center,
+                          style: AppFonts.googleSans(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+
+                        _activeTabIndex == 0
+                            ? _buildSignInTab(context, appState)
+                            : _buildRegisterTab(context, appState),
+                      ],
+                    ),
+                  ),
+                ),
+
+                if (!isMobile) ...[
+                  const SizedBox(height: 24),
+                  _buildTrustFooter(),
+                ],
+              ],
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -1265,6 +1336,11 @@ class _AuthScreenState extends State<AuthScreen> {
 
         _PasswordStrengthMeter(password: _regPasswordController.text),
 
+        if (_selectedRole == UserRole.insuranceAgent) ...[
+          const SizedBox(height: 12),
+          _buildInsuranceAgentRegisterFields(),
+        ],
+
         const SizedBox(height: 12),
 
         Row(
@@ -1300,18 +1376,264 @@ class _AuthScreenState extends State<AuthScreen> {
             final email = _regEmailController.text.trim();
             final password = _regPasswordController.text.trim();
 
+            List<String> finalPlans = _selectedInsurancePlans.toList();
+            if (finalPlans.isEmpty) {
+              finalPlans = ['Comprehensive Rx Plan'];
+            }
+
             await appState.registerAccount(
               name: name,
               email: email,
               password: password,
               role: _selectedRole,
+              insuranceCompany: _selectedRole == UserRole.insuranceAgent ? _selectedInsuranceCompany : null,
+              insurancePlans: _selectedRole == UserRole.insuranceAgent ? finalPlans : const [],
+              insuranceMedicines: const [],
+              insuranceHospitals: const [],
             );
           },
         ),
 
         const SizedBox(height: 10),
         _buildSecurityGuarantee(),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "Already have an Account? ",
+              style: AppFonts.googleSans(
+                fontSize: 13,
+                color: const Color(0xFF64748B),
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _activeTabIndex = 0;
+                });
+              },
+              child: Text(
+                'Sign In',
+                style: AppFonts.googleSans(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF1244A2),
+                ),
+              ),
+            ),
+          ],
+        ),
       ],
+    );
+  }
+
+  Widget _buildInsuranceAgentRegisterFields() {
+    final companyPlansMap = {
+      'Blue Cross Blue Shield': [
+        'Blue Cross PPO Premier',
+        'Blue Cross Advantage Plus',
+        'Blue Cross Rx Comprehensive',
+        'Blue Care HMO Gold',
+      ],
+      'UnitedHealthcare (UHC)': [
+        'UHC Choice Plus Comprehensive',
+        'UHC Medicare Part D Standard',
+        'UHC Dual Complete (HMO-POS)',
+        'Optum Rx Preferred',
+      ],
+      'Medicare Part D (CMS)': [
+        'SilverScript Choice (PDP)',
+        'Medicare Advantage Part D Gold',
+        'WellCare Value Script (PDP)',
+        'Humana Premier Rx (PDP)',
+      ],
+      'Aetna Health': [
+        'Aetna Medicare Part D Value',
+        'Aetna Open Access PPO',
+        'Aetna Premier Rx Tier 1-5',
+      ],
+      'Cigna Healthcare': [
+        'Cigna Secure Rx (PDP)',
+        'Cigna Total Care Plus',
+        'Cigna Essential Rx Plan',
+      ],
+      'Humana Rx': [
+        'Humana Walmart Value Rx',
+        'Humana Gold Plus (HMO)',
+        'Humana Premier Part D',
+      ],
+      'Kaiser Permanente': [
+        'Kaiser Senior Advantage',
+        'Kaiser Permanente Deductible Plan',
+        'Kaiser Specialty Rx',
+      ],
+    };
+
+    final currentAvailablePlans = companyPlansMap[_selectedInsuranceCompany] ?? companyPlansMap['Blue Cross Blue Shield']!;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFCBD5E1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Insurance Company Dropdown
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1D4ED8).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.business_rounded, color: Color(0xFF1D4ED8), size: 16),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '1. SELECT INSURANCE COMPANY / PAYER',
+                style: AppFonts.googleSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF1E293B),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFCBD5E1)),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedInsuranceCompany,
+                isExpanded: true,
+                icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF1D4ED8)),
+                style: AppFonts.googleSans(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textDark,
+                ),
+                items: companyPlansMap.keys.map((c) {
+                  return DropdownMenuItem<String>(
+                    value: c,
+                    child: Text(c),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() {
+                      _selectedInsuranceCompany = val;
+                      _selectedInsurancePlans.clear();
+                      final defaults = companyPlansMap[val];
+                      if (defaults != null && defaults.isNotEmpty) {
+                        _selectedInsurancePlans.addAll(defaults.take(2));
+                      }
+                    });
+                  }
+                },
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // 2. Benefit Plans Dropdown & Selected Chips
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '2. COVERED BENEFIT PLANS (${_selectedInsurancePlans.length} Selected)',
+                style: AppFonts.googleSans(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF475569),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFCBD5E1)),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                hint: Text('Select a plan to add/toggle...', style: AppFonts.googleSans(fontSize: 12, color: const Color(0xFF94A3B8))),
+                icon: const Icon(Icons.playlist_add_check_rounded, color: Color(0xFF1D4ED8), size: 18),
+                items: currentAvailablePlans.map((p) {
+                  final isAlreadySelected = _selectedInsurancePlans.contains(p);
+                  return DropdownMenuItem<String>(
+                    value: p,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(p, style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w600)),
+                        Icon(
+                          isAlreadySelected ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
+                          size: 16,
+                          color: isAlreadySelected ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() {
+                      if (_selectedInsurancePlans.contains(val)) {
+                        _selectedInsurancePlans.remove(val);
+                      } else {
+                        _selectedInsurancePlans.add(val);
+                      }
+                    });
+                  }
+                },
+              ),
+            ),
+          ),
+          if (_selectedInsurancePlans.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: _selectedInsurancePlans.map((plan) {
+                return Chip(
+                  label: Text(plan),
+                  backgroundColor: const Color(0xFFDBEAFE),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: const BorderSide(color: Color(0xFF3B82F6)),
+                  ),
+                  labelStyle: AppFonts.googleSans(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF1E40AF),
+                  ),
+                  deleteIcon: const Icon(Icons.close_rounded, size: 14, color: Color(0xFF1E40AF)),
+                  onDeleted: () {
+                    setState(() {
+                      _selectedInsurancePlans.remove(plan);
+                    });
+                  },
+                );
+              }).toList(),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -1361,7 +1683,9 @@ class _HorizontalRoleSelector extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
           children:
-              UserRole.values.map((role) {
+              UserRole.values
+                  .where((role) => role != UserRole.admin)
+                  .map((role) {
                 final isSelected = role == selected;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8.0),
@@ -1941,7 +2265,7 @@ class _PillCtaButtonState extends State<_PillCtaButton> {
   }
 }
 
-class _GlowBorderFormField extends StatelessWidget {
+class _GlowBorderFormField extends StatefulWidget {
   final TextEditingController controller;
   final String label;
   final String hint;
@@ -1961,30 +2285,74 @@ class _GlowBorderFormField extends StatelessWidget {
   });
 
   @override
+  State<_GlowBorderFormField> createState() => _GlowBorderFormFieldState();
+}
+
+class _GlowBorderFormFieldState extends State<_GlowBorderFormField> {
+  final FocusNode _focusNode = FocusNode();
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      if (mounted) {
+        setState(() {
+          _isFocused = _focusNode.hasFocus;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
+        color: _isFocused ? Colors.white : const Color(0xFFF1F5F9),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+        border: Border.all(
+          color: _isFocused ? AppColors.primaryTeal : const Color(0xFFCBD5E1),
+          width: _isFocused ? 1.8 : 1.2,
+        ),
+        boxShadow: _isFocused
+            ? [
+                BoxShadow(
+                  color: AppColors.primaryTeal.withValues(alpha: 0.15),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                )
+              ]
+            : [],
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF64748B), size: 18),
+          Icon(
+            widget.icon,
+            color: _isFocused ? AppColors.primaryTeal : const Color(0xFF64748B),
+            size: 18,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: TextField(
-              controller: controller,
-              obscureText: obscureText,
-              keyboardType: keyboardType,
+              controller: widget.controller,
+              focusNode: _focusNode,
+              obscureText: widget.obscureText,
+              keyboardType: widget.keyboardType,
               style: AppFonts.googleSans(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF0F172A),
               ),
               decoration: InputDecoration(
-                hintText: hint,
+                hintText: widget.hint,
                 hintStyle: AppFonts.googleSans(
                   fontSize: 14,
                   color: const Color(0xFF94A3B8),
@@ -1993,58 +2361,89 @@ class _GlowBorderFormField extends StatelessWidget {
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 border: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
               ),
             ),
           ),
-          if (suffixIcon != null) suffixIcon!,
+          if (widget.suffixIcon != null) widget.suffixIcon!,
         ],
       ),
     );
   }
 }
 
-class _GradientBlueCtaButton extends StatelessWidget {
+class _GradientBlueCtaButton extends StatefulWidget {
   final String label;
   final VoidCallback onPressed;
 
   const _GradientBlueCtaButton({required this.label, required this.onPressed});
 
   @override
+  State<_GradientBlueCtaButton> createState() => _GradientBlueCtaButtonState();
+}
+
+class _GradientBlueCtaButtonState extends State<_GradientBlueCtaButton> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: 48,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1D4ED8), Color(0xFF2563EB)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF2563EB).withValues(alpha: 0.35),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedScale(
+        scale: _isHovered ? 1.015 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: double.infinity,
+          height: 50,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1D4ED8), Color(0xFF2563EB)],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF2563EB).withValues(alpha: _isHovered ? 0.45 : 0.3),
+                blurRadius: _isHovered ? 16 : 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: Text(
-          label.toUpperCase(),
-          style: AppFonts.googleSans(
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-            letterSpacing: 0.8,
+          child: ElevatedButton(
+            onPressed: widget.onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    widget.label.toUpperCase(),
+                    textAlign: TextAlign.center,
+                    style: AppFonts.googleSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
+              ],
+            ),
           ),
         ),
       ),
