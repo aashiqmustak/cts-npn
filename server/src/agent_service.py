@@ -1,6 +1,8 @@
+import asyncio
 import datetime
 import pathlib
 import sys
+import time
 from typing import Any
 
 # Ensure server/src is in sys.path
@@ -107,6 +109,49 @@ class PrescriptionUploadOCRPayload(BaseModel):
     doctor_id: str = "DOC_001"
 
 
+class PrescriptionStatusPayload(BaseModel):
+    prescription_id: str
+    patient_id: str
+    status: str  # "Bought" or "Not Bought"
+    doctor_name: str | None = None
+    medication_name: str | None = None
+    dosage: str | None = None
+    instructions: str | None = None
+    frequency: str | None = None
+    duration_days: int | None = 30
+    timestamp: str | None = None
+
+
+_pending_followup_tasks: dict[str, asyncio.Task] = {}
+_followup_records: dict[str, dict[str, Any]] = {}
+
+
+async def _schedule_followup_call_task(
+    prescription_id: str, payload_data: dict[str, Any], delay_seconds: int = 120
+):
+    try:
+        print(
+            f"[Follow-up Scheduler] 2-minute timer started for Rx {prescription_id} (Patient {payload_data.get('patient_id')})"
+        )
+        await asyncio.sleep(delay_seconds)
+
+        # Timer elapsed -> Mark follow-up as triggered
+        record = _followup_records.get(prescription_id)
+        if record and record.get("status") == "Not Bought":
+            record["triggered"] = True
+            record["triggered_at"] = datetime.datetime.now(datetime.UTC).isoformat()
+            record["call_status"] = "initiated"
+            print(
+                f"[Follow-up Scheduler] 2-minute timer completed! Automated adherence call triggered for Patient {payload_data.get('patient_id')} (Medication: {payload_data.get('medication_name')})"
+            )
+    except asyncio.CancelledError:
+        print(
+            f"[Follow-up Scheduler] Follow-up timer cancelled for Rx {prescription_id} (Prescription was marked as Bought)."
+        )
+    finally:
+        _pending_followup_tasks.pop(prescription_id, None)
+
+
 @get("/health")
 async def rx_health() -> dict[str, str]:
     return {"status": "healthy", "agent": "prescription_agent"}
@@ -140,9 +185,102 @@ async def upload_ocr(
     }
 
 
+@post("/status")
+async def update_prescription_status(
+    data: PrescriptionStatusPayload,
+) -> dict[str, Any]:
+    rx_id = data.prescription_id
+    status = data.status.strip()
+    patient_id = data.patient_id.strip()
+
+    if rx_id in _pending_followup_tasks:
+        _pending_followup_tasks[rx_id].cancel()
+        _pending_followup_tasks.pop(rx_id, None)
+
+    import time
+    now_iso = datetime.datetime.now(datetime.UTC).isoformat()
+    record = {
+        "prescription_id": rx_id,
+        "patient_id": patient_id,
+        "status": status,
+        "doctor_name": data.doctor_name or "Attending Physician",
+        "medication_name": data.medication_name or "Prescribed Medication",
+        "dosage": data.dosage or "",
+        "instructions": data.instructions or "",
+        "frequency": data.frequency or "",
+        "duration_days": data.duration_days or 30,
+        "updated_at": now_iso,
+        "triggered": False,
+        "triggered_at": None,
+        "call_status": "none",
+        "scheduled_delay_seconds": 120,
+    }
+    _followup_records[rx_id] = record
+
+    if status.lower() == "not bought":
+        record["timer_started_at"] = time.time()
+        record["timer_expires_at"] = time.time() + 120
+        record["call_status"] = "scheduled_2min"
+        task = asyncio.create_task(
+            _schedule_followup_call_task(rx_id, record, delay_seconds=120)
+        )
+        _pending_followup_tasks[rx_id] = task
+        return {
+            "success": True,
+            "prescription_id": rx_id,
+            "status": "Not Bought",
+            "followup_scheduled": True,
+            "delay_seconds": 120,
+            "message": "Status updated to Not Bought. 2-minute server follow-up timer initiated.",
+        }
+    else:
+        record["call_status"] = "resolved_bought"
+        return {
+            "success": True,
+            "prescription_id": rx_id,
+            "status": "Bought",
+            "followup_scheduled": False,
+            "message": "Prescription marked as bought.",
+        }
+
+
+@get("/followups/{patient_id:str}")
+async def get_patient_followups(patient_id: str) -> list[dict[str, Any]]:
+    import time
+    results = []
+    now = time.time()
+    p_norm = patient_id.strip().lower()
+    for _rx_id, rec in _followup_records.items():
+        rec_pid = str(rec.get("patient_id", "")).strip().lower()
+        if rec_pid == p_norm or (p_norm in rec_pid) or (rec_pid in p_norm):
+            rec_copy = dict(rec)
+            if rec.get("status") == "Not Bought" and not rec.get("triggered", False):
+                expires = rec.get("timer_expires_at", 0)
+                remaining = max(0, int(expires - now))
+                rec_copy["remaining_seconds"] = remaining
+            results.append(rec_copy)
+    return results
+
+
+@post("/followups/{prescription_id:str}/dismiss")
+async def dismiss_patient_followup(prescription_id: str) -> dict[str, Any]:
+    if prescription_id in _followup_records:
+        _followup_records[prescription_id]["dismissed"] = True
+        _followup_records[prescription_id]["call_status"] = "dismissed"
+        return {"success": True, "prescription_id": prescription_id}
+    return {"success": False, "error": "Not found"}
+
+
 prescription_router = Router(
     path="/api/v1/prescription",
-    route_handlers=[rx_health, normalize_prescription, upload_ocr],
+    route_handlers=[
+        rx_health,
+        normalize_prescription,
+        upload_ocr,
+        update_prescription_status,
+        get_patient_followups,
+        dismiss_patient_followup,
+    ],
     tags=["1. Prescription Agent"],
 )
 

@@ -155,22 +155,26 @@ class GoogleSignInButton extends StatelessWidget {
               else
                 const GoogleLogo(size: 20),
               const SizedBox(width: 12),
-              Text(
-                text,
-                style: const TextStyle(
-                  fontFamily: 'Google Sans',
-                  fontFamilyFallback: [
-                    'Google Sans',
-                    'Google Sans Text',
-                    'Product Sans',
-                    'Open Sans',
-                    'Roboto',
-                    'sans-serif',
-                  ],
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1F2937),
-                  letterSpacing: 0.1,
+              Flexible(
+                child: Text(
+                  text,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: const TextStyle(
+                    fontFamily: 'Google Sans',
+                    fontFamilyFallback: [
+                      'Google Sans',
+                      'Google Sans Text',
+                      'Product Sans',
+                      'Open Sans',
+                      'Roboto',
+                      'sans-serif',
+                    ],
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1F2937),
+                    letterSpacing: 0.1,
+                  ),
                 ),
               ),
             ],

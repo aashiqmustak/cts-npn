@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
@@ -21,6 +20,7 @@ class _AuthScreenState extends State<AuthScreen> {
   UserRole _selectedRole = UserRole.doctor;
 
   bool _otpSent = false;
+  bool _isGoogleLoading = false;
   final _signInEmailController = TextEditingController();
   final _otpController = TextEditingController();
 
@@ -255,7 +255,7 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget _buildRightCarouselPanel() {
     return Container(
       color: const Color(0xFFF4F7FC),
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(24),
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFFF8FAFC),
@@ -286,7 +286,7 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(bottom: 24),
+              padding: const EdgeInsets.only(bottom: 16),
               child: _buildCarouselDots(),
             ),
           ],
@@ -316,14 +316,16 @@ class _AuthScreenState extends State<AuthScreen> {
 
     final slide = slides[index];
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 32, 32, 16),
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
+          SizedBox(
+            height: 180,
             child: Container(
-              margin: const EdgeInsets.only(bottom: 20),
+              margin: const EdgeInsets.only(bottom: 14),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
@@ -341,27 +343,28 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
 
           Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 slide['title']!,
                 textAlign: TextAlign.center,
                 style: AppFonts.googleSans(
-                  fontSize: 18.5,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF0F172A),
                   letterSpacing: -0.4,
-                  height: 1.3,
+                  height: 1.25,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 slide['subtitle']!,
                 textAlign: TextAlign.center,
                 style: AppFonts.googleSans(
-                  fontSize: 12.5,
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w400,
                   color: const Color(0xFF64748B),
-                  height: 1.4,
+                  height: 1.35,
                 ),
               ),
             ],
@@ -457,49 +460,48 @@ class _AuthScreenState extends State<AuthScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Appointments Schedule',
-                      style: AppFonts.googleSans(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF0F172A),
-                      ),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Appointments Schedule',
+                    style: AppFonts.googleSans(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0F172A),
                     ),
-                    const SizedBox(height: 8),
-                    _mockTableRow(
-                      'Emily Johnson',
-                      'Cardiology',
-                      'Dr. Robert Brown',
-                      '10:30 AM',
-                      'Confirmed',
-                    ),
-                    _mockTableRow(
-                      'Michael Lee',
-                      'Dermatology',
-                      'Dr. Sarah Davis',
-                      '11:00 AM',
-                      'Confirmed',
-                    ),
-                    _mockTableRow(
-                      'Jessica Taylor',
-                      'Pediatrics',
-                      'Dr. Karen White',
-                      '01:15 PM',
-                      'In-Progress',
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 8),
+                  _mockTableRow(
+                    'Emily Johnson',
+                    'Cardiology',
+                    'Dr. Robert Brown',
+                    '10:30 AM',
+                    'Confirmed',
+                  ),
+                  _mockTableRow(
+                    'Michael Lee',
+                    'Dermatology',
+                    'Dr. Sarah Davis',
+                    '11:00 AM',
+                    'Confirmed',
+                  ),
+                  _mockTableRow(
+                    'Jessica Taylor',
+                    'Pediatrics',
+                    'Dr. Karen White',
+                    '01:15 PM',
+                    'In-Progress',
+                  ),
+                ],
               ),
             ),
           ],
@@ -953,8 +955,16 @@ class _AuthScreenState extends State<AuthScreen> {
           // Google Sign-In with actual 4-color Google logo strictly for patients
           GoogleSignInButton(
             text: 'Sign in with Google (Patients)',
+            isLoading: _isGoogleLoading,
             onPressed: () async {
-              await appState.signInWithGooglePatient();
+              setState(() => _isGoogleLoading = true);
+              try {
+                await appState.signInWithGooglePatient();
+              } finally {
+                if (mounted) {
+                  setState(() => _isGoogleLoading = false);
+                }
+              }
             },
           ),
 

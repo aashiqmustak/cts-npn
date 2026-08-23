@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'models/models.dart';
 import 'providers/app_state.dart';
 import 'services/supabase_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/main_layout.dart';
 import 'screens/auth_screen.dart';
+import 'screens/patient_profile_completion_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +42,10 @@ class AppShell extends StatelessWidget {
 
     if (!appState.isLoggedIn) {
       return const AuthScreen();
+    }
+
+    if (appState.currentUser.role == UserRole.patient && !appState.isPatientProfileComplete) {
+      return const PatientProfileCompletionScreen();
     }
 
     return const MainLayout();

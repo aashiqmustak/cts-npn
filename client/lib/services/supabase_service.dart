@@ -171,11 +171,20 @@ class SupabaseService {
   }
 
   void _sendSmtpEmail({required String email, required String otpCode}) async {
+    final cleanEmail = email.trim().toLowerCase();
+    final isEmail = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(cleanEmail);
+    if (!isEmail) {
+      if (kDebugMode) {
+        print('SMTP Dispatch logged for $email (Identifier/MRN) -> OTP: $otpCode');
+      }
+      return;
+    }
+
     try {
       final smtpServer = gmail('alternea.health@gmail.com', 'smtp_app_password');
       final message = Message()
         ..from = const Address('alternea.health@gmail.com', 'Alternea Clinical Portal')
-        ..recipients.add(email)
+        ..recipients.add(cleanEmail)
         ..subject = 'Alternea Verification Code: $otpCode'
         ..html = '''
           <div style="font-family: Arial, sans-serif; max-width: 600px; padding: 24px; border: 1px solid #E2E8F0; border-radius: 12px;">
@@ -418,6 +427,19 @@ class SupabaseService {
     }
   }
 
+  Future<bool> updatePrescriptionStatus(String prescriptionId, String status) async {
+    if (!isInitialized) return false;
+    try {
+      await client.from('prescriptions').update({
+        'status': status,
+      }).eq('id', prescriptionId);
+      return true;
+    } catch (e) {
+      if (kDebugMode) print('updatePrescriptionStatus error: $e');
+      return false;
+    }
+  }
+
   Future<bool> dispensePrescriptionItem(String itemId) async {
     if (!isInitialized) return false;
     try {
@@ -503,6 +525,9 @@ class SupabaseService {
     String? hospitalId,
     String? doctorId,
     required UserRole role,
+    String? googleAccountId,
+    String? googleEmail,
+    String? googleAvatarUrl,
   }) async {
     final roleStr = _roleToDbString(role);
     final titleStr = _roleToTitle(role);
@@ -511,6 +536,9 @@ class SupabaseService {
       'email': email,
       'name': name,
       'phone': phone,
+      'google_account_id': googleAccountId,
+      'google_email': googleEmail ?? email,
+      'google_avatar_url': googleAvatarUrl,
       'hospital_name': hospitalName,
       'hospital_id': hospitalId,
       'doctor_id': doctorId,

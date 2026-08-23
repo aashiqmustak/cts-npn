@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
@@ -577,6 +576,24 @@ class MainLayout extends StatelessWidget {
 
           // Clinical Notifications Bell Action Button
           _NotificationIconButton(user: user),
+
+          const SizedBox(width: 10),
+
+          // Direct Log Out Button
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 20),
+            tooltip: 'Log Out',
+            style: IconButton.styleFrom(
+              backgroundColor: const Color(0xFFFEF2F2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+                side: const BorderSide(color: Color(0xFFFECACA)),
+              ),
+            ),
+            onPressed: () {
+              appState.logout();
+            },
+          ),
         ],
       ),
     );
@@ -938,7 +955,7 @@ class _RoleSwitcherSidebarCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 14),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.bgSlate,
         borderRadius: BorderRadius.circular(18),
@@ -950,7 +967,7 @@ class _RoleSwitcherSidebarCard extends StatelessWidget {
       child: Row(
         children: [
           _UserAvatarBadge(user: user, radius: 17),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -960,7 +977,7 @@ class _RoleSwitcherSidebarCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppFonts.googleSans(
-                    fontSize: 12,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w800,
                     color: AppColors.textDark,
                   ),
@@ -970,13 +987,22 @@ class _RoleSwitcherSidebarCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppFonts.googleSans(
-                    fontSize: 10.5,
+                    fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: AppColors.primaryTeal,
                   ),
                 ),
               ],
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 16),
+            tooltip: 'Log Out',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            onPressed: () {
+              appState.logout();
+            },
           ),
         ],
       ),
@@ -1828,8 +1854,13 @@ class _DraggableNotificationCardState extends State<_DraggableNotificationCard> 
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
+                            final isCall = notif.id.contains('CALL') || notif.title.contains('Call') || notif.title.contains('Follow-up');
                             widget.appState.dismissNotification(notif.id);
-                            widget.appState.setNavIndex(1);
+                            if (isCall) {
+                              widget.appState.setNavIndex(4); // Voice Agent Screen
+                            } else {
+                              widget.appState.setNavIndex(0); // Patient Dashboard My Prescriptions
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF0284C7),
@@ -1839,7 +1870,9 @@ class _DraggableNotificationCardState extends State<_DraggableNotificationCard> 
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
                           child: Text(
-                            'View Cabinet',
+                            (notif.id.contains('CALL') || notif.title.contains('Call') || notif.title.contains('Follow-up'))
+                                ? 'Answer Call'
+                                : 'View Prescriptions',
                             style: AppFonts.googleSans(fontSize: 11, fontWeight: FontWeight.w800),
                           ),
                         ),

@@ -57,59 +57,153 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final emailController = TextEditingController(text: user.email);
     String? selectedDoctorId = user.doctorId;
 
+    final patientProfile = user.patientProfile ??
+        PatientProfile(
+          patientId: user.patientId ?? user.id,
+          name: user.name,
+          age: 0,
+          gender: 'Female',
+          phone: user.phone ?? '',
+          email: user.email,
+          height: '',
+          weight: '',
+          address: '',
+          city: '',
+          bloodGroup: '',
+          allergies: '',
+          chronicConditions: '',
+          dateOfBirth: null,
+        );
+
+    final patientNameController = TextEditingController(text: patientProfile.name);
+    final patientPhoneController = TextEditingController(text: patientProfile.phone);
+    final patientEmailController = TextEditingController(text: patientProfile.email);
+    final patientDobController = TextEditingController(
+      text: patientProfile.dateOfBirth != null ? patientProfile.dateOfBirth!.toIso8601String().split('T').first : '',
+    );
+    final patientHeightController = TextEditingController(text: patientProfile.height);
+    final patientWeightController = TextEditingController(text: patientProfile.weight);
+    final patientAddressController = TextEditingController(text: patientProfile.address);
+    final patientCityController = TextEditingController(text: patientProfile.city);
+    final patientBloodGroupController = TextEditingController(text: patientProfile.bloodGroup);
+    final patientAllergiesController = TextEditingController(text: patientProfile.allergies);
+    final patientChronicConditionsController = TextEditingController(text: patientProfile.chronicConditions);
+    String? selectedGender = patientProfile.gender.isNotEmpty ? patientProfile.gender : 'Female';
+
+    Future<void> pickDob() async {
+      final now = DateTime.now();
+      final picked = await showDatePicker(
+        context: context,
+        initialDate: patientProfile.dateOfBirth ?? DateTime(now.year - 30),
+        firstDate: DateTime(1900),
+        lastDate: now,
+      );
+      if (picked != null) {
+        patientDobController.text = picked.toIso8601String().split('T').first;
+      }
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Edit Profile Details',
+          user.role == UserRole.patient ? 'Edit Patient Profile' : 'Edit Profile Details',
           style: AppFonts.googleSans(fontWeight: FontWeight.w800, color: AppColors.textDark),
         ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Full Name',
-                  prefixIcon: Icon(Icons.person_rounded, color: Color(0xFF1244A2)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email Address / User ID',
-                  prefixIcon: Icon(Icons.email_rounded, color: Color(0xFF1244A2)),
-                ),
-              ),
-              if (user.role == UserRole.pharmacist) ...[
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: selectedDoctorId,
-                  decoration: const InputDecoration(
-                    labelText: 'Supervising Physician',
-                    prefixIcon: Icon(Icons.badge_rounded, color: Color(0xFF1244A2)),
-                  ),
-                  items: [
-                    const DropdownMenuItem<String>(
-                      value: null,
-                      child: Text('None Assigned (All Doctors)'),
+        content: SizedBox(
+          width: 520,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (user.role == UserRole.patient) ...[
+                  _buildPatientEditField('Name', patientNameController, Icons.person_rounded),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: pickDob,
+                    child: AbsorbPointer(
+                      child: _buildPatientEditField('DOB', patientDobController, Icons.calendar_today_rounded),
                     ),
-                    ...appState.doctors.map((d) {
-                      return DropdownMenuItem<String>(
-                        value: d.id,
-                        child: Text('${d.name} (${d.specialty})'),
-                      );
-                    }),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: selectedGender,
+                    decoration: InputDecoration(
+                      labelText: 'Gender',
+                      prefixIcon: const Icon(Icons.wc_rounded, color: Color(0xFF1244A2)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'Female', child: Text('Female')),
+                      DropdownMenuItem(value: 'Male', child: Text('Male')),
+                      DropdownMenuItem(value: 'Other', child: Text('Other')),
+                      DropdownMenuItem(value: 'Prefer not to say', child: Text('Prefer not to say')),
+                    ],
+                    onChanged: (val) => selectedGender = val,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildPatientEditField('Phone Number', patientPhoneController, Icons.phone_rounded),
+                  const SizedBox(height: 12),
+                  _buildPatientEditField('Email', patientEmailController, Icons.email_rounded),
+                  const SizedBox(height: 12),
+                  _buildPatientEditField('Height', patientHeightController, Icons.height_rounded),
+                  const SizedBox(height: 12),
+                  _buildPatientEditField('Weight', patientWeightController, Icons.monitor_weight_rounded),
+                  const SizedBox(height: 12),
+                  _buildPatientEditField('Address', patientAddressController, Icons.home_rounded),
+                  const SizedBox(height: 12),
+                  _buildPatientEditField('City', patientCityController, Icons.location_city_rounded),
+                  const SizedBox(height: 12),
+                  _buildPatientEditField('Blood Group', patientBloodGroupController, Icons.bloodtype_rounded),
+                  const SizedBox(height: 12),
+                  _buildPatientEditField('Allergies', patientAllergiesController, Icons.warning_amber_rounded),
+                  const SizedBox(height: 12),
+                  _buildPatientEditField('Chronic Conditions', patientChronicConditionsController, Icons.medical_services_rounded),
+                ] else ...[
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Full Name',
+                      prefixIcon: Icon(Icons.person_rounded, color: Color(0xFF1244A2)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: emailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Email Address / User ID',
+                      prefixIcon: Icon(Icons.email_rounded, color: Color(0xFF1244A2)),
+                    ),
+                  ),
+                  if (user.role == UserRole.pharmacist) ...[
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: selectedDoctorId,
+                      decoration: const InputDecoration(
+                        labelText: 'Supervising Physician',
+                        prefixIcon: Icon(Icons.badge_rounded, color: Color(0xFF1244A2)),
+                      ),
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('None Assigned (All Doctors)'),
+                        ),
+                        ...appState.doctors.map((d) {
+                          return DropdownMenuItem<String>(
+                            value: d.id,
+                            child: Text('${d.name} (${d.specialty})'),
+                          );
+                        }),
+                      ],
+                      onChanged: (val) {
+                        selectedDoctorId = val;
+                      },
+                    ),
                   ],
-                  onChanged: (val) {
-                    selectedDoctorId = val;
-                  },
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
         actions: [
@@ -119,26 +213,61 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              final newName = nameController.text.trim();
-              final newEmail = emailController.text.trim();
-              if (newName.isNotEmpty) {
-                final updatedUser = User(
-                  id: user.id,
-                  name: newName,
-                  email: newEmail.isNotEmpty ? newEmail : user.email,
-                  role: user.role,
-                  hospitalName: user.hospitalName,
-                  hospitalId: user.hospitalId,
-                  title: user.title,
-                  doctorId: selectedDoctorId,
+              if (user.role == UserRole.patient) {
+                final phone = patientPhoneController.text.trim();
+                final email = patientEmailController.text.trim();
+                final name = patientNameController.text.trim();
+                if (name.isEmpty || phone.isEmpty || email.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please complete the required patient fields.'),
+                      backgroundColor: Color(0xFF1244A2),
+                    ),
+                  );
+                  return;
+                }
+
+                final updatedProfile = PatientProfile(
+                  patientId: patientProfile.patientId,
+                  name: name,
+                  dateOfBirth: patientDobController.text.trim().isNotEmpty ? DateTime.tryParse(patientDobController.text.trim()) : null,
+                  age: patientDobController.text.trim().isNotEmpty ? _calculateAge(DateTime.tryParse(patientDobController.text.trim())!) : 0,
+                  gender: selectedGender ?? 'Female',
+                  phone: phone,
+                  email: email,
+                  height: patientHeightController.text.trim(),
+                  weight: patientWeightController.text.trim(),
+                  address: patientAddressController.text.trim(),
+                  city: patientCityController.text.trim(),
+                  bloodGroup: patientBloodGroupController.text.trim(),
+                  allergies: patientAllergiesController.text.trim(),
+                  chronicConditions: patientChronicConditionsController.text.trim(),
                 );
-                appState.updateUser(updatedUser);
+                appState.savePatientProfile(updatedProfile);
+              } else {
+                final newName = nameController.text.trim();
+                final newEmail = emailController.text.trim();
+                if (newName.isNotEmpty) {
+                  final updatedUser = User(
+                    id: user.id,
+                    name: newName,
+                    email: newEmail.isNotEmpty ? newEmail : user.email,
+                    role: user.role,
+                    hospitalName: user.hospitalName,
+                    hospitalId: user.hospitalId,
+                    title: user.title,
+                    doctorId: selectedDoctorId,
+                  );
+                  appState.updateUser(updatedUser);
+                }
               }
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Profile details updated successfully!'),
-                  backgroundColor: Color(0xFF1244A2),
+                SnackBar(
+                  content: Text(
+                    user.role == UserRole.patient ? 'Profile updated successfully!' : 'Profile details updated successfully!',
+                  ),
+                  backgroundColor: const Color(0xFF1244A2),
                 ),
               );
             },
@@ -152,6 +281,26 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildPatientEditField(String label, TextEditingController controller, IconData icon) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: const Color(0xFF1244A2)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  int _calculateAge(DateTime dob) {
+    final now = DateTime.now();
+    var age = now.year - dob.year;
+    if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
+      age--;
+    }
+    return age;
   }
 
   @override
@@ -453,6 +602,23 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   // Patient Health Profile Bento
   Widget _buildPatientHealthProfileBento(User user) {
+    final profile = user.patientProfile;
+    final fullName = profile?.name ?? user.name;
+    final email = profile?.email ?? user.email;
+    final phone = profile?.phone ?? user.phone ?? 'Not provided';
+    final dob = profile?.dateOfBirth != null
+        ? '${profile!.dateOfBirth!.year}-${profile.dateOfBirth!.month.toString().padLeft(2, '0')}-${profile.dateOfBirth!.day.toString().padLeft(2, '0')}'
+        : 'Not provided';
+    final age = profile?.age != null && profile!.age > 0 ? profile.age.toString() : 'Not provided';
+    final gender = profile?.gender ?? 'Not provided';
+    final height = profile?.height ?? 'Not provided';
+    final weight = profile?.weight ?? 'Not provided';
+    final address = profile?.address ?? 'Not provided';
+    final city = profile?.city ?? 'Not provided';
+    final bloodGroup = profile?.bloodGroup ?? 'Not provided';
+    final allergies = profile?.allergies ?? 'Not provided';
+    final chronicConditions = profile?.chronicConditions ?? 'Not provided';
+
     return BentoCard(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -477,12 +643,22 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
           const Divider(height: 28),
 
-          _buildStyledTileRow(Icons.fingerprint_rounded, 'Medical Record Number (MRN)', 'PAT-301 (Verified System ID)', isHighlight: true),
-          _buildStyledTileRow(Icons.person_pin_rounded, 'Primary Care Physician', 'Dr. Tariq Martin, MD (MetroHealth Cardiology)'),
+          _buildStyledTileRow(Icons.fingerprint_rounded, 'Medical Record Number (MRN)', user.patientId ?? 'PAT-301 (Verified System ID)', isHighlight: true),
+          _buildStyledTileRow(Icons.person_rounded, 'Full Name', fullName),
+          _buildStyledTileRow(Icons.cake_rounded, 'DOB', dob),
+          _buildStyledTileRow(Icons.calculate_rounded, 'Age', age),
+          _buildStyledTileRow(Icons.wc_rounded, 'Gender', gender),
+          _buildStyledTileRow(Icons.phone_rounded, 'Phone', phone),
+          _buildStyledTileRow(Icons.email_rounded, 'Email', email),
+          _buildStyledTileRow(Icons.height_rounded, 'Height', height),
+          _buildStyledTileRow(Icons.monitor_weight_rounded, 'Weight', weight),
+          _buildStyledTileRow(Icons.home_rounded, 'Address', address),
+          _buildStyledTileRow(Icons.location_city_rounded, 'City', city),
+          _buildStyledTileRow(Icons.bloodtype_rounded, 'Blood Group', bloodGroup),
+          _buildStyledTileRow(Icons.warning_amber_rounded, 'Allergies', allergies),
+          _buildStyledTileRow(Icons.medical_services_rounded, 'Chronic Conditions', chronicConditions),
           _buildStyledTileRow(Icons.health_and_safety_rounded, 'Insurance Plan Provider', 'Medicare Part D — SilverScript Choice (#MED-99201)'),
           _buildStyledTileRow(Icons.payments_rounded, 'Insurance Copay Tier', 'Tier 1 Generics (\$0.00) • Tier 2 Preferred (\$5.00)'),
-          _buildStyledTileRow(Icons.warning_amber_rounded, 'Blood Type & Allergies', 'Blood Type: O+ Positive • Penicillin (Severe)'),
-          _buildStyledTileRow(Icons.contact_phone_rounded, 'Emergency Contact', 'Sarah Rostova (Spouse) • (336) 555-0199'),
         ],
       ),
     );

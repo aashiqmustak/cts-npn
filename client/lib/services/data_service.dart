@@ -482,4 +482,16 @@ class DataService {
       _tierConfigs[index].coinsurancePct = coinsurance;
     }
   }
+
+  // Patient Action: Update prescription status (e.g. Bought / Not Bought)
+  Future<bool> updatePrescriptionStatus(String prescriptionId, String status) async {
+    final index = _prescriptions.indexWhere((r) => r.id == prescriptionId);
+    if (index != -1) {
+      _prescriptions[index] = _prescriptions[index].copyWith(status: status);
+    }
+    if (supabaseService.isInitialized) {
+      await supabaseService.updatePrescriptionStatus(prescriptionId, status);
+    }
+    return true;
+  }
 }

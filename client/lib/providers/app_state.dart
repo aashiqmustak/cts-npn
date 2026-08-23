@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 import '../services/data_service.dart';
@@ -116,6 +118,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Follow-up Automated Voice Call & Notification State
+  Prescription? _activeFollowUpIncomingCall;
+  Prescription? get activeFollowUpIncomingCall => _activeFollowUpIncomingCall;
+  final Map<String, Timer> _localFollowUpTimers = {};
+  Timer? _backendFollowUpPollingTimer;
+
   AppState() {
     _currentUser = const User(
       id: 'U_INIT',
@@ -129,6 +137,7 @@ class AppState extends ChangeNotifier {
     );
     _loadSavedSession();
     refreshData();
+    _startBackendFollowUpPolling();
   }
 
   Future<void> _loadSavedSession() async {
@@ -164,6 +173,28 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void savePatientProfile(PatientProfile profile) {
+    final updatedUser = User(
+      id: _currentUser.id,
+      name: profile.name,
+      email: profile.email,
+      phone: profile.phone,
+      role: UserRole.patient,
+      assignedPatientIds: _currentUser.assignedPatientIds,
+      avatarUrl: _currentUser.avatarUrl,
+      title: _currentUser.title,
+      hospitalId: _currentUser.hospitalId,
+      hospitalName: _currentUser.hospitalName,
+      doctorId: _currentUser.doctorId,
+      patientId: profile.patientId,
+      patientProfile: profile,
+    );
+
+    _currentUser = updatedUser;
+    _saveSession(updatedUser);
+    notifyListeners();
+  }
+
   Future<void> _saveSession(User user) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -190,6 +221,9 @@ class AppState extends ChangeNotifier {
   // Getters
   bool get isLoggedIn => _isLoggedIn;
   User get currentUser => _currentUser;
+  bool get isPatientProfileComplete =>
+      _currentUser.role == UserRole.patient &&
+      (_currentUser.patientProfile?.isComplete ?? false);
   int get currentNavIndex => _currentNavIndex;
   int get activeSubTabIndex => _activeSubTabIndex;
   String? get selectedPrescriptionId => _selectedPrescriptionId;
@@ -356,12 +390,198 @@ class AppState extends ChangeNotifier {
       ClinicalNotification(
         id: 'NOTIF-${DateTime.now().millisecondsSinceEpoch}',
         title: '⚡ New e-Prescription Issued',
-        subtitle: 'Dr. Tariq Martin issued e-Rx for $firstDrugName ($diagnosis). Available in Medicine Cabinet.',
+        subtitle: 'Dr. Tariq Martin issued e-Rx for $firstDrugName ($diagnosis). Available in My Prescriptions.',
         time: 'Just now',
         icon: Icons.edit_note_rounded,
         color: const Color(0xFF1244A2),
       ),
     );
+    notifyListeners();
+  }
+
+  String _getBackendBaseUrl() {
+    try {
+      final host = Uri.base.host;
+      final finalHost = host.isEmpty ? 'localhost' : host;
+      return 'http://$finalHost:8000';
+    } catch (_) {
+      return 'http://localhost:8000';
+    }
+  }
+
+  void dismissFollowUpIncomingCall() {
+    if (_activeFollowUpIncomingCall != null) {
+      final rxId = _activeFollowUpIncomingCall!.id;
+      try {
+        final baseUrl = _getBackendBaseUrl();
+        http.post(Uri.parse('$baseUrl/api/v1/prescription/followups/$rxId/dismiss'));
+      } catch (_) {}
+    }
+    _activeFollowUpIncomingCall = null;
+    notifyListeners();
+  }
+
+  void _startBackendFollowUpPolling() {
+    _backendFollowUpPollingTimer?.cancel();
+    _backendFollowUpPollingTimer = Timer.periodic(const Duration(seconds: 4), (_) async {
+      if (!_isLoggedIn || _currentUser.role != UserRole.patient) return;
+      try {
+        final baseUrl = _getBackendBaseUrl();
+        final pid = _currentUser.patientId ?? _currentUser.id;
+        final res = await http.get(
+          Uri.parse('$baseUrl/api/v1/prescription/followups/$pid'),
+        );
+        if (res.statusCode == 200) {
+          final List list = jsonDecode(res.body);
+          for (final item in list) {
+            final rxId = item['prescription_id']?.toString() ?? '';
+            final isTriggered = item['triggered'] == true;
+            final isDismissed = item['dismissed'] == true;
+            final status = item['status']?.toString() ?? '';
+
+            if (status.toLowerCase() == 'not bought' && isTriggered && !isDismissed) {
+              final rx = dataService.prescriptions.firstWhere(
+                (r) => r.id == rxId,
+                orElse: () => Prescription(
+                  id: rxId,
+                  patientId: pid,
+                  patientName: _currentUser.name,
+                  drugId: '',
+                  drugName: item['medication_name'] ?? 'Prescribed Medication',
+                  drugClass: 'General',
+                  fillDates: [],
+                  fillRecords: [],
+                  pdcScore: 0.85,
+                  status: 'Not Bought',
+                  lastFillDate: DateTime.now(),
+                  nextDueDate: DateTime.now(),
+                  prescriberName: item['doctor_name'] ?? 'Attending Doctor',
+                ),
+              );
+              _triggerFollowUpNotificationAndCall(rx);
+            }
+          }
+        }
+      } catch (_) {}
+    });
+  }
+
+  void _triggerFollowUpNotificationAndCall(Prescription rx) {
+    final existingIdx = _userNotifications.indexWhere((n) => n.id == 'NOTIF-CALL-${rx.id}');
+    if (existingIdx == -1) {
+      addNotification(
+        ClinicalNotification(
+          id: 'NOTIF-CALL-${rx.id}',
+          title: '📞 Clinical Adherence Follow-up Call',
+          subtitle: 'Automated 2-minute follow-up call initiated for unpurchased ${rx.drugName} (Prescribed by ${rx.prescriberName}).',
+          time: 'Just now',
+          icon: Icons.phone_in_talk_rounded,
+          color: const Color(0xFFFB8500),
+        ),
+      );
+    }
+    _activeFollowUpIncomingCall = rx;
+    notifyListeners();
+  }
+
+  Future<void> markPrescriptionBought(String rxId) async {
+    _localFollowUpTimers[rxId]?.cancel();
+    _localFollowUpTimers.remove(rxId);
+
+    if (_activeFollowUpIncomingCall?.id == rxId) {
+      _activeFollowUpIncomingCall = null;
+    }
+
+    await dataService.updatePrescriptionStatus(rxId, 'Bought');
+
+    try {
+      final baseUrl = _getBackendBaseUrl();
+      final rx = dataService.prescriptions.firstWhere(
+        (r) => r.id == rxId,
+        orElse: () => Prescription(
+          id: rxId,
+          patientId: '',
+          patientName: '',
+          drugId: '',
+          drugName: '',
+          drugClass: '',
+          fillDates: [],
+          fillRecords: [],
+          pdcScore: 0,
+          status: 'Bought',
+          lastFillDate: DateTime.now(),
+          nextDueDate: DateTime.now(),
+          prescriberName: '',
+        ),
+      );
+      final pid = rx.patientId.isNotEmpty ? rx.patientId : (_currentUser.patientId ?? _currentUser.id);
+
+      await http.post(
+        Uri.parse('$baseUrl/api/v1/prescription/status'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'prescription_id': rxId,
+          'patient_id': pid,
+          'status': 'Bought',
+          'doctor_name': rx.prescriberName,
+          'medication_name': rx.drugName,
+        }),
+      );
+    } catch (e) {
+      debugPrint('Error notifying backend of Bought status: $e');
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> markPrescriptionNotBought(String rxId) async {
+    _localFollowUpTimers[rxId]?.cancel();
+
+    await dataService.updatePrescriptionStatus(rxId, 'Not Bought');
+
+    final rx = dataService.prescriptions.firstWhere(
+      (r) => r.id == rxId,
+      orElse: () => Prescription(
+        id: rxId,
+        patientId: '',
+        patientName: '',
+        drugId: '',
+        drugName: '',
+        drugClass: '',
+        fillDates: [],
+        fillRecords: [],
+        pdcScore: 0,
+        status: 'Not Bought',
+        lastFillDate: DateTime.now(),
+        nextDueDate: DateTime.now(),
+        prescriberName: '',
+      ),
+    );
+    final pid = rx.patientId.isNotEmpty ? rx.patientId : (_currentUser.patientId ?? _currentUser.id);
+
+    try {
+      final baseUrl = _getBackendBaseUrl();
+      await http.post(
+        Uri.parse('$baseUrl/api/v1/prescription/status'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'prescription_id': rxId,
+          'patient_id': pid,
+          'status': 'Not Bought',
+          'doctor_name': rx.prescriberName,
+          'medication_name': rx.drugName,
+          'instructions': rx.cleanNotes,
+        }),
+      );
+    } catch (e) {
+      debugPrint('Error notifying backend of Not Bought status: $e');
+    }
+
+    // 2-minute client timer backup
+    _localFollowUpTimers[rxId] = Timer(const Duration(minutes: 2), () {
+      _triggerFollowUpNotificationAndCall(rx);
+    });
+
     notifyListeners();
   }
 
@@ -420,10 +640,18 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> sendOtp(String email) async {
-    if (email.isNotEmpty) {
-      await dataService.supabaseService.sendOtpCode(email);
+  Future<bool> sendOtp(String identifier) async {
+    final clean = identifier.trim();
+    if (clean.isEmpty) return false;
+
+    // Check if the identifier belongs to a known user with an email
+    final check = checkUserIdentifier(clean);
+    String targetAddress = clean;
+    if (check['exists'] == true && (check['email'] as String?)?.isNotEmpty == true) {
+      targetAddress = check['email'] as String;
     }
+
+    await dataService.supabaseService.sendOtpCode(targetAddress);
     return true;
   }
 
@@ -504,33 +732,121 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> signInWithGooglePatient() async {
-    if (dataService.supabaseService.isInitialized) {
-      try {
-        await dataService.supabaseService.signInWithGoogle();
-      } catch (e) {
-        debugPrint('Supabase Google OAuth error: $e');
+    try {
+      bool oauthStarted = false;
+      if (dataService.supabaseService.isInitialized) {
+        oauthStarted = await dataService.supabaseService.signInWithGoogle();
       }
+
+      if (oauthStarted) {
+        final authUser = dataService.supabaseService.client.auth.currentUser;
+        if (authUser == null) {
+          final fallback = _buildGooglePatientFallback();
+          login(fallback);
+          return;
+        }
+
+        final email = (authUser.email ?? '').trim();
+        final googleName = (authUser.userMetadata?['full_name'] ??
+                authUser.userMetadata?['name'] ??
+                authUser.userMetadata?['given_name'] ??
+                'Google Patient')
+            .toString();
+        final googleAccountId = authUser.id;
+        final existingProfile = email.isNotEmpty ? await dataService.supabaseService.fetchUserProfile(email) : null;
+
+        final patientUser = existingProfile != null
+            ? User(
+                id: existingProfile.id,
+                name: existingProfile.name.isNotEmpty ? existingProfile.name : googleName,
+                email: email.isNotEmpty ? email : existingProfile.email,
+                phone: existingProfile.phone,
+                googleAccountId: googleAccountId,
+                googleEmail: email.isNotEmpty ? email : existingProfile.email,
+                googleAvatarUrl: authUser.userMetadata?['avatar_url']?.toString(),
+                role: UserRole.patient,
+                assignedPatientIds: existingProfile.assignedPatientIds,
+                avatarUrl: existingProfile.avatarUrl,
+                title: existingProfile.title.isNotEmpty ? existingProfile.title : 'Patient Account',
+                hospitalId: existingProfile.hospitalId,
+                hospitalName: existingProfile.hospitalName,
+                doctorId: existingProfile.doctorId,
+                patientId: existingProfile.patientId ?? 'PT-${DateTime.now().millisecondsSinceEpoch}',
+                patientProfile: existingProfile.patientProfile,
+              )
+            : User(
+                id: 'U_${googleAccountId.substring(0, googleAccountId.length > 12 ? 12 : googleAccountId.length)}',
+                name: googleName,
+                email: email.isNotEmpty ? email : 'patient@google.local',
+                phone: null,
+                googleAccountId: googleAccountId,
+                googleEmail: email.isNotEmpty ? email : 'patient@google.local',
+                googleAvatarUrl: authUser.userMetadata?['avatar_url']?.toString(),
+                role: UserRole.patient,
+                assignedPatientIds: const ['PT-301'],
+                avatarUrl: authUser.userMetadata?['avatar_url']?.toString() ?? '',
+                title: 'Patient Account',
+                patientId: 'PT-${DateTime.now().millisecondsSinceEpoch}',
+                hospitalId: 'HOSP-101',
+                hospitalName: 'MetroHealth Medical Center',
+              );
+
+        await dataService.supabaseService.upsertUserProfile(
+          id: patientUser.id,
+          email: patientUser.email,
+          name: patientUser.name,
+          phone: patientUser.phone,
+          hospitalName: patientUser.hospitalName,
+          hospitalId: patientUser.hospitalId,
+          doctorId: patientUser.doctorId,
+          role: UserRole.patient,
+          googleAccountId: patientUser.googleAccountId,
+          googleEmail: patientUser.googleEmail,
+          googleAvatarUrl: patientUser.googleAvatarUrl,
+        );
+
+        login(patientUser);
+        return;
+      }
+    } catch (e) {
+      debugPrint('Supabase Google OAuth error: $e');
     }
 
-    // Authenticate as a Patient account
-    final patientUser = dataService.users.firstWhere(
-      (u) => u.role == UserRole.patient,
-      orElse: () => const User(
-        id: 'U_GOOGLE_PATIENT',
-        name: 'Jessica Thompson',
-        email: 'jessica.thompson@gmail.com',
-        phone: '+1 (555) 234-5678',
-        role: UserRole.patient,
-        assignedPatientIds: ['PT-301'],
-        avatarUrl: '',
-        title: 'Patient Account',
+    login(_buildGooglePatientFallback());
+  }
+
+  User _buildGooglePatientFallback() {
+    return User(
+      id: 'U_GOOGLE_PATIENT',
+      name: 'Jessica Thompson',
+      email: 'jessica.thompson@gmail.com',
+      phone: '+1 (555) 234-5678',
+      googleAccountId: 'google-fallback',
+      googleEmail: 'jessica.thompson@gmail.com',
+      role: UserRole.patient,
+      assignedPatientIds: const ['PT-301'],
+      avatarUrl: '',
+      title: 'Patient Account',
+      patientId: 'PT-301',
+      hospitalId: 'HOSP-101',
+      hospitalName: 'MetroHealth Medical Center',
+      patientProfile: PatientProfile(
         patientId: 'PT-301',
-        hospitalId: 'HOSP-101',
-        hospitalName: 'MetroHealth Medical Center',
+        name: 'Jessica Thompson',
+        dateOfBirth: DateTime(1982, 5, 14),
+        age: 42,
+        gender: 'Female',
+        phone: '+1 (555) 234-5678',
+        email: 'jessica.thompson@gmail.com',
+        height: "5'7\"",
+        weight: '142 lbs',
+        address: '742 Evergreen Terrace',
+        city: 'Metro City',
+        bloodGroup: 'A+',
+        allergies: 'Penicillin',
+        chronicConditions: 'Type 2 Diabetes Mellitus, Hypertension',
       ),
     );
-
-    login(patientUser);
   }
 
   Future<bool> registerAccount({
@@ -631,6 +947,12 @@ class AppState extends ChangeNotifier {
 
   void logout() {
     _isLoggedIn = false;
+    _currentNavIndex = 0;
+    _activeSubTabIndex = 0;
+    _selectedPrescriptionId = null;
+    _activeFollowUpIncomingCall = null;
+    _userNotifications.clear();
+    cancelAllFollowUpTimers();
     _clearSession();
     notifyListeners();
   }
@@ -836,5 +1158,30 @@ class AppState extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  bool _isDisposed = false;
+
+  @override
+  void notifyListeners() {
+    if (!_isDisposed) {
+      super.notifyListeners();
+    }
+  }
+
+  void cancelAllFollowUpTimers() {
+    _backendFollowUpPollingTimer?.cancel();
+    _backendFollowUpPollingTimer = null;
+    for (final t in _localFollowUpTimers.values) {
+      t.cancel();
+    }
+    _localFollowUpTimers.clear();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    cancelAllFollowUpTimers();
+    super.dispose();
   }
 }

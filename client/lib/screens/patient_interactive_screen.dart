@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/models.dart';
@@ -337,11 +337,34 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
               const SizedBox(height: 18),
 
               // -------------------------------------------------------------
+              // INCOMING CALL ALERT (IF AUTOMATED FOLLOW-UP TRIGGERED)
+              // -------------------------------------------------------------
+              if (appState.activeFollowUpIncomingCall != null) ...[
+                _PatientScrollWaveCard(
+                  scrollOffset: _scrollOffset,
+                  triggerOffset: 50,
+                  child: _buildIncomingFollowUpCallCard(context, appState),
+                ),
+                const SizedBox(height: 18),
+              ],
+
+              // -------------------------------------------------------------
+              // MY PRESCRIPTIONS SECTION (Doctor e-Rx & Bought / Not Bought)
+              // -------------------------------------------------------------
+              _PatientScrollWaveCard(
+                scrollOffset: _scrollOffset,
+                triggerOffset: 70,
+                child: _buildMyPrescriptionsSection(context, appState),
+              ),
+
+              const SizedBox(height: 20),
+
+              // -------------------------------------------------------------
               // FIRST ROW: 7-DAY DOSING BAR GRAPH & ROUTINE DONUT GRAPH
               // -------------------------------------------------------------
               _PatientScrollWaveCard(
                 scrollOffset: _scrollOffset,
-                triggerOffset: 90,
+                triggerOffset: 120,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final isWide = constraints.maxWidth >= 900;
@@ -938,8 +961,10 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            alignment: WrapAlignment.center,
             children: [
               _buildPatientLegendPill(
                 index: 0,
@@ -1717,6 +1742,700 @@ class _PatientInteractiveScreenState extends State<PatientInteractiveScreen>
             onPressed: () => _addCustomMedicine(appState),
             child: Text('Add to Schedule',
                 style: AppFonts.googleSans(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------
+  // INCOMING FOLLOW-UP CALL CARD (Triggered after 2 minutes)
+  // ---------------------------------------------------------------------
+  Widget _buildIncomingFollowUpCallCard(BuildContext context, AppState appState) {
+    final rx = appState.activeFollowUpIncomingCall;
+    if (rx == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFF7ED), Color(0xFFFEF3C7)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF59E0B), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.phone_in_talk_rounded,
+              color: Color(0xFFD97706),
+              size: 26,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD97706),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'AUTOMATED CLINICAL FOLLOW-UP',
+                        style: AppFonts.googleSans(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '2-Minute Adherence Check',
+                      style: AppFonts.googleSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF92400E),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Follow-up Call for ${rx.drugName} (Dr. ${rx.prescriberName})',
+                  style: AppFonts.googleSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF78350F),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Our automated AI clinical care assistant is reaching out to assist with medication adherence and barriers.',
+                  style: AppFonts.googleSans(
+                    fontSize: 12,
+                    color: const Color(0xFF92400E),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.headset_mic_rounded, size: 16, color: Colors.white),
+            label: Text(
+              'Answer Call',
+              style: AppFonts.googleSans(
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+                color: Colors.white,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD97706),
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              appState.setNavIndex(4); // Navigate to Voice Agent Screen
+            },
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.close_rounded, color: Color(0xFF92400E), size: 18),
+            onPressed: () => appState.dismissFollowUpIncomingCall(),
+            tooltip: 'Dismiss',
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------
+  // MY PRESCRIPTIONS SECTION
+  // ---------------------------------------------------------------------
+  Widget _buildMyPrescriptionsSection(BuildContext context, AppState appState) {
+    final activePatientId = (appState.currentUser.patientId ?? appState.currentUser.id).toLowerCase();
+    final activePatientName = appState.currentUser.name.toLowerCase();
+
+    // Link and filter prescriptions assigned to the authenticated patient
+    final patientPrescriptions = appState.prescriptions.reversed.where((r) {
+      final pid = r.patientId.toLowerCase();
+      final pName = r.patientName.toLowerCase();
+      if (appState.currentUser.role == UserRole.patient) {
+        return pid == activePatientId ||
+            (activePatientId.isNotEmpty && (pid.contains(activePatientId) || activePatientId.contains(pid))) ||
+            (activePatientName.isNotEmpty && pName.isNotEmpty && pName.contains(activePatientName));
+      }
+      return pid == activePatientId ||
+          pid == 'pat_00001' ||
+          pid == 'pt-301' ||
+          (activePatientId.isNotEmpty && (pid.contains(activePatientId) || activePatientId.contains(pid)));
+    }).toList();
+
+    return BentoCard(
+      title: 'My Prescriptions',
+      subtitle: 'Doctor-issued e-prescriptions with adherence & purchase confirmation',
+      icon: const Icon(Icons.receipt_long_rounded, color: AppColors.primaryTeal, size: 20),
+      trailing: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.primaryTeal.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primaryTeal.withValues(alpha: 0.2)),
+        ),
+        child: Text(
+          '${patientPrescriptions.length} e-Prescriptions',
+          style: AppFonts.googleSans(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: AppColors.primaryTeal,
+          ),
+        ),
+      ),
+      child: patientPrescriptions.isEmpty
+          ? Container(
+              padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: const BoxDecoration(
+                      color: AppColors.bgSlate,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.medical_information_outlined,
+                      size: 36,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No Prescriptions Assigned Yet',
+                    style: AppFonts.googleSans(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'When your physician issues a new e-prescription, it will appear here for verification and tracking.',
+                    textAlign: TextAlign.center,
+                    style: AppFonts.googleSans(
+                      fontSize: 12,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: patientPrescriptions.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 14),
+              itemBuilder: (context, idx) {
+                final rx = patientPrescriptions[idx];
+                final rxItems = appState.prescriptionItems
+                    .where((i) => i.prescriptionId == rx.id)
+                    .toList();
+
+                return _buildPrescriptionCard(context, appState, rx, rxItems);
+              },
+            ),
+    );
+  }
+
+  Widget _buildPrescriptionCard(
+    BuildContext context,
+    AppState appState,
+    Prescription rx,
+    List<PrescriptionItem> items,
+  ) {
+    final isBought = rx.isBought;
+    final isNotBought = rx.isNotBought;
+    final dateStr = rx.prescribedDate != null
+        ? DateFormat('MMM dd, yyyy').format(rx.prescribedDate!)
+        : DateFormat('MMM dd, yyyy').format(rx.lastFillDate);
+
+    final displayItems = items.isNotEmpty
+        ? items
+        : [
+            PrescriptionItem(
+              id: 'ITEM-${rx.id}',
+              prescriptionId: rx.id,
+              medicineName: rx.drugName,
+              dosage: '1 Tablet (Oral)',
+              frequency: 'Once daily',
+              durationDays: 30,
+              isDispensed: false,
+              instructions: rx.cleanNotes.isNotEmpty ? rx.cleanNotes : 'Take as directed by doctor',
+            ),
+          ];
+
+    Color statusBg;
+    Color statusBorder;
+    Color statusTextColor;
+    String statusLabel;
+    IconData statusIcon;
+
+    if (isBought) {
+      statusBg = const Color(0xFFECFDF5);
+      statusBorder = const Color(0xFFA7F3D0);
+      statusTextColor = const Color(0xFF047857);
+      statusLabel = 'Bought';
+      statusIcon = Icons.check_circle_rounded;
+    } else if (isNotBought) {
+      statusBg = const Color(0xFFFEF3C7);
+      statusBorder = const Color(0xFFFDE68A);
+      statusTextColor = const Color(0xFFB45309);
+      statusLabel = 'Not Bought • Follow-up Active';
+      statusIcon = Icons.phone_callback_rounded;
+    } else {
+      statusBg = AppColors.primaryTeal.withValues(alpha: 0.08);
+      statusBorder = AppColors.primaryTeal.withValues(alpha: 0.2);
+      statusTextColor = AppColors.primaryTeal;
+      statusLabel = rx.status.isNotEmpty ? rx.status : 'Prescribed';
+      statusIcon = Icons.medical_services_rounded;
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isBought
+            ? const Color(0xFFF0FDF4).withValues(alpha: 0.6)
+            : isNotBought
+                ? const Color(0xFFFFFBEB).withValues(alpha: 0.6)
+                : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isBought
+              ? const Color(0xFFA7F3D0)
+              : isNotBought
+                  ? const Color(0xFFFCD34D)
+                  : AppColors.borderLight,
+          width: isBought || isNotBought ? 1.5 : 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // -------------------------------------------------------------
+            // Header Row: Doctor Name, Date & Status Badge
+            // -------------------------------------------------------------
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryTeal.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.badge_rounded,
+                    color: AppColors.primaryTeal,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              rx.prescriberName.isNotEmpty
+                                  ? (rx.prescriberName.startsWith('Dr.') ? rx.prescriberName : 'Dr. ${rx.prescriberName}')
+                                  : 'Dr. Tariq Martin, MD',
+                              style: AppFonts.googleSans(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textDark,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.bgSlate,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              rx.id,
+                              style: AppFonts.googleSans(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.calendar_today_rounded,
+                            size: 13,
+                            color: AppColors.textMuted,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            'Prescribed on $dateStr',
+                            style: AppFonts.googleSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                          if (rx.hospitalName != null && rx.hospitalName!.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            const Text('•', style: TextStyle(color: AppColors.textMuted)),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                rx.hospitalName!,
+                                style: AppFonts.googleSans(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textMuted,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Prescription Status Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: statusBg,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: statusBorder),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(statusIcon, size: 14, color: statusTextColor),
+                      const SizedBox(width: 5),
+                      Text(
+                        statusLabel,
+                        style: AppFonts.googleSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: statusTextColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+            const Divider(height: 1, color: AppColors.borderLight),
+            const SizedBox(height: 14),
+
+            // -------------------------------------------------------------
+            // Medication Items List
+            // -------------------------------------------------------------
+            ...displayItems.map((item) {
+              final instr = (item.instructions != null && item.instructions!.isNotEmpty)
+                  ? item.instructions!
+                  : (rx.cleanNotes.isNotEmpty ? rx.cleanNotes : 'Take as directed by doctor');
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.bgSlate.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.medication_rounded,
+                          color: AppColors.primaryTeal,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            item.medicineName,
+                            style: AppFonts.googleSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    // Grid of Dosage, Frequency, Duration
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 8,
+                      children: [
+                        _buildRxDetailPill(
+                          icon: Icons.scale_rounded,
+                          label: 'Dosage',
+                          value: item.dosage.isNotEmpty ? item.dosage : 'As Directed',
+                        ),
+                        _buildRxDetailPill(
+                          icon: Icons.repeat_rounded,
+                          label: 'Frequency',
+                          value: item.frequency.isNotEmpty ? item.frequency : 'Daily',
+                        ),
+                        _buildRxDetailPill(
+                          icon: Icons.timer_outlined,
+                          label: 'Duration',
+                          value: '${item.durationDays} Days',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    // Instructions
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.borderLight),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.info_outline_rounded,
+                            size: 15,
+                            color: AppColors.primaryTeal,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: RichText(
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: 'Instructions: ',
+                                    style: AppFonts.googleSans(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 12,
+                                      color: AppColors.textDark,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: instr,
+                                    style: AppFonts.googleSans(
+                                      fontSize: 12,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+
+            // -------------------------------------------------------------
+            // Two Action Buttons: ✓ Bought | ✕ Not Bought
+            // -------------------------------------------------------------
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // ✕ Not Bought Button
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.close_rounded, size: 16, color: Color(0xFFEF4444)),
+                  label: Text(
+                    '✕ Not Bought',
+                    style: AppFonts.googleSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFEF4444),
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: isNotBought ? const Color(0xFFFEE2E2) : Colors.transparent,
+                    side: BorderSide(
+                      color: isNotBought ? const Color(0xFFDC2626) : const Color(0xFFFCA5A5),
+                      width: isNotBought ? 1.5 : 1.0,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: () async {
+                    await appState.markPrescriptionNotBought(rx.id);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).clearSnackBars();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: const Color(0xFFD97706),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          content: Row(
+                            children: [
+                              const Icon(Icons.phone_callback_rounded, color: Colors.white, size: 20),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Follow-up call will be initiated shortly.',
+                                  style: AppFonts.googleSans(
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          duration: const Duration(seconds: 4),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                const SizedBox(width: 12),
+                // ✓ Bought Button
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.check_rounded, size: 16, color: Colors.white),
+                  label: Text(
+                    '✓ Bought',
+                    style: AppFonts.googleSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isBought ? const Color(0xFF059669) : AppColors.primaryTeal,
+                    elevation: isBought ? 0 : 2,
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: () async {
+                    await appState.markPrescriptionBought(rx.id);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).clearSnackBars();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: const Color(0xFF059669),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          content: Row(
+                            children: [
+                              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Prescription marked as bought.',
+                                  style: AppFonts.googleSans(
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          duration: const Duration(seconds: 4),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRxDetailPill({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: AppColors.primaryTeal),
+          const SizedBox(width: 5),
+          Text(
+            '$label: ',
+            style: AppFonts.googleSans(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textMuted,
+            ),
+          ),
+          Text(
+            value,
+            style: AppFonts.googleSans(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textDark,
+            ),
           ),
         ],
       ),
