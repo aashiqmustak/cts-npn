@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// The official 4-color Google "G" logo rendered via a precise CustomPainter vector.
 class GoogleLogoPainter extends CustomPainter {

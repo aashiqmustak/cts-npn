@@ -19,6 +19,7 @@ void main() {
 
   testWidgets('Patients with incomplete profiles are routed to profile completion', (WidgetTester tester) async {
     final appState = AppState();
+    addTearDown(appState.dispose);
     appState.login(
       const User(
         id: 'PT-1001',
@@ -41,5 +42,6 @@ void main() {
     );
 
     expect(find.text('Complete Your Profile'), findsOneWidget);
+    appState.cancelAllFollowUpTimers();
   });
 }

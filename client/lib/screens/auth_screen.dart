@@ -328,40 +328,45 @@ class _AuthScreenState extends State<AuthScreen> {
     return Container(
       color: const Color(0xFFF4F7FC),
       padding: const EdgeInsets.all(24),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.04),
-              blurRadius: 32,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: 3,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentCarouselIndex = index;
-                  });
-                },
-                itemBuilder: (context, index) {
-                  return _buildCarouselSlide(index);
-                },
+      child: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 580, maxHeight: 620),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                blurRadius: 32,
+                offset: const Offset(0, 8),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: _buildCarouselDots(),
-            ),
-          ],
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 440,
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: 3,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentCarouselIndex = index;
+                    });
+                  },
+                  itemBuilder: (context, index) {
+                    return _buildCarouselSlide(index);
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _buildCarouselDots(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -410,7 +415,18 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                 ],
               ),
-              child: _buildCarouselMockupContent(index),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.topCenter,
+                    child: SizedBox(
+                      width: constraints.maxWidth,
+                      child: _buildCarouselMockupContent(index),
+                    ),
+                  );
+                },
+              ),
             ),
           ),
 

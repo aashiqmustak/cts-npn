@@ -160,6 +160,7 @@ class User {
   final String? hospitalName;
   final String? doctorId;
   final String? patientId;
+  final PatientProfile? patientProfile;
   final String? insuranceCompany;
   final List<String> insurancePlans;
   final List<String> insuranceMedicines;
@@ -181,6 +182,7 @@ class User {
     this.hospitalName,
     this.doctorId,
     this.patientId,
+    this.patientProfile,
     this.insuranceCompany,
     this.insurancePlans = const [],
     this.insuranceMedicines = const [],
@@ -200,6 +202,7 @@ class User {
     String? hospitalName,
     String? doctorId,
     String? patientId,
+    PatientProfile? patientProfile,
     String? insuranceCompany,
     List<String>? insurancePlans,
     List<String>? insuranceMedicines,
@@ -218,6 +221,7 @@ class User {
       hospitalName: hospitalName ?? this.hospitalName,
       doctorId: doctorId ?? this.doctorId,
       patientId: patientId ?? this.patientId,
+      patientProfile: patientProfile ?? this.patientProfile,
       insuranceCompany: insuranceCompany ?? this.insuranceCompany,
       insurancePlans: insurancePlans ?? this.insurancePlans,
       insuranceMedicines: insuranceMedicines ?? this.insuranceMedicines,
@@ -255,6 +259,9 @@ class User {
       hospitalName: json['hospital_name']?.toString() ?? json['hospitals']?['name']?.toString(),
       doctorId: json['doctor_id']?.toString(),
       patientId: json['patient_id']?.toString(),
+        patientProfile: patientProfileJson is Map<String, dynamic>
+          ? PatientProfile.fromJson(patientProfileJson)
+          : null,
       insuranceCompany: json['insurance_company']?.toString(),
       insurancePlans: (json['insurance_plans'] as List?)
               ?.map((e) => e.toString())
@@ -285,6 +292,7 @@ class User {
         'hospital_name': hospitalName,
         'doctor_id': doctorId,
         'patient_id': patientId,
+        'patient_profile': patientProfile?.toJson(),
         'insurance_company': insuranceCompany,
         'insurance_plans': insurancePlans,
         'insurance_medicines': insuranceMedicines,
