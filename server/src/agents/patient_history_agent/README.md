@@ -1,194 +1,119 @@
-# Patient History Agent
+# Patient History Agent (Pinecone RAG Enabled)
 
-The Patient History Agent query component retrieves historical medication behavior and adherence-related patient features from the `patient_history.csv` dataset.
+The Patient History Agent query component retrieves historical medication behavior and adherence-related patient features from both the baseline `patient_history.csv` dataset and live client submissions via a **Pinecone Vector Database RAG (Retrieval-Augmented Generation)** architecture.
 
-It calculates previous PDC, refill gaps, prior medication abandonment, medication switches, medication burden, and the number of patient conditions based on historical records.
+It calculates:
+- Proportion of Days Covered (PDC-180)
+- Refill gaps (90-day window)
+- Prior medication abandonments
+- Prior medication switches
+- Medication burden (unique medication count)
+- Number of diagnosed conditions
+- Semantic RAG retrieval and LLM clinical synthesis across patient treatment history
+
+---
 
 ## Directory Structure
 
 ```text
 patient_history_agent/
-
 ├── app/
-
-│   ├── schemas.py          # Pydantic data schemas (PatientHistoryRequest, PatientHistoryResponse, MedicationHistory)
-
-│   ├── repository.py       # Reads patient history CSV records on startup & provides patient lookups
-
-│   ├── service.py          # Calculates PDC, refill gaps, abandonment, switches, medication and condition counts
-
-│   ├── agent.py            # High-level agent interface encapsulating the service
-
+│   ├── schemas.py          # Pydantic schemas (Request, Response, Ingest, RAG queries)
+│   ├── repository.py       # Hybrid CSV + Pinecone vector data repository
+│   ├── pinecone_client.py  # Pinecone inference embeddings (llama-text-embed-v2) & vector operations
+│   ├── service.py          # Adherence computation, LLM/RAG clinical summary synthesis
+│   ├── agent.py            # High-level agent interface
 │   ├── router.py           # FastAPI APIRouter endpoints
-
 │   └── __init__.py         # Package exposures
-
-├── server.py               # Exposes POST /patient-history/check HTTP server on port 8003
-
-└── README.md               # Reference documentation, example payloads, and commands
+├── ingest_dataset.py       # Standalone CLI script to sync dataset/patient_history.csv to Pinecone
+├── server.py               # Standalone FastAPI microservice on port 8003
+└── README.md               # Documentation and reference examples
 ```
 
-## Dataset
+---
 
-The Patient History Agent uses:
+## Environment Configuration
 
-```text
-dataset/patient_history.csv
+Configure the following variables in `.env`:
+
+```env
+PINECONE_API_KEY=your_pinecone_api_key_here
+PINECONE_INDEX_NAME=cts-npn
+PINECONE_NAMESPACE=patient-history
+EMBEDDING_PROVIDER=llama-text-embed-v2
+
+# Optional for LLM RAG clinical synthesis
+GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=openai/gpt-oss-120b
 ```
 
-The current dummy dataset contains **1,000 patient medication-history records**.
+---
 
-The dataset contains the following fields:
+## API Endpoints
 
-```text
-patient_id
-drug_id
-fill_date
-days_supply
-status
-condition
-```
+### 1. Health & Vector Status
+- **Endpoint**: `GET /patient-history/health`
+- **Description**: Returns agent status, dataset count, and Pinecone vector statistics.
 
-Example record:
-
-```csv
-PAT_001,RX_100001,2026-07-15,30,FILLED,Diabetes
-```
-
-## Schema Specification
-
-### Input JSON
-
+### 2. Adherence Check & Optional RAG Context
+- **Endpoint**: `POST /patient-history/check`
+- **Request Body**:
 ```json
 {
-  "patient_id": "PAT_001",
-  "drug_id": "RX_100001",
-  "lookback_days": 365
+  "patient_id": "PAT_082",
+  "drug_id": "RX_100004",
+  "lookback_days": 365,
+  "include_rag": true
 }
 ```
 
-### Output JSON
-
+### 3. Ingest New Patient Record from Client
+- **Endpoint**: `POST /patient-history/record`
+- **Request Body**:
 ```json
 {
-  "patient_id": "PAT_001",
-  "medication_history": {
-    "previous_pdc_180": 0.0,
-    "refill_gap_days_90": 0,
-    "prior_abandonment_count_12m": 0,
-    "prior_switch_count_12m": 5,
-    "medication_count": 6,
-    "conditions_count": 4
-  },
-  "history_status": "AVAILABLE"
+  "patient_id": "PAT_082",
+  "drug_id": "RX_100004",
+  "fill_date": "2026-08-20",
+  "days_supply": 30,
+  "status": "FILLED",
+  "condition": "Hypertension",
+  "notes": "Refill completed at local pharmacy.",
+  "source": "client_submission"
+}
+```
+- **Behavior**: Instantly vectorizes the record using Pinecone Inference embeddings and stores it with rich metadata in the Pinecone index.
+
+### 4. Semantic RAG Query & Clinical Synthesis
+- **Endpoint**: `POST /patient-history/rag-query`
+- **Request Body**:
+```json
+{
+  "patient_id": "PAT_082",
+  "query": "Hypertension medication adherence and refill consistency",
+  "top_k": 5
 }
 ```
 
-## Output Field Specification
-
-| Field                         | Description                                                            |
-| ----------------------------- | ---------------------------------------------------------------------- |
-| `previous_pdc_180`            | Proportion of medication covered during the previous 180 days          |
-| `refill_gap_days_90`          | Total refill gap days calculated over the previous 90 days             |
-| `prior_abandonment_count_12m` | Number of abandoned medication records in the available history        |
-| `prior_switch_count_12m`      | Number of medication changes based on the patient's medication history |
-| `medication_count`            | Number of unique medications found for the patient                     |
-| `conditions_count`            | Number of unique conditions associated with the patient                |
-| `history_status`              | Indicates whether patient history is available                         |
-
-Possible history status values:
-
-```text
-AVAILABLE
-NOT_AVAILABLE
+### 5. Bulk Sync Dataset to Pinecone
+- **Endpoint**: `POST /patient-history/sync-dataset`
+- **CLI Alternative**:
+```powershell
+uv run python server/src/agents/patient_history_agent/ingest_dataset.py
 ```
 
-## API Setup and Execution
+---
 
-### Running the API Standalone
+## Running the Agent
 
-Run the FastAPI service using Python:
-
+### Standalone FastAPI Server
 ```powershell
 uv run python server/src/agents/patient_history_agent/server.py
 ```
+- Swagger UI: `http://localhost:8003/docs`
 
-This starts the service on port `8003`.
-
-You can access:
-
-* Swagger Docs: `http://localhost:8003/docs`
-* Health Check: `http://localhost:8003/patient-history/health`
-* API endpoint: `POST http://localhost:8003/patient-history/check`
-
-## Health Check
-
-To verify that the Patient History Agent is running and the dataset has been loaded:
-
+### Unified Server Gateway (Litestar)
 ```powershell
-curl http://localhost:8003/patient-history/health
+uv run python server/src/agent_service.py
 ```
-
-Expected response:
-
-```json
-{
-  "status": "healthy",
-  "agent": "patient_history",
-  "dataset_records": 1000
-}
-```
-
-## API Testing
-
-### Patient History Check
-
-Send a POST request using cURL:
-
-```powershell
-curl -X POST "http://localhost:8003/patient-history/check" -H "Content-Type: application/json" -d "{\"patient_id\":\"PAT_001\",\"drug_id\":\"RX_100001\",\"lookback_days\":365}"
-```
-
-Example response:
-
-```json
-{
-  "patient_id": "PAT_001",
-  "medication_history": {
-    "previous_pdc_180": 0.0,
-    "refill_gap_days_90": 0,
-    "prior_abandonment_count_12m": 0,
-    "prior_switch_count_12m": 5,
-    "medication_count": 6,
-    "conditions_count": 4
-  },
-  "history_status": "AVAILABLE"
-}
-```
-
-## Swagger Testing
-
-Open the following URL in your browser:
-
-```text
-http://localhost:8003/docs
-```
-
-Select:
-
-```text
-POST /patient-history/check
-```
-
-Click **Try it out** and provide:
-
-```json
-{
-  "patient_id": "PAT_001",
-  "drug_id": "RX_100001",
-  "lookback_days": 365
-}
-```
-
-Then click **Execute** to view the calculated medication-history features.
-
+- API Base Path: `http://localhost:8000/api/v1/patient-history/...`

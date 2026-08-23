@@ -45,6 +45,7 @@ dependencies = [
 	"numpy>=2.5.2",
 	"easyocr>=1.7.2",
 	"pypdf>=6.16.1",
+	"pinecone>=9.1.0",
 ]
 
 [project.scripts]
