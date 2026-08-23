@@ -165,25 +165,33 @@ feature_names = bundle["feature_names"]
 threshold = bundle["optimal_threshold"]  # 0.6949
 
 # Create sample input dataframe
-sample_data = pd.DataFrame([{
-    "out_of_pocket_cost": 65.0,
-    "access_friction_score": 0.75,
-    "payer_coverage_ratio": 0.30,
-    "prior_auth_required": 1,
-    "refill_gap_days_90": 18,
-    "previous_pdc_180": 0.68,
-    "formulary_tier": 3,
-}])
+sample_data = pd.DataFrame(
+    [
+        {
+            "out_of_pocket_cost": 65.0,
+            "access_friction_score": 0.75,
+            "payer_coverage_ratio": 0.30,
+            "prior_auth_required": 1,
+            "refill_gap_days_90": 18,
+            "previous_pdc_180": 0.68,
+            "formulary_tier": 3,
+        }
+    ]
+)
 
 # Align with training features
-sample_encoded = pd.get_dummies(sample_data, dtype=int).reindex(columns=feature_names, fill_value=0)
+sample_encoded = pd.get_dummies(sample_data, dtype=int).reindex(
+    columns=feature_names, fill_value=0
+)
 
 # Inference
 prob = model.predict_proba(sample_encoded)[0][1]
 will_abandon = prob >= threshold
 risk_level = "HIGH" if will_abandon else ("MEDIUM" if prob > 0.25 else "LOW")
 
-print(f"Abandonment Probability: {prob * 100:.2f}% | Likely Abandonment: {will_abandon} | Risk: {risk_level}")
+print(
+    f"Abandonment Probability: {prob * 100:.2f}% | Likely Abandonment: {will_abandon} | Risk: {risk_level}"
+)
 ```
 
 ---

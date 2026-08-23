@@ -677,7 +677,9 @@ async def chat_message(data: ChatMessagePayload) -> dict[str, Any]:
         if sarvam_key:
             try:
                 # Clean spoken text for clear voice audio
-                spoken_text = reply.split("Clinical Rationale:")[0].replace("\n", " ").strip()
+                spoken_text = (
+                    reply.split("Clinical Rationale:")[0].replace("\n", " ").strip()
+                )
                 if len(spoken_text) > 400:
                     spoken_text = spoken_text[:400]
                 if spoken_text:
@@ -743,7 +745,10 @@ async def voice_tts(data: dict[str, Any]) -> dict[str, Any]:
             )
             if tts_res.status_code == 200:
                 res_data = tts_res.json()
-                return {"status": "success", "audio_base64": res_data.get("audios", [None])[0]}
+                return {
+                    "status": "success",
+                    "audio_base64": res_data.get("audios", [None])[0],
+                }
     except Exception as exc:  # noqa: BLE001
         return {"status": "error", "message": str(exc)}
     return {"status": "error", "message": "TTS synthesis failed"}
@@ -762,24 +767,32 @@ async def voice_start(data: dict[str, Any]) -> dict[str, Any]:
             res = await client.post(f"{PIPECAT_VOICE_URL}/start", json=data)
             return res.json()
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Voice runner error on port 7860: {exc}") from exc
+        raise HTTPException(
+            status_code=502, detail=f"Voice runner error on port 7860: {exc}"
+        ) from exc
 
 
 @post("/sessions/{session_id:str}/api/offer")
 async def voice_offer(session_id: str, data: dict[str, Any]) -> dict[str, Any]:
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            res = await client.post(f"{PIPECAT_VOICE_URL}/sessions/{session_id}/api/offer", json=data)
+            res = await client.post(
+                f"{PIPECAT_VOICE_URL}/sessions/{session_id}/api/offer", json=data
+            )
             return res.json()
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Voice runner offer error: {exc}") from exc
+        raise HTTPException(
+            status_code=502, detail=f"Voice runner offer error: {exc}"
+        ) from exc
 
 
 @patch("/sessions/{session_id:str}/api/offer")
 async def voice_ice_patch(session_id: str, data: dict[str, Any]) -> dict[str, Any]:
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            res = await client.patch(f"{PIPECAT_VOICE_URL}/sessions/{session_id}/api/offer", json=data)
+            res = await client.patch(
+                f"{PIPECAT_VOICE_URL}/sessions/{session_id}/api/offer", json=data
+            )
             return res.json()
     except Exception:  # noqa: BLE001
         return {"status": "ok"}
