@@ -28,6 +28,7 @@ import '../screens/voice_agent_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/pharmacist_insurance_screen.dart';
 import '../screens/insurance_pharmacy_connections_screen.dart';
+import '../screens/alternate_agent_screen.dart';
 
 class MainLayout extends StatefulWidget {
   final Widget? child;
@@ -305,30 +306,36 @@ class _MainLayoutState extends State<MainLayout> {
         ),
         _SidebarNavItem(
           index: 2,
+          icon: Icons.auto_awesome_rounded,
+          label: 'Alternate Agent',
+          appState: appState,
+        ),
+        _SidebarNavItem(
+          index: 3,
           icon: Icons.folder_shared_rounded,
           label: 'Health Records Vault',
           appState: appState,
         ),
         _SidebarNavItem(
-          index: 3,
+          index: 4,
           icon: Icons.local_hospital_rounded,
           label: 'Hospitals Directory',
           appState: appState,
         ),
         _SidebarNavItem(
-          index: 4,
+          index: 5,
           icon: Icons.analytics_rounded,
           label: 'Clinical Analytics',
           appState: appState,
         ),
         _SidebarNavItem(
-          index: 5,
+          index: 6,
           icon: Icons.graphic_eq_rounded,
           label: 'AI Voice Assistant',
           appState: appState,
         ),
         _SidebarNavItem(
-          index: 6,
+          index: 7,
           icon: Icons.person_rounded,
           label: 'My Profile',
           appState: appState,
@@ -350,36 +357,42 @@ class _MainLayoutState extends State<MainLayout> {
         ),
         _SidebarNavItem(
           index: 2,
+          icon: Icons.auto_awesome_rounded,
+          label: 'Alternate Agent',
+          appState: appState,
+        ),
+        _SidebarNavItem(
+          index: 3,
           icon: Icons.insights_rounded,
           label: 'Adherence Risk Core',
           appState: appState,
         ),
         _SidebarNavItem(
-          index: 3,
+          index: 4,
           icon: Icons.analytics_rounded,
           label: 'Pharmacy Analytics',
           appState: appState,
         ),
         _SidebarNavItem(
-          index: 4,
+          index: 5,
           icon: Icons.explore_rounded,
           label: 'Formulary Catalog',
           appState: appState,
         ),
         _SidebarNavItem(
-          index: 5,
+          index: 6,
           icon: Icons.verified_user_rounded,
           label: 'Connected Insurance',
           appState: appState,
         ),
         _SidebarNavItem(
-          index: 6,
+          index: 7,
           icon: Icons.graphic_eq_rounded,
           label: 'AI Voice Assistant',
           appState: appState,
         ),
         _SidebarNavItem(
-          index: 7,
+          index: 8,
           icon: Icons.person_rounded,
           label: 'My Profile',
           appState: appState,
@@ -643,27 +656,29 @@ class _RoleScreenStack extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (user.isDoctor) {
-      switch (appState.currentNavIndex.clamp(0, 6)) {
+      switch (appState.currentNavIndex.clamp(0, 7)) {
         case 0:
           return const DoctorOverviewDashboardScreen();
         case 1:
           return const DoctorPrescriptionScreen();
         case 2:
-          return const HealthRecordsScreen();
+          return const AlternateAgentScreen();
         case 3:
-          return const HospitalsScreen();
+          return const HealthRecordsScreen();
         case 4:
-          return const DashboardOverviewScreen();
+          return const HospitalsScreen();
         case 5:
-          return const VoiceAgentScreen();
+          return const DashboardOverviewScreen();
         case 6:
+          return const VoiceAgentScreen();
+        case 7:
           return const UserProfileScreen();
         default:
           return const DoctorOverviewDashboardScreen();
       }
     } else if (user.isPharmacist) {
       final isViewingDetails = appState.selectedPrescriptionId != null;
-      switch (appState.currentNavIndex.clamp(0, 7)) {
+      switch (appState.currentNavIndex.clamp(0, 8)) {
         case 0:
           return const PharmacistDispenseScreen();
         case 1:
@@ -673,16 +688,18 @@ class _RoleScreenStack extends StatelessWidget {
                 )
               : const PrescriptionsScreen();
         case 2:
-          return const AdherenceScreen();
+          return const AlternateAgentScreen();
         case 3:
-          return const PharmacistAnalyticsScreen();
+          return const AdherenceScreen();
         case 4:
-          return const FormularyScreen();
+          return const PharmacistAnalyticsScreen();
         case 5:
-          return const PharmacistInsuranceScreen();
+          return const FormularyScreen();
         case 6:
-          return const VoiceAgentScreen();
+          return const PharmacistInsuranceScreen();
         case 7:
+          return const VoiceAgentScreen();
+        case 8:
           return const UserProfileScreen();
         default:
           return const PharmacistDispenseScreen();

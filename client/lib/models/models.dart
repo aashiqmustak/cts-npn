@@ -121,7 +121,7 @@ extension UserRoleAuthMeta on UserRole {
 
 enum RiskLevel { high, medium, low }
 
-enum OutreachStatus { pending, contacted, resolved, declined }
+enum OutreachStatus { pending, contacted, syncScheduled, resolved, declined }
 
 enum FrictionStatus { blocked, inReview, appealed, resolved }
 

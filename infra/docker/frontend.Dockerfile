@@ -1,23 +1,20 @@
-# Stage 1: Build Flutter web application
+# Stage 1: Build Flutter web application using pre-configured official Flutter image
 FROM ghcr.io/cirruslabs/flutter:stable AS build
 
 WORKDIR /app
 
 # Copy dependency files first for Docker caching
-COPY client/pubspec.yaml client/pubspec.lock ./
+COPY client/pubspec.yaml client/pubspec.lock* ./
 
-RUN --mount=type=cache,target=/root/.pub-cache \
-    flutter pub get
+RUN flutter pub get
 
 # Copy remaining Flutter project
 COPY client/ ./
 
-# Build Flutter Web
-RUN --mount=type=cache,target=/app/.dart_tool \
-    flutter build web --release
+# Build Flutter Web in release mode
+RUN flutter build web --release
 
-
-# Stage 2: NGINX
+# Stage 2: Serve with lightweight NGINX
 FROM nginx:alpine
 
 COPY --from=build /app/build/web /usr/share/nginx/html
