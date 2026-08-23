@@ -180,100 +180,107 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
             padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
             child: Column(
               children: [
-                // Siri Glowing Orb Animated Stage
+                // Siri Glowing Orb Animated Stage (Isolated inside RepaintBoundary with fixed dimensions to eliminate all shaking)
                 Center(
-                  child: GestureDetector(
-                    onTap: _handleMicTap,
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Siri Animated Wave Aura & Ripples
-                          AnimatedBuilder(
-                            animation: Listenable.merge([
-                              _waveController,
-                              _pulseController,
-                              _visualizerController,
-                            ]),
-                            builder: (context, child) {
-                              return CustomPaint(
-                                size: const Size(260, 260),
-                                painter: _SiriWaveOrbPainter(
-                                  waveProgress: _waveController.value,
-                                  pulseProgress: _pulseController.value,
-                                  visualizerProgress:
-                                      _visualizerController.value,
-                                  isConnected: isConnected,
-                                  isConnecting: isConnecting,
-                                ),
-                              );
-                            },
-                          ),
+                  child: RepaintBoundary(
+                    child: SizedBox(
+                      width: 260,
+                      height: 260,
+                      child: GestureDetector(
+                        onTap: _handleMicTap,
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            clipBehavior: Clip.none,
+                            children: [
+                              // Siri Animated Wave Aura & Ripples
+                              AnimatedBuilder(
+                                animation: Listenable.merge([
+                                  _waveController,
+                                  _pulseController,
+                                  _visualizerController,
+                                ]),
+                                builder: (context, child) {
+                                  return CustomPaint(
+                                    size: const Size(260, 260),
+                                    painter: _SiriWaveOrbPainter(
+                                      waveProgress: _waveController.value,
+                                      pulseProgress: _pulseController.value,
+                                      visualizerProgress:
+                                          _visualizerController.value,
+                                      isConnected: isConnected,
+                                      isConnecting: isConnecting,
+                                    ),
+                                  );
+                                },
+                              ),
 
-                          // Core Floating Glass Button
-                          AnimatedBuilder(
-                            animation: _pulseController,
-                            builder: (context, child) {
-                              final scale = isConnected
-                                  ? 1.0 + (_pulseController.value * 0.08)
-                                  : 1.0;
-                              return Transform.scale(
-                                scale: scale,
-                                child: Container(
-                                  width: 88,
-                                  height: 88,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: RadialGradient(
-                                      colors: isConnected
-                                          ? [
-                                              const Color(0xFF00F2FE),
-                                              const Color(0xFF4FACFE),
-                                              const Color(0xFF008080),
-                                              const Color(0xFF0A1128),
-                                            ]
-                                          : isConnecting
+                              // Core Floating Glass Button
+                              AnimatedBuilder(
+                                animation: _pulseController,
+                                builder: (context, child) {
+                                  final scale = isConnected
+                                      ? 1.0 + (_pulseController.value * 0.05)
+                                      : 1.0;
+                                  return Transform.scale(
+                                    scale: scale,
+                                    child: Container(
+                                      width: 88,
+                                      height: 88,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: RadialGradient(
+                                          colors: isConnected
                                               ? [
-                                                  const Color(0xFFFFB703),
-                                                  const Color(0xFFFB8500),
-                                                  const Color(0xFFD97706),
-                                                ]
-                                              : [
-                                                  const Color(0xFF00C9A7),
+                                                  const Color(0xFF00F2FE),
+                                                  const Color(0xFF4FACFE),
                                                   const Color(0xFF008080),
                                                   const Color(0xFF0A1128),
-                                                ],
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: (isConnected
-                                                ? const Color(0xFF00F2FE)
-                                                : isConnecting
-                                                    ? const Color(0xFFFFB703)
-                                                    : AppColors.primaryTeal)
-                                            .withValues(alpha: 0.5),
-                                        blurRadius: 28,
-                                        spreadRadius: 4,
+                                                ]
+                                              : isConnecting
+                                                  ? [
+                                                      const Color(0xFFFFB703),
+                                                      const Color(0xFFFB8500),
+                                                      const Color(0xFFD97706),
+                                                    ]
+                                                  : [
+                                                      const Color(0xFF00C9A7),
+                                                      const Color(0xFF008080),
+                                                      const Color(0xFF0A1128),
+                                                    ],
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: (isConnected
+                                                    ? const Color(0xFF00F2FE)
+                                                    : isConnecting
+                                                        ? const Color(0xFFFFB703)
+                                                        : AppColors.primaryTeal)
+                                                .withValues(alpha: 0.5),
+                                            blurRadius: 28,
+                                            spreadRadius: 4,
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                  child: Center(
-                                    child: Icon(
-                                      isConnecting
-                                          ? Icons.hourglass_top_rounded
-                                          : isConnected
-                                              ? Icons.graphic_eq_rounded
-                                              : Icons.mic_rounded,
-                                      color: Colors.white,
-                                      size: 38,
+                                      child: Center(
+                                        child: Icon(
+                                          isConnecting
+                                              ? Icons.hourglass_top_rounded
+                                              : isConnected
+                                                  ? Icons.graphic_eq_rounded
+                                                  : Icons.mic_rounded,
+                                          color: Colors.white,
+                                          size: 38,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              );
-                            },
+                                  );
+                                },
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -538,7 +545,9 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
         ];
 
         return Container(
+          height: 64,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          alignment: Alignment.center,
           decoration: BoxDecoration(
             color: AppColors.bgSlate,
             borderRadius: BorderRadius.circular(20),
@@ -546,6 +555,7 @@ class _VoiceAgentScreenState extends State<VoiceAgentScreen>
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: heights.map((h) {
               return Container(
                 width: 4,
@@ -587,38 +597,38 @@ class _SiriWaveOrbPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final baseRadius = size.width * 0.28;
+    final baseRadius = size.width * 0.22;
 
     // 1. Ambient Outer Nebula Glow
     final glowPaint = Paint()
       ..shader = RadialGradient(
         colors: isConnected
             ? [
-                const Color(0xFF00F2FE).withValues(alpha: 0.35),
-                const Color(0xFF4FACFE).withValues(alpha: 0.20),
-                const Color(0xFF7F00FF).withValues(alpha: 0.12),
+                const Color(0xFF00F2FE).withValues(alpha: 0.30),
+                const Color(0xFF4FACFE).withValues(alpha: 0.18),
+                const Color(0xFF7F00FF).withValues(alpha: 0.10),
                 Colors.transparent,
               ]
             : isConnecting
                 ? [
-                    const Color(0xFFFFB703).withValues(alpha: 0.4),
-                    const Color(0xFFFB8500).withValues(alpha: 0.2),
+                    const Color(0xFFFFB703).withValues(alpha: 0.35),
+                    const Color(0xFFFB8500).withValues(alpha: 0.18),
                     Colors.transparent,
                   ]
                 : [
-                    const Color(0xFF00C9A7).withValues(alpha: 0.25),
-                    const Color(0xFF008080).withValues(alpha: 0.15),
+                    const Color(0xFF00C9A7).withValues(alpha: 0.20),
+                    const Color(0xFF008080).withValues(alpha: 0.10),
                     Colors.transparent,
                   ],
       ).createShader(
         Rect.fromCircle(
             center: center,
-            radius: baseRadius * (1.6 + pulseProgress * 0.3)),
+            radius: baseRadius * (1.4 + pulseProgress * 0.15)),
       );
 
     canvas.drawCircle(
       center,
-      baseRadius * (1.6 + pulseProgress * 0.3),
+      baseRadius * (1.4 + pulseProgress * 0.15),
       glowPaint,
     );
 
@@ -626,7 +636,7 @@ class _SiriWaveOrbPainter extends CustomPainter {
     final numRings = isConnected ? 4 : 2;
     for (int i = 0; i < numRings; i++) {
       final angleOffset = (i * math.pi / 2) + (waveProgress * math.pi * 2);
-      final scaleFactor = 1.0 + (i * 0.18) + (pulseProgress * 0.08);
+      final scaleFactor = 1.0 + (i * 0.14) + (pulseProgress * 0.05);
 
       final path = Path();
       const numPoints = 64;

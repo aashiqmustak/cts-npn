@@ -18,6 +18,7 @@ from pipecat.audio.vad.vad_analyzer import VADParams
 from pipecat.frames.frames import (
     Frame,
     LLMMessagesAppendFrame,
+    OutputTransportMessageUrgentFrame,
     TranscriptionFrame,
     TTSSpeakFrame,
 )
@@ -101,8 +102,46 @@ class TranscriptionLogger(FrameProcessor):
     ):
         await super().process_frame(frame, direction)
 
-        if isinstance(frame, TranscriptionFrame):
-            logger.info("[STT Heard User]: %s", frame.text)
+        if isinstance(frame, TranscriptionFrame) and frame.text and frame.text.strip():
+            user_text = frame.text.strip()
+            print(f"\n[STT Heard User]: {user_text}\n")
+            await self.push_frame(
+                OutputTransportMessageUrgentFrame(
+                    message=json.dumps(
+                        {
+                            "type": "transcript",
+                            "sender": "user",
+                            "text": user_text,
+                        }
+                    )
+                )
+            )
+
+        await self.push_frame(frame, direction)
+
+
+class AssistantTranscriptLogger(FrameProcessor):
+    async def process_frame(
+        self,
+        frame: Frame,
+        direction: FrameDirection,
+    ):
+        await super().process_frame(frame, direction)
+
+        if isinstance(frame, TTSSpeakFrame) and frame.text and frame.text.strip():
+            bot_text = frame.text.strip()
+            print(f"\n[Alternea Spoken Voice + Text]: {bot_text}\n")
+            await self.push_frame(
+                OutputTransportMessageUrgentFrame(
+                    message=json.dumps(
+                        {
+                            "type": "transcript",
+                            "sender": "agent",
+                            "text": bot_text,
+                        }
+                    )
+                )
+            )
 
         await self.push_frame(frame, direction)
 
@@ -424,6 +463,7 @@ async def run_bot(
         )
 
         transcription_logger = TranscriptionLogger()
+        assistant_transcript_logger = AssistantTranscriptLogger()
 
         pipeline = Pipeline(
             [
@@ -433,6 +473,7 @@ async def run_bot(
                 user_aggregator,
                 llm,
                 tts,
+                assistant_transcript_logger,
                 transport.output(),
                 assistant_aggregator,
             ]

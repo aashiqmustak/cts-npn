@@ -43,6 +43,94 @@
   </style>
 </head>
 <body>
+  <script>
+    let recognition = null;
+    let isRecognizing = false;
+
+    window.startSpeechRecognition = function(callbackName, endCallbackName) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        console.warn("Speech recognition not supported in this browser.");
+        return false;
+      }
+      
+      try {
+        if (recognition && isRecognizing) {
+          recognition.stop();
+        }
+
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = function() {
+          isRecognizing = true;
+          console.log("[STT] Speech recognition active...");
+        };
+
+        recognition.onresult = function(event) {
+          let transcript = '';
+          for (let i = 0; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          console.log("[STT Heard]:", transcript);
+          if (window[callbackName]) {
+            window[callbackName](transcript);
+          }
+        };
+
+        recognition.onerror = function(event) {
+          console.error("[STT Error]:", event.error);
+        };
+
+        recognition.onend = function() {
+          isRecognizing = false;
+          console.log("[STT] Speech recognition ended");
+          if (window[endCallbackName]) {
+            window[endCallbackName]();
+          }
+        };
+
+        recognition.start();
+        return true;
+      } catch (err) {
+        console.error("Failed to start speech recognition:", err);
+        return false;
+      }
+    };
+
+    window.stopSpeechRecognition = function() {
+      if (recognition && isRecognizing) {
+        recognition.stop();
+        isRecognizing = false;
+      }
+    };
+
+    window.playBase64Audio = function(base64Wav) {
+      if (!base64Wav) return;
+      try {
+        const audio = new Audio("data:audio/wav;base64," + base64Wav);
+        audio.play().catch(e => console.warn("Autoplay prevented:", e));
+      } catch (e) {
+        console.error("Failed to play base64 audio:", e);
+      }
+    };
+
+    window.speakTextWithBrowserTTS = function(text) {
+      if (!window.speechSynthesis) return;
+      try {
+        window.speechSynthesis.cancel();
+        const clean = text.replace(/[*_#•]/g, '').trim();
+        const utterance = new SpeechSynthesisUtterance(clean);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.error("Browser TTS error:", e);
+      }
+    };
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
