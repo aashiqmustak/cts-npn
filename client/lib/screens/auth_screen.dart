@@ -310,11 +310,6 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                   ),
                 ),
-
-                if (!isMobile) ...[
-                  const SizedBox(height: 24),
-                  _buildTrustFooter(),
-                ],
               ],
             ),
           ),
@@ -886,78 +881,6 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         );
       }),
-    );
-  }
-
-  Widget _buildTrustFooter() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.verified_user_outlined,
-                size: 14,
-                color: Color(0xFF10B981),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '256-Bit TLS',
-                style: AppFonts.googleSans(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF64748B),
-                ),
-              ),
-            ],
-          ),
-          Container(width: 1, height: 12, color: const Color(0xFFCBD5E1)),
-          Row(
-            children: [
-              const Icon(
-                Icons.shield_outlined,
-                size: 14,
-                color: Color(0xFF1D4ED8),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'HIPAA Audit',
-                style: AppFonts.googleSans(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF64748B),
-                ),
-              ),
-            ],
-          ),
-          Container(width: 1, height: 12, color: const Color(0xFFCBD5E1)),
-          Row(
-            children: [
-              const Icon(
-                Icons.bolt_rounded,
-                size: 14,
-                color: Color(0xFFF59E0B),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Zero-Trust',
-                style: AppFonts.googleSans(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF64748B),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 
