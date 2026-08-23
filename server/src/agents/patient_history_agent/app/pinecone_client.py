@@ -22,9 +22,16 @@ class PineconePatientHistoryClient:
         embedding_model: str | None = None,
     ):
         self.api_key = api_key or os.getenv("PINECONE_API_KEY", "").strip()
-        self.index_name = index_name or os.getenv("PINECONE_INDEX_NAME", "cts-npn").strip()
-        self.namespace = namespace or os.getenv("PINECONE_NAMESPACE", "patient-history").strip()
-        self.embedding_model = embedding_model or os.getenv("EMBEDDING_PROVIDER", "llama-text-embed-v2").strip()
+        self.index_name = (
+            index_name or os.getenv("PINECONE_INDEX_NAME", "cts-npn").strip()
+        )
+        self.namespace = (
+            namespace or os.getenv("PINECONE_NAMESPACE", "patient-history").strip()
+        )
+        self.embedding_model = (
+            embedding_model
+            or os.getenv("EMBEDDING_PROVIDER", "llama-text-embed-v2").strip()
+        )
 
         self._pc = None
         self._index = None
@@ -34,7 +41,9 @@ class PineconePatientHistoryClient:
 
     def _init_client(self) -> None:
         if not self.api_key:
-            logger.warning("PINECONE_API_KEY is missing. Pinecone RAG features will run in mock/offline mode.")
+            logger.warning(
+                "PINECONE_API_KEY is missing. Pinecone RAG features will run in mock/offline mode."
+            )
             self._available = False
             return
 
@@ -44,7 +53,11 @@ class PineconePatientHistoryClient:
             self._pc = Pinecone(api_key=self.api_key)
             self._index = self._pc.Index(self.index_name)
             self._available = True
-            logger.info("Connected to Pinecone index '%s' (namespace: '%s')", self.index_name, self.namespace)
+            logger.info(
+                "Connected to Pinecone index '%s' (namespace: '%s')",
+                self.index_name,
+                self.namespace,
+            )
         except (ImportError, RuntimeError, ValueError, OSError) as exc:
             logger.error("Failed to connect to Pinecone: %s", exc)
             self._available = False
@@ -83,7 +96,9 @@ class PineconePatientHistoryClient:
         hash_suffix = hashlib.md5(raw.encode("utf-8")).hexdigest()[:8]
         return f"{p_id}_{d_id}_{f_date}_{hash_suffix}"
 
-    def embed_texts(self, texts: list[str], input_type: str = "passage", max_retries: int = 3) -> list[list[float]]:
+    def embed_texts(
+        self, texts: list[str], input_type: str = "passage", max_retries: int = 3
+    ) -> list[list[float]]:
         """Generate embeddings using Pinecone Inference API with automatic retry."""
         if not self.is_available or not self._pc:
             raise RuntimeError("Pinecone client is not initialized or offline.")
@@ -99,10 +114,20 @@ class PineconePatientHistoryClient:
                 return [record.values for record in embeddings_response]
             except (TimeoutError, OSError, RuntimeError, ValueError) as exc:
                 last_exc = exc
-                logger.warning("Embedding attempt %d/%d failed: %s. Retrying in %ds...", attempt + 1, max_retries, exc, attempt + 1)
+                logger.warning(
+                    "Embedding attempt %d/%d failed: %s. Retrying in %ds...",
+                    attempt + 1,
+                    max_retries,
+                    exc,
+                    attempt + 1,
+                )
                 time.sleep(attempt + 1)
 
-        logger.error("Error generating embeddings with Pinecone inference (%s): %s", self.embedding_model, last_exc)
+        logger.error(
+            "Error generating embeddings with Pinecone inference (%s): %s",
+            self.embedding_model,
+            last_exc,
+        )
         if last_exc:
             raise last_exc
         raise RuntimeError("Failed to generate embeddings.")
@@ -132,7 +157,9 @@ class PineconePatientHistoryClient:
                 continue
 
             vectors = []
-            for j, (rec, text, emb) in enumerate(zip(chunk, texts, embeddings, strict=False)):
+            for j, (rec, text, emb) in enumerate(
+                zip(chunk, texts, embeddings, strict=False)
+            ):
                 vec_id = self.generate_record_id(rec, index_idx=i + j)
                 metadata = {
                     "patient_id": str(rec.get("patient_id") or "").strip().lower(),
@@ -150,7 +177,9 @@ class PineconePatientHistoryClient:
             try:
                 self._index.upsert(vectors=vectors, namespace=ns)
                 total_upserted += len(vectors)
-                logger.info("Upserted %d records to Pinecone namespace '%s'", len(vectors), ns)
+                logger.info(
+                    "Upserted %d records to Pinecone namespace '%s'", len(vectors), ns
+                )
             except (TimeoutError, OSError, RuntimeError, ValueError) as exc:
                 logger.error("Failed to upsert vectors to Pinecone: %s", exc)
 
@@ -199,7 +228,9 @@ class PineconePatientHistoryClient:
     ) -> list[dict[str, Any]]:
         """Retrieve semantically relevant records for a patient from Pinecone."""
         if not self.is_available or not self._index:
-            logger.warning("Pinecone is not available; unable to perform vector search.")
+            logger.warning(
+                "Pinecone is not available; unable to perform vector search."
+            )
             return []
 
         ns = namespace or self.namespace
@@ -250,13 +281,19 @@ class PineconePatientHistoryClient:
                 )
             return results
         except (TimeoutError, OSError, RuntimeError, ValueError) as exc:
-            logger.error("Error executing Pinecone query for patient '%s': %s", patient_id, exc)
+            logger.error(
+                "Error executing Pinecone query for patient '%s': %s", patient_id, exc
+            )
             return []
 
     def get_stats(self) -> dict[str, Any]:
         """Return index statistics and status."""
         if not self.is_available or not self._index:
-            return {"status": "offline", "index_name": self.index_name, "total_vector_count": 0}
+            return {
+                "status": "offline",
+                "index_name": self.index_name,
+                "total_vector_count": 0,
+            }
 
         try:
             stats = self._index.describe_index_stats()

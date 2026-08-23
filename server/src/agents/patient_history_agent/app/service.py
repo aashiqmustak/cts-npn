@@ -35,7 +35,9 @@ class PatientHistoryService:
 
                 self._groq_client = Groq(api_key=groq_key)
             except (ImportError, RuntimeError, ValueError) as exc:
-                logger.warning("Could not initialize Groq client for RAG synthesis: %s", exc)
+                logger.warning(
+                    "Could not initialize Groq client for RAG synthesis: %s", exc
+                )
 
     def get_patient_history(
         self, request: PatientHistoryRequest
@@ -73,10 +75,16 @@ class PatientHistoryService:
             fill_val = record.get("fill_date")
             fill_date = None
             if isinstance(fill_val, datetime):
-                fill_date = fill_val.replace(tzinfo=UTC) if fill_val.tzinfo is None else fill_val
+                fill_date = (
+                    fill_val.replace(tzinfo=UTC)
+                    if fill_val.tzinfo is None
+                    else fill_val
+                )
             elif isinstance(fill_val, str):
                 try:
-                    fill_date = datetime.strptime(fill_val.strip(), "%Y-%m-%d").replace(tzinfo=UTC)
+                    fill_date = datetime.strptime(fill_val.strip(), "%Y-%m-%d").replace(
+                        tzinfo=UTC
+                    )
                 except (ValueError, TypeError):
                     continue
 
@@ -180,7 +188,8 @@ class PatientHistoryService:
 
         return PatientRecordIngestResponse(
             success=True,
-            record_id=vector_id or f"mem_{record_input.patient_id}_{record_input.drug_id}",
+            record_id=vector_id
+            or f"mem_{record_input.patient_id}_{record_input.drug_id}",
             patient_id=record_input.patient_id,
             message="Patient record successfully saved to history repository and Pinecone vector store.",
             vector_id=vector_id,
@@ -231,7 +240,8 @@ class PatientHistoryService:
         hist_resp = self.get_patient_history(
             PatientHistoryRequest(
                 patient_id=request.patient_id,
-                drug_id=request.drug_id or (matches[0].drug_id if matches else "UNKNOWN"),
+                drug_id=request.drug_id
+                or (matches[0].drug_id if matches else "UNKNOWN"),
             )
         )
 
@@ -316,7 +326,11 @@ class PatientHistoryService:
                 )
                 model_name = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
                 # Fallback to llama-3.3-70b-versatile if gpt-oss is specified or fails
-                for try_model in [model_name, "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]:
+                for try_model in [
+                    model_name,
+                    "llama-3.3-70b-versatile",
+                    "llama-3.1-8b-instant",
+                ]:
                     try:
                         resp = self._groq_client.chat.completions.create(
                             model=try_model,
@@ -327,19 +341,32 @@ class PatientHistoryService:
                         content = resp.choices[0].message.content
                         if content:
                             return content.strip()
-                    except (RuntimeError, ValueError, TimeoutError, OSError) as model_exc:
-                        logger.debug("Model %s generation retry: %s", try_model, model_exc)
+                    except (
+                        RuntimeError,
+                        ValueError,
+                        TimeoutError,
+                        OSError,
+                    ) as model_exc:
+                        logger.debug(
+                            "Model %s generation retry: %s", try_model, model_exc
+                        )
                         continue
             except (RuntimeError, ValueError, TimeoutError, OSError) as exc:
                 logger.warning("LLM RAG summary generation fallback: %s", exc)
 
         # High quality clinical fallback synthesis
         drugs = list({str(m.get("drug_id")) for m in matches if m.get("drug_id")})
-        conditions = list({str(m.get("condition")) for m in matches if m.get("condition")})
-        abandoned = sum(1 for m in matches if str(m.get("status")).upper() == "ABANDONED")
+        conditions = list(
+            {str(m.get("condition")) for m in matches if m.get("condition")}
+        )
+        abandoned = sum(
+            1 for m in matches if str(m.get("status")).upper() == "ABANDONED"
+        )
 
         adherence_str = (
-            "Optimal (>=80%)" if adherence.previous_pdc_180 >= 0.80 else "Sub-optimal (<80%)"
+            "Optimal (>=80%)"
+            if adherence.previous_pdc_180 >= 0.80
+            else "Sub-optimal (<80%)"
         )
         return (
             f"Patient {patient_id} has {len(matches)} retrieved history records spanning conditions ({', '.join(conditions)}) "

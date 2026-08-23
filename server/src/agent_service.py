@@ -316,9 +316,7 @@ async def rag_query_patient_history_route(
     try:
         return patient_history_agent.query_rag(data)
     except Exception as exc:
-        raise HTTPException(
-            status_code=500, detail=f"RAG query failed: {exc}"
-        ) from exc
+        raise HTTPException(status_code=500, detail=f"RAG query failed: {exc}") from exc
 
 
 @post("/sync-dataset")

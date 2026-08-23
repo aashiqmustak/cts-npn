@@ -60,6 +60,7 @@ dev = [
 	"mypy>=1.19.1",
 	"basedpyright>=1.37.2",
 	"commitlint>=1.13.3",
+	"pytest>=9.1.1",
 ]
 
 [tool.uv]
