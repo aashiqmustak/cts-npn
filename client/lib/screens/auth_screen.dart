@@ -770,10 +770,19 @@ class _AuthScreenState extends State<AuthScreen> {
 
         const SizedBox(height: 16),
 
-        // 3 Role Selection Cards in Row
+        // 4 Role Selection Cards in Row (Patient, Insurance, Doctor, Pharmacist)
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            Expanded(
+              child: _buildRoleSelectCardV2(
+                role: UserRole.patient,
+                icon: Icons.favorite_rounded,
+                iconColor: const Color(0xFFEF4444),
+                iconBg: const Color(0xFFFEF2F2),
+              ),
+            ),
+            const SizedBox(width: 6),
             Expanded(
               child: _buildRoleSelectCardV2(
                 role: UserRole.insuranceAgent,
@@ -782,7 +791,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 iconBg: const Color(0xFFEFF6FF),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Expanded(
               child: _buildRoleSelectCardV2(
                 role: UserRole.doctor,
@@ -791,7 +800,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 iconBg: const Color(0xFFECFDF5),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Expanded(
               child: _buildRoleSelectCardV2(
                 role: UserRole.pharmacist,
@@ -803,15 +812,46 @@ class _AuthScreenState extends State<AuthScreen> {
           ],
         ),
 
-        const SizedBox(height: 20),
-
-        // Google Sign-Up Button
-        GoogleSignInButton(
-          text: 'Sign up with Google (Patient)',
-          onPressed: () async {
-            await appState.signInWithGooglePatient();
-          },
-        ),
+        if (_selectedRole == UserRole.patient) ...[
+          const SizedBox(height: 18),
+          // Google Sign-Up Button (Patient Portal Exclusive)
+          GoogleSignInButton(
+            text: 'Sign up with Google (Patient Portal)',
+            onPressed: () async {
+              await appState.signInWithGooglePatient();
+            },
+          ),
+        ] else ...[
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.verified_user_outlined,
+                  size: 14,
+                  color: Color(0xFF2563EB),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Institutional verification required for ${_selectedRole.label}s.',
+                    style: AppFonts.googleSans(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
