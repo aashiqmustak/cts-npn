@@ -1,0 +1,325 @@
+================================================================================
+          CTS PHARMAASSIST — FRONTEND STATIC PAGES & DYNAMIC FLOW AUDIT
+================================================================================
+Generated Date: 2026-08-23
+Scope: Complete inspection of all 26 client screens across 5 user roles
+Goal: Identify all hardcoded/static options, dummy handlers, and specify the
+      exact dynamic cross-role bindings required for full production parity.
+================================================================================
+
+TABLE OF CONTENTS:
+1. EXECUTIVE SUMMARY & SYSTEM ARCHITECTURE
+2. ROLE 1: DOCTOR / PHYSICIAN SCREENS AUDIT
+3. ROLE 2: PHARMACIST SCREENS AUDIT
+4. ROLE 3: PATIENT SCREENS AUDIT
+5. ROLE 4: INSURANCE AGENT SCREENS AUDIT
+6. ROLE 5: SYSTEM ADMINISTRATOR SCREENS AUDIT
+7. CENTRAL SHARED DATA STORE & STATE MUTATION MATRIX
+8. STEP-BY-STEP IMPLEMENTATION CHECKLIST
+
+================================================================================
+1. EXECUTIVE SUMMARY & SYSTEM ARCHITECTURE
+================================================================================
+The CTS PharmaAssist frontend operates across 5 distinct clinical roles:
+  [1] Doctor / Physician
+  [2] Pharmacist
+  [3] Patient
+  [4] Insurance Agent
+  [5] System Administrator
+
+Currently, several screens contain:
+  - Hardcoded telemetry numbers (e.g., static consultation counts, static adherence percentages)
+  - Hardcoded FlChart data points (FlSpot coordinates, static PieChart sections)
+  - Disconnected action buttons (buttons that trigger ScaffoldMessenger snackbars without updating AppState/Supabase/Backend)
+  - One-way state changes that do not dynamically propagate to other roles
+
+--------------------------------------------------------------------------------
+Cross-Role Dynamic Ripple Flow (Target Standard):
+--------------------------------------------------------------------------------
+  [Doctor Issues e-Rx]
+        │
+        ▼
+  [Insurance PA Verification Engine] ──(If PA Needed)──► [Insurance Agent Friction Portal]
+        │                                                           │
+        │ (Approved)                                                │ (PA Approved)
+        ▼                                                           ▼
+  [Pharmacist Dispense Queue] ◄─────────────────────────────────────┘
+        │
+        ▼
+  [Pharmacist Dispenses & Verifies Medication]
+        │
+        ├──────────────────────────────────────────┐
+        ▼                                          ▼
+  [Pharmacist Analytics Updated]             [Patient Medicine Cabinet ("My Medicines")]
+  (Revenue, inventory, fill rates)                 │
+                                                   ▼
+                                             [Patient Logs Daily Dose ("Take Dose")]
+                                                   │
+                                                   ▼
+                                             [Adherence Risk Core (PDC Engine)]
+                                             (Live PDC score recalculated in real-time)
+
+================================================================================
+2. ROLE 1: DOCTOR / PHYSICIAN SCREENS AUDIT
+================================================================================
+
+--------------------------------------------------------------------------------
+2.1. Doctor Overview Screen
+File: client/lib/screens/doctor_overview_screen.dart
+--------------------------------------------------------------------------------
+• STATIC / HARDCODED ELEMENTS:
+  - Telemetry Card 1: 'Consultations Today: 18 Patients (+12.5%)' (Hardcoded string).
+  - Telemetry Card 2: 'Active e-Prescriptions: totalPrescriptions Issued' (Partially dynamic, but subtitle is hardcoded).
+  - Telemetry Card 3: 'Patient Regimen Adherence: 96.4% PDC' (Hardcoded string).
+  - Telemetry Card 4: 'Prior Auth Friction: 2 Pending Review' (Hardcoded string).
+  - LineChart (Weekly Consultations Velocity): Hardcoded FlSpot points (14, 19, 16, 24, 22, 12, 18).
+  - PieChart (Prescribed Drug Classes): Hardcoded sections (Cardiology 38%, Endocrine 26%, Antibiotics 20%, Psychiatric 16%).
+  - Time Range Filter (7D, 30D, 90D): Updates state variable but does not recalculate chart spots.
+
+• DYNAMIC FIX REQUIRED:
+  1. Derive 'Consultations Today' from appState.patientRecords filtered by visitDate == today.
+  2. Compute 'Patient Regimen Adherence' as the average PDC score of all patients assigned to the logged-in doctor.
+  3. Derive 'Prior Auth Friction' from appState.dataService.paFrictionEvents where assignedDoctorId == currentDoctor.id.
+  4. Dynamically aggregate LineChart spots by grouping appState.prescriptions by weekday.
+  5. Dynamically calculate PieChart slices by grouping appState.prescriptions by drugClass.
+  6. Connect 7D/30D/90D filters to filter prescriptions within the selected DateTime window.
+
+--------------------------------------------------------------------------------
+2.2. Doctor e-Prescription Screen
+File: client/lib/screens/doctor_prescription_screen.dart
+--------------------------------------------------------------------------------
+• STATIC / HARDCODED ELEMENTS:
+  - Default patient fallback list uses hardcoded demo IDs (PAT_00001 - PAT_00005).
+  - Default hospital fallback uses hardcoded 'Mayo Clinic Hospital - Phoenix'.
+  - Prior Auth verification is not executed at prescription submission time.
+
+• DYNAMIC FIX REQUIRED:
+  1. Pull live active patient records directly from appState.dataService.patientRecords and Supabase.
+  2. Pull hospital registry directly from appState.hospitals.
+  3. When Doctor clicks 'Issue e-Prescription':
+     - Automatically check target medication against appState.dataService.drugs.
+     - If drug.requiresPa == true, instantly generate a PAFrictionEvent and push to appState.dataService.paFrictionEvents.
+     - Broadcast prescription to Pharmacist Dispense Queue (appState.prescriptions).
+     - Populate initial scheduled doses into Patient Medicine Logs (appState.dataService.patientLogs).
+
+--------------------------------------------------------------------------------
+2.3. Prescriptions & Prescription Details Screens
+Files: client/lib/screens/prescriptions_screen.dart, client/lib/screens/prescription_details_screen.dart
+--------------------------------------------------------------------------------
+• STATIC / HARDCODED ELEMENTS:
+  - 'Discontinue Regimen' and 'Modify Dosage' buttons in details modal trigger temporary snackbars without updating the prescription status in the centralized state.
+  - PDF export uses client-side template without dynamic doctor digital signature.
+
+• DYNAMIC FIX REQUIRED:
+  1. Wire 'Discontinue Regimen' to execute appState.updatePrescriptionStatus(rxId, 'Discontinued').
+  2. Propagate discontinuation instantly to Pharmacist Dispense Screen and Patient Medicine Cabinet.
+  3. Enable digital e-signature generation based on logged-in doctor NPI/DEA credentials.
+
+================================================================================
+3. ROLE 2: PHARMACIST SCREENS AUDIT
+================================================================================
+
+--------------------------------------------------------------------------------
+3.1. Pharmacist Dispense Screen
+File: client/lib/screens/pharmacist_dispense_screen.dart
+--------------------------------------------------------------------------------
+• STATIC / HARDCODED ELEMENTS:
+  - Dispense verification marks item as dispensed locally, but does not always create a persistent PharmacistDispenseRecord in history.
+  - Inventory on-hand deductions are simulated.
+
+• DYNAMIC FIX REQUIRED:
+  1. When Pharmacist clicks 'Dispense & Verify Item':
+     - Call appState.dispensePrescriptionItem(itemId).
+     - Create PharmacistDispenseRecord with timestamp, pharmacist ID, patient ID, and drug NDC.
+     - Automatically populate 30-day/90-day intake schedule in the Patient's 'My Medicines' Cabinet.
+     - Recalculate Pharmacist Analytics total revenue, copay collections, and dispense velocity.
+
+--------------------------------------------------------------------------------
+3.2. Pharmacist Analytics Screen
+File: client/lib/screens/pharmacist_analytics_screen.dart
+--------------------------------------------------------------------------------
+• STATIC / HARDCODED ELEMENTS:
+  - Line 108: totalDispensed = appState.prescriptions.length * 320 + 1280 (Artificial multiplier formula).
+  - Multi-series Area Chart (Dispensed vs Refills vs Interventions) uses hardcoded curve equations.
+  - Tier-by-Tier Copay Revenue distribution uses static percentage splits.
+
+• DYNAMIC FIX REQUIRED:
+  1. Replace artificial multipliers with actual count of appState.dataService.dispenseRecords.
+  2. Derive monthly revenue from actual dispensed prescription drug cost shares and copays.
+  3. Calculate dynamic refill rates from actual fillRecords on each active prescription.
+  4. Generate live area chart curves from real daily dispense timestamps.
+
+--------------------------------------------------------------------------------
+3.3. Formulary Screen
+File: client/lib/screens/formulary_screen.dart
+--------------------------------------------------------------------------------
+• STATIC / HARDCODED ELEMENTS:
+  - Formulary search table uses static list if Supabase returns 0 records.
+  - Tier Copay Configurator (Tier 1-5 default copays) modifies local variables without saving to database.
+
+• DYNAMIC FIX REQUIRED:
+  1. Connect table directly to appState.dataService.drugs with real-time text search on Drug Name, NDC, and Class.
+  2. When Admin/Pharmacist updates Tier Copay Config (e.g., Tier 1 = $0.00, Tier 3 = $45.00), save to appState.dataService.tierConfigs and update all live copay calculations across the app.
+
+--------------------------------------------------------------------------------
+3.4. Alternate Agent Screen (Clinical CDS Bot)
+File: client/lib/screens/alternate_agent_screen.dart
+--------------------------------------------------------------------------------
+• STATUS: FULLY DYNAMIC (COMPLETED)
+  - Connected to 7-Stage Multi-Agent Orchestrator backend (POST /api/v1/chat/message).
+  - Connected to Pipecat WebRTC Voice Engine (localhost:7860).
+  - Live Sarvam AI TTS / STT voice synthesis.
+  - Interactive Bento Recommendation Card with 1-Click Regimen Switch.
+
+================================================================================
+4. ROLE 3: PATIENT SCREENS AUDIT
+================================================================================
+
+--------------------------------------------------------------------------------
+4.1. Patient Interactive Screen & Daily Medicine Cabinet
+File: client/lib/screens/patient_interactive_screen.dart
+--------------------------------------------------------------------------------
+• STATIC / HARDCODED ELEMENTS:
+  - 'Today's Dose Schedule' uses fallback dummy items if patientLogs is empty.
+  - Adherence Score Dial (e.g., 94%) is statically displayed when logs are uninitialized.
+
+• DYNAMIC FIX REQUIRED:
+  1. Filter appState.dataService.patientLogs strictly by current logged-in patient's ID (e.g. PAT_00402).
+  2. When patient taps 'Take Dose' (Checkmark):
+     - Execute appState.toggleMedicineLog(logId, true).
+     - Instantly recalculate patient's daily adherence score.
+     - Update PDC telemetry in the Pharmacist's Adherence Risk Core.
+  3. When patient taps 'Report Side Effect / Barrier':
+     - Create a clinical flag in AdherenceRiskFlag for pharmacist outreach.
+
+--------------------------------------------------------------------------------
+4.2. My Medicines Screen
+File: client/lib/screens/my_medicines_screen.dart
+--------------------------------------------------------------------------------
+• STATIC / HARDCODED ELEMENTS:
+  - Displays generic dummy pills if no prescriptions match the active session.
+  - 'Request Refill' button triggers a snackbar without creating a refill request queue item.
+
+• DYNAMIC FIX REQUIRED:
+  1. Bind active medication cards directly to appState.prescriptions where patientId == currentUser.patientId.
+  2. When patient taps 'Request Refill':
+     - Create an active refill request in appState.prescriptions.
+     - Move prescription status to 'Refill Requested' in Pharmacist Dispense Queue.
+
+--------------------------------------------------------------------------------
+4.3. Health Records Screen
+File: client/lib/screens/health_records_screen.dart
+--------------------------------------------------------------------------------
+• STATIC / HARDCODED ELEMENTS:
+  - Lab values (HbA1c 7.2%, eGFR 68 mL/min, Blood Pressure 128/82, LDL 142 mg/dL) are static mock numbers.
+  - Immunization records and allergy chips are hardcoded.
+
+• DYNAMIC FIX REQUIRED:
+  1. Bind clinical telemetry to the patient's real medical history and active diagnosis (e.g., Diabetics display HbA1c/Glucose; Cardiac patients display Lipid Profile/eGFR).
+  2. Read allergies dynamically from appState.currentUser or patient context.
+
+================================================================================
+5. ROLE 4: INSURANCE AGENT SCREENS AUDIT
+================================================================================
+
+--------------------------------------------------------------------------------
+5.1. Prior-Auth & Step-Therapy Friction Center
+File: client/lib/screens/friction_screen.dart
+--------------------------------------------------------------------------------
+• STATIC / HARDCODED ELEMENTS:
+  - Resolving a bottleneck only updates the local FrictionStatus without unblocking the blocked prescription in the Pharmacist Dispense Queue.
+  - Est. Annual Savings uses simulated numbers.
+
+• DYNAMIC FIX REQUIRED:
+  1. When Insurance Agent clicks 'Approve Prior Auth':
+     - Update PAFrictionEvent.status = FrictionStatus.resolved.
+     - Find matching prescription in appState.prescriptions and unblock status to 'Active (PA Approved)'.
+     - Notify Doctor and Pharmacist in their respective notification feeds.
+  2. When Insurance Agent clicks 'Suggest Tier 1 Alternative':
+     - Trigger 7-Stage Alternative Discovery on backend and route recommendation to prescribing Doctor.
+
+--------------------------------------------------------------------------------
+5.2. Insurance Portal & Pharmacy Connections
+Files: client/lib/screens/insurance_portal_screen.dart, client/lib/screens/authorized_pharmacy_screen.dart, client/lib/screens/insurance_pharmacy_connections_screen.dart
+--------------------------------------------------------------------------------
+• STATIC / HARDCODED ELEMENTS:
+  - Plan Enrollees (e.g. 14,200 enrollees) and Deductible Accumulators are static text.
+  - Authorized Pharmacy list toggle switches do not save authorization state to database.
+
+• DYNAMIC FIX REQUIRED:
+  1. Dynamically calculate total enrollees per plan from appState.dataService.patients.
+  2. Persist pharmacy network in-network / out-of-network status changes so Doctor e-Rx pharmacy selector reflects authorized dispensaries.
+
+================================================================================
+6. ROLE 5: SYSTEM ADMINISTRATOR SCREENS AUDIT
+================================================================================
+
+--------------------------------------------------------------------------------
+6.1. System Dashboard Overview & Admin Reports
+Files: client/lib/screens/dashboard_overview_screen.dart, client/lib/screens/admin_reports_screen.dart
+--------------------------------------------------------------------------------
+• STATIC / HARDCODED ELEMENTS:
+  - System-wide KPIs (Total Claims $1.4M, CMS 5-Star Index 4.85, ML Accuracy 94.2%) are static strings.
+  - Audit Log events are static mock lists.
+
+• DYNAMIC FIX REQUIRED:
+  1. Compute live system totals across all collections (Total Users, Total e-Prescriptions, Dispensed Count, Total Formulary Drugs).
+  2. Stream live audit log entries whenever any role performs an action (Doctor Prescribes, Pharmacist Dispenses, Patient Takes Dose, Insurance Approves PA).
+
+--------------------------------------------------------------------------------
+6.2. Admin Data & User Directory
+File: client/lib/screens/admin_data_users_screen.dart
+--------------------------------------------------------------------------------
+• STATIC / HARDCODED ELEMENTS:
+  - Adding a new user locally does not persist to Supabase auth or update user role permissions.
+
+• DYNAMIC FIX REQUIRED:
+  1. Wire user creation/edit form to call appState.dataService.supabaseService.createUserProfile().
+  2. Allow Admin to dynamically switch active user roles for end-to-end multi-role testing.
+
+================================================================================
+7. CENTRAL SHARED DATA STORE & STATE MUTATION MATRIX
+================================================================================
+
+All cross-role interactions will be coordinated through client/lib/providers/app_state.dart
+and client/lib/services/data_service.dart using the following standard methods:
+
+┌────────────────────────────┬─────────────────────────────┬──────────────────────────────────────────┐
+│ ACTION TRIGGER             │ EXECUTED METHOD             │ AFFECTED ROLES & SCREENS                 │
+├────────────────────────────┼─────────────────────────────┼──────────────────────────────────────────┤
+│ Doctor Issues e-Rx         │ createDoctorPrescription()  │ • Pharmacist Dispense Queue (NEW RX)     │
+│                            │                             │ • Insurance Friction Center (IF PA REQ)  │
+│                            │                             │ • Patient Medicine Cabinet (SCHEDULED)   │
+│                            │                             │ • Doctor Dashboard (VOLUME INCREMENT)    │
+├────────────────────────────┼─────────────────────────────┼──────────────────────────────────────────┤
+│ Insurance Approves PA      │ updateFrictionStatus()      │ • Pharmacist Dispense Queue (UNBLOCKED)  │
+│                            │                             │ • Doctor Overview (FRICTION REDUCED)     │
+│                            │                             │ • Insurance Portal (RESOLVED)            │
+├────────────────────────────┼─────────────────────────────┼──────────────────────────────────────────┤
+│ Pharmacist Dispenses Rx    │ dispensePrescriptionItem()  │ • Patient Medicine Cabinet (ACTIVE DOSE) │
+│                            │                             │ • Pharmacist Analytics (REVENUE + REFILL)│
+│                            │                             │ • Admin Dashboard (CLAIM FULFILLED)      │
+├────────────────────────────┼─────────────────────────────┼──────────────────────────────────────────┤
+│ Patient Logs Dose ("Taken")│ togglePatientMedicineLog()  │ • Patient Interactive Screen (SCORE UP)  │
+│                            │                             │ • Pharmacist Adherence Core (PDC GAIN)   │
+│                            │                             │ • Doctor Overview (ADHERENCE COMPLIANT)  │
+├────────────────────────────┼─────────────────────────────┼──────────────────────────────────────────┤
+│ Pharmacist Enrolls 90D Sync│ updateOutreachStatus()      │ • Adherence Risk Core (SYNC ACTIVE)      │
+│                            │                             │ • Patient 'My Medicines' (90D AUTO-FILL) │
+└────────────────────────────┴─────────────────────────────┴──────────────────────────────────────────┘
+
+================================================================================
+8. STEP-BY-STEP IMPLEMENTATION CHECKLIST
+================================================================================
+
+[ ] Step 1: Update DataService & AppState with complete cross-role mutation handlers.
+[ ] Step 2: Refactor Doctor Overview & e-Prescription screens for 100% dynamic calculations.
+[ ] Step 3: Refactor Pharmacist Dispense & Analytics screens with real revenue/fill data.
+[ ] Step 4: Refactor Patient Interactive & 'My Medicines' screens with live dose logging.
+[ ] Step 5: Refactor Insurance Friction & Portal screens with live PA unblocking.
+[ ] Step 6: Refactor Admin Dashboard & Audit Logs with real-time event aggregation.
+[ ] Step 7: Build & verify Flutter Web release container.
+
+================================================================================
+END OF AUDIT FILE
+================================================================================

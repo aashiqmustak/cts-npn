@@ -345,14 +345,29 @@ class MultiAgentOrchestrator:
             discovered_alternatives = alt_output.candidates
 
             for alt in discovered_alternatives:
+                # Look up true tier, cost, and dosage form
+                f_record = self.formulary_repo.find_record(
+                    drug_id=alt.drug_id,
+                    plan_id=request.insurance_plan_id,
+                    pharmacy_id=request.pharmacy_id,
+                )
+                alt_tier = int(f_record.get("formulary_tier") or 1) if f_record else (4 if "evolocumab" in alt.drug_name.lower() or "subcutaneous" in alt.drug_name.lower() else 1)
+                alt_cost = float(f_record.get("patient_copay") or f_record.get("estimated_patient_cost") or (150.0 if alt_tier >= 4 else 10.0)) if f_record else (150.0 if alt_tier >= 4 else 10.0)
+                alt_form = "Subcutaneous Pen" if any(k in alt.drug_name.lower() for k in ["pen", "subcutaneous", "injection", "syringe"]) else "Oral Tablet"
+
+                # Tag same-class statin generics accurately
+                rel = alt.relationship
+                if any(s in alt.drug_name.lower() for s in ["statin", "atorvastatin", "rosuvastatin", "simvastatin", "pravastatin", "fluvastatin", "lovastatin"]):
+                    rel = "SAME_CLASS"
+
                 candidates_for_ranking.append(
                     CandidateDrug(
                         drug_id=alt.drug_id,
                         drug_name=alt.drug_name,
-                        dosage_form="Oral Tablet",
-                        formulary_tier=1,
-                        estimated_cost=10.0,
-                        relationship=alt.relationship,
+                        dosage_form=alt_form,
+                        formulary_tier=alt_tier,
+                        estimated_cost=alt_cost,
+                        relationship=rel,
                     )
                 )
 

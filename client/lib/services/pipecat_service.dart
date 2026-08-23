@@ -27,9 +27,13 @@ class PipecatTranscript {
 class PipecatService extends ChangeNotifier {
   PipecatState _state = PipecatState.disconnected;
   PipecatState get state => _state;
+  bool get isConnected => _state == PipecatState.connected;
 
   final List<PipecatTranscript> _transcripts = [];
   List<PipecatTranscript> get transcripts => _transcripts;
+
+  String _latestSpeechText = '';
+  String get latestSpeechText => _latestSpeechText;
 
   RTCPeerConnection? _peerConnection;
   MediaStream? _localStream;
@@ -43,7 +47,7 @@ class PipecatService extends ChangeNotifier {
   // Getter for dynamically determining API url based on page host
   String get apiBaseUrl {
     final host = Uri.base.host;
-    const port = 8000;
+    const port = 7860;
     // Default to localhost for non-web, or the page host for web
     final finalHost = host.isEmpty ? 'localhost' : host;
     return 'http://$finalHost:$port';
@@ -57,6 +61,7 @@ class PipecatService extends ChangeNotifier {
 
   void clearTranscripts() {
     _transcripts.clear();
+    _latestSpeechText = '';
     notifyListeners();
   }
 
@@ -120,27 +125,101 @@ class PipecatService extends ChangeNotifier {
         }
       };
 
-      // 3. Create a Data Channel
-      final RTCDataChannelInit init = RTCDataChannelInit()..ordered = true;
-      _dataChannel = await _peerConnection!.createDataChannel('pipecat', init);
+      // 3. Register Data Channel handlers (for both client and server created channels)
+      void setupChannelHandlers(RTCDataChannel channel) {
+        channel.onMessage = (RTCDataChannelMessage message) {
+          try {
+            final raw = message.text;
+            if (raw.isEmpty) return;
 
-      _dataChannel!.onMessage = (RTCDataChannelMessage message) {
-        try {
-          final data = json.decode(message.text);
-          if (data['type'] == 'transcript') {
+            Map<String, dynamic>? data;
+            try {
+              data = json.decode(raw) as Map<String, dynamic>?;
+            } catch (_) {
+              try {
+                final unescaped = raw.replaceAll(r'\"', '"').replaceAll(r'\\', '');
+                data = json.decode(unescaped) as Map<String, dynamic>?;
+              } catch (_) {
+                data = null;
+              }
+            }
+
+            // Drop unparseable raw JSON strings
+            if (data == null && (raw.trim().startsWith('{') || raw.trim().startsWith('"{') || raw.trim().startsWith(r'\"{\'))) {
+              return;
+            }
+
+            String text = '';
+            String sender = 'agent';
+
+            if (data != null) {
+              final type = data['type']?.toString() ?? '';
+              final innerData = data['data'] is Map<String, dynamic> ? data['data'] as Map<String, dynamic> : null;
+
+              if (type == 'user-transcription' || type == 'user_transcript' || type == 'user-llm-text' || (data['sender']?.toString() == 'user')) {
+                sender = 'user';
+                text = innerData != null ? (innerData['text']?.toString() ?? '') : (data['text']?.toString() ?? '');
+              } else if (type == 'bot-transcription' || type == 'bot-tts-text' || type == 'bot_transcript' || (data['sender']?.toString() == 'agent')) {
+                sender = 'agent';
+                text = innerData != null ? (innerData['text']?.toString() ?? '') : (data['text']?.toString() ?? '');
+              } else if (type == 'bot-llm-text') {
+                // Ignore streaming token fragments from LLM
+                return;
+              } else {
+                text = data['text']?.toString() ?? data['message']?.toString() ?? '';
+                sender = data['sender']?.toString() ?? (type == 'user' ? 'user' : 'agent');
+              }
+            } else {
+              text = raw;
+            }
+
+            final cleanText = text.trim();
+            if (cleanText.isEmpty) return;
+
+            if (sender == 'user') {
+              // Update latest transcribed text for the input box
+              _latestSpeechText = cleanText;
+              notifyListeners();
+              return;
+            }
+
+            // Ignore tiny single-word fragments for assistant bubbles
+            if (cleanText.split(' ').length < 2 && cleanText.length < 15) {
+              return;
+            }
+
+            // Deduplicate identical consecutive messages
+            if (_transcripts.isNotEmpty &&
+                _transcripts.first.sender == sender &&
+                _transcripts.first.text == cleanText) {
+              return;
+            }
+
             final now = DateTime.now();
             final timeStr = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
             _transcripts.insert(0, PipecatTranscript(
-              sender: data['sender'] ?? 'agent',
-              text: data['text'] ?? '',
+              sender: sender,
+              text: cleanText,
               time: timeStr,
             ));
             notifyListeners();
+          } catch (e) {
+            debugPrint('[Pipecat] Error parsing data channel message: $e');
           }
-        } catch (e) {
-          debugPrint('Error parsing data channel message: $e');
-        }
+        };
+      }
+
+      // Handle server-created data channels
+      _peerConnection!.onDataChannel = (RTCDataChannel channel) {
+        debugPrint('[Pipecat] Incoming server DataChannel: ${channel.label}');
+        _dataChannel = channel;
+        setupChannelHandlers(channel);
       };
+
+      // Create client data channel
+      final RTCDataChannelInit init = RTCDataChannelInit()..ordered = true;
+      _dataChannel = await _peerConnection!.createDataChannel('pipecat', init);
+      setupChannelHandlers(_dataChannel!);
 
       // 4. Start session and negotiate offer
       final baseUrl = apiBaseUrl;
