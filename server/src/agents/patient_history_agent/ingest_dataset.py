@@ -15,9 +15,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from agents.patient_history_agent.app.pinecone_client import (
-    PineconePatientHistoryClient,
-)
 from agents.patient_history_agent.app.repository import PatientHistoryRepository
 
 logging.basicConfig(

@@ -1,7 +1,7 @@
-from datetime import UTC, datetime, timedelta
-from itertools import pairwise
 import logging
 import os
+from datetime import UTC, datetime, timedelta
+from itertools import pairwise
 from typing import Any
 
 from .repository import PatientHistoryRepository
@@ -34,7 +34,7 @@ class PatientHistoryService:
                 from groq import Groq
 
                 self._groq_client = Groq(api_key=groq_key)
-            except Exception as exc:
+            except (ImportError, RuntimeError, ValueError) as exc:
                 logger.warning("Could not initialize Groq client for RAG synthesis: %s", exc)
 
     def get_patient_history(
@@ -327,9 +327,10 @@ class PatientHistoryService:
                         content = resp.choices[0].message.content
                         if content:
                             return content.strip()
-                    except Exception:
+                    except (RuntimeError, ValueError, TimeoutError, OSError) as model_exc:
+                        logger.debug("Model %s generation retry: %s", try_model, model_exc)
                         continue
-            except Exception as exc:
+            except (RuntimeError, ValueError, TimeoutError, OSError) as exc:
                 logger.warning("LLM RAG summary generation fallback: %s", exc)
 
         # High quality clinical fallback synthesis
@@ -338,7 +339,7 @@ class PatientHistoryService:
         abandoned = sum(1 for m in matches if str(m.get("status")).upper() == "ABANDONED")
 
         adherence_str = (
-            "Optimal (≥80%)" if adherence.previous_pdc_180 >= 0.80 else "Sub-optimal (<80%)"
+            "Optimal (>=80%)" if adherence.previous_pdc_180 >= 0.80 else "Sub-optimal (<80%)"
         )
         return (
             f"Patient {patient_id} has {len(matches)} retrieved history records spanning conditions ({', '.join(conditions)}) "

@@ -85,7 +85,7 @@ class PatientHistoryRepository:
             try:
                 vec_id = self.pinecone.upsert_single_record(formatted_record)
                 logger.info("Synced new patient record to Pinecone (vector_id: %s)", vec_id)
-            except Exception as exc:
+            except (TimeoutError, OSError, RuntimeError, ValueError) as exc:
                 logger.error("Failed to sync record to Pinecone: %s", exc)
 
         return vec_id

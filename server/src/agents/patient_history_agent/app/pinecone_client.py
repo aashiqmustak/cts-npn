@@ -1,7 +1,9 @@
 import hashlib
 import logging
 import os
+import time
 from typing import Any
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -43,7 +45,7 @@ class PineconePatientHistoryClient:
             self._index = self._pc.Index(self.index_name)
             self._available = True
             logger.info("Connected to Pinecone index '%s' (namespace: '%s')", self.index_name, self.namespace)
-        except Exception as exc:
+        except (ImportError, RuntimeError, ValueError, OSError) as exc:
             logger.error("Failed to connect to Pinecone: %s", exc)
             self._available = False
 
@@ -86,9 +88,7 @@ class PineconePatientHistoryClient:
         if not self.is_available or not self._pc:
             raise RuntimeError("Pinecone client is not initialized or offline.")
 
-        import time
-
-        last_exc = None
+        last_exc: BaseException | None = None
         for attempt in range(max_retries):
             try:
                 embeddings_response = self._pc.inference.embed(
@@ -97,13 +97,15 @@ class PineconePatientHistoryClient:
                     parameters={"input_type": input_type, "truncate": "END"},
                 )
                 return [record.values for record in embeddings_response]
-            except Exception as exc:
+            except (TimeoutError, OSError, RuntimeError, ValueError) as exc:
                 last_exc = exc
                 logger.warning("Embedding attempt %d/%d failed: %s. Retrying in %ds...", attempt + 1, max_retries, exc, attempt + 1)
                 time.sleep(attempt + 1)
 
         logger.error("Error generating embeddings with Pinecone inference (%s): %s", self.embedding_model, last_exc)
-        raise last_exc or RuntimeError("Failed to generate embeddings.")
+        if last_exc:
+            raise last_exc
+        raise RuntimeError("Failed to generate embeddings.")
 
     def upsert_records(
         self,
@@ -125,7 +127,7 @@ class PineconePatientHistoryClient:
 
             try:
                 embeddings = self.embed_texts(texts, input_type="passage")
-            except Exception as exc:
+            except (TimeoutError, OSError, RuntimeError, ValueError) as exc:
                 logger.error("Failed to generate embeddings for batch %d: %s", i, exc)
                 continue
 
@@ -149,7 +151,7 @@ class PineconePatientHistoryClient:
                 self._index.upsert(vectors=vectors, namespace=ns)
                 total_upserted += len(vectors)
                 logger.info("Upserted %d records to Pinecone namespace '%s'", len(vectors), ns)
-            except Exception as exc:
+            except (TimeoutError, OSError, RuntimeError, ValueError) as exc:
                 logger.error("Failed to upsert vectors to Pinecone: %s", exc)
 
         return total_upserted
@@ -247,7 +249,7 @@ class PineconePatientHistoryClient:
                     }
                 )
             return results
-        except Exception as exc:
+        except (TimeoutError, OSError, RuntimeError, ValueError) as exc:
             logger.error("Error executing Pinecone query for patient '%s': %s", patient_id, exc)
             return []
 
@@ -266,5 +268,5 @@ class PineconePatientHistoryClient:
                 "namespaces": stats.namespaces,
                 "metric": stats.metric,
             }
-        except Exception as exc:
+        except (TimeoutError, OSError, RuntimeError, ValueError) as exc:
             return {"status": "error", "error": str(exc)}
