@@ -435,8 +435,8 @@ async def run_bot(
             }
         ]
 
-        context = LLMContext(messages, tools=agent_tools) 
-        #ignore[pyref]
+        context = LLMContext(messages, tools=agent_tools)
+        # ignore[pyref]
 
         # Smart turn detection with graceful fallback
         turn_analyzer = None
