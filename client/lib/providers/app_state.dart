@@ -467,6 +467,16 @@ class AppState extends ChangeNotifier {
     );
   }
 
+  Future<bool> verifyDoctorLicense({
+    required String email,
+    required String licenseNumber,
+  }) async {
+    return await dataService.supabaseService.verifyDoctorLicense(
+      email: email,
+      licenseNumber: licenseNumber,
+    );
+  }
+
   Future<bool> verifyOtpAndLogin({
     required String email,
     required String otp,

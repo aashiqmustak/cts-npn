@@ -231,6 +231,44 @@ class SupabaseService {
     return false;
   }
 
+  /// Verify doctor license and email against public.doctor_licence
+  Future<bool> verifyDoctorLicense({
+    required String email,
+    required String licenseNumber,
+  }) async {
+    if (email.isEmpty || licenseNumber.isEmpty) return false;
+    final normalizedEmail = email.trim().toLowerCase();
+    final normalizedLicense = licenseNumber.trim().toLowerCase();
+
+    if (isInitialized) {
+      try {
+        final res = await client
+            .from('doctor_licence')
+            .select('id, licence_number, email')
+            .ilike('email', normalizedEmail)
+            .ilike('licence_number', normalizedLicense)
+            .limit(1);
+
+        if (res.isNotEmpty) {
+          if (kDebugMode) {
+            print('Doctor license matched in doctor_licence table for $normalizedEmail ($normalizedLicense)');
+          }
+          return true;
+        } else {
+          if (kDebugMode) {
+            print('No matching doctor_licence found for $normalizedEmail and $normalizedLicense');
+          }
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Supabase doctor_licence query error: $e');
+        }
+      }
+    }
+
+    return false;
+  }
+
   void _sendSmtpEmail({required String email, required String otpCode}) async {
     try {
       await SmtpEmailService.sendOtpEmail(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
@@ -78,12 +77,23 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+    final user = appState.currentUser;
+    final isDoctor = user.role == UserRole.doctor;
+
+    final basePrescriptions = isDoctor
+        ? appState.prescriptions.where((rx) {
+            if (user.doctorId != null && user.doctorId!.isNotEmpty && rx.doctorId == user.doctorId) return true;
+            if (rx.doctorId == user.id) return true;
+            if (user.name.isNotEmpty && rx.prescriberName.toLowerCase().contains(user.name.toLowerCase())) return true;
+            return false;
+          }).toList()
+        : appState.prescriptions;
 
     // Calculate dynamic tab counts
-    final activeCount = appState.prescriptions.where((rx) => rx.status.toLowerCase() == 'active' || rx.status.toLowerCase() == 'prescribed').length;
-    final completedCount = appState.prescriptions.where((rx) => rx.status.toLowerCase() == 'completed').length;
-    final expiredCount = appState.prescriptions.where((rx) => rx.status.toLowerCase() == 'expired').length;
-    final draftsCount = appState.prescriptions.where((rx) => rx.status.toLowerCase() == 'draft').length;
+    final activeCount = basePrescriptions.where((rx) => rx.status.toLowerCase() == 'active' || rx.status.toLowerCase() == 'prescribed').length;
+    final completedCount = basePrescriptions.where((rx) => rx.status.toLowerCase() == 'completed').length;
+    final expiredCount = basePrescriptions.where((rx) => rx.status.toLowerCase() == 'expired').length;
+    final draftsCount = basePrescriptions.where((rx) => rx.status.toLowerCase() == 'draft').length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
@@ -215,7 +225,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
               final isDesktop = constraints.maxWidth >= 900;
 
               final query = _searchQuery.trim().toLowerCase();
-              final filteredRxList = appState.prescriptions.reversed.where((rx) {
+              final filteredRxList = basePrescriptions.reversed.where((rx) {
                 // Tab filter first
                 bool matchesTab = true;
                 if (_activeFilterTab == 1) {

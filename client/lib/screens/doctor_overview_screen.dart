@@ -2,6 +2,7 @@ import '../theme/app_theme.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../widgets/bento_card.dart';
 
@@ -27,15 +28,32 @@ class _DoctorOverviewDashboardScreenState
         : (appState.hospitals.isNotEmpty ? appState.hospitals.first.name : 'Clinical Health Hub');
     final specialty = user.title.isNotEmpty ? user.title : 'Physician & General Practice';
 
-    final totalPrescriptions = appState.prescriptions.length;
-    final totalPatients = appState.patientRecords.length;
-    final totalHospitals = appState.hospitals.length;
-    final paFrictionCount = appState.dataService.paFrictionEvents.length;
+    // Dynamic scoping for logged-in doctor
+    final myPrescriptions = appState.prescriptions.where((p) {
+      if (user.doctorId != null && user.doctorId!.isNotEmpty && p.doctorId == user.doctorId) return true;
+      if (p.doctorId == user.id) return true;
+      if (user.name.isNotEmpty && p.prescriberName.toLowerCase().contains(user.name.toLowerCase())) return true;
+      return false;
+    }).toList();
 
-    // Calculate live average PDC adherence from active prescriptions
+    final myRxIds = myPrescriptions.map((p) => p.id).toSet();
+    final myPatientIds = myPrescriptions.map((p) => p.patientId.toLowerCase()).toSet();
+    final myPatients = appState.patientRecords.where((p) {
+      return (user.assignedPatientIds.contains(p.id)) || myPatientIds.contains(p.id.toLowerCase());
+    }).toList();
+
+    final totalPrescriptions = myPrescriptions.length;
+    final totalPatients = myPatients.length;
+    final totalHospitals = (user.hospitalName != null && user.hospitalName!.isNotEmpty) ? 1 : 0;
+    
+    final paFrictionCount = appState.dataService.paFrictionEvents.where((f) {
+      return myRxIds.contains(f.prescriptionId) || myPatientIds.contains(f.patientId.toLowerCase());
+    }).length;
+
+    // Calculate live average PDC adherence from active prescriptions for this doctor
     double avgPdc = 0.0;
-    if (appState.prescriptions.isNotEmpty) {
-      final validPdc = appState.prescriptions.map((p) => p.pdcScore).where((s) => s > 0).toList();
+    if (myPrescriptions.isNotEmpty) {
+      final validPdc = myPrescriptions.map((p) => p.pdcScore).where((s) => s > 0).toList();
       if (validPdc.isNotEmpty) {
         avgPdc = (validPdc.reduce((a, b) => a + b) / validPdc.length) * 100;
       }
@@ -76,17 +94,17 @@ class _DoctorOverviewDashboardScreenState
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(flex: 7, child: _buildPatientVolumeLineChart(appState)),
+                    Expanded(flex: 7, child: _buildPatientVolumeLineChart(appState, myPrescriptions, myPatients)),
                     const SizedBox(width: 18),
-                    Expanded(flex: 5, child: _buildDrugClassDistributionChart(appState)),
+                    Expanded(flex: 5, child: _buildDrugClassDistributionChart(appState, myPrescriptions)),
                   ],
                 );
               }
               return Column(
                 children: [
-                  _buildPatientVolumeLineChart(appState),
+                  _buildPatientVolumeLineChart(appState, myPrescriptions, myPatients),
                   const SizedBox(height: 18),
-                  _buildDrugClassDistributionChart(appState),
+                  _buildDrugClassDistributionChart(appState, myPrescriptions),
                 ],
               );
             },
@@ -95,7 +113,7 @@ class _DoctorOverviewDashboardScreenState
           const SizedBox(height: 20),
 
           // 4. Clinical Appointments & Live e-Rx Transmission Queue
-          _buildTodaysPatientQueue(appState),
+          _buildTodaysPatientQueue(appState, myPatients),
 
           const SizedBox(height: 24),
         ],
@@ -398,10 +416,7 @@ class _DoctorOverviewDashboardScreenState
   }
 
   // --- Chart 1: Patient Volume & e-Rx Line Chart ---
-  Widget _buildPatientVolumeLineChart(AppState appState) {
-    final prescriptions = appState.prescriptions;
-    final patients = appState.patientRecords;
-
+  Widget _buildPatientVolumeLineChart(AppState appState, List<Prescription> prescriptions, List<PatientRecord> patients) {
     // Calculate dynamic 7-day spots based on actual live items or baseline
     final double rxCount = prescriptions.length.toDouble();
     final double ptCount = patients.length.toDouble();
@@ -611,21 +626,13 @@ class _DoctorOverviewDashboardScreenState
   }
 
   // --- Chart 2: Drug Class Distribution ---
-  Widget _buildDrugClassDistributionChart(AppState appState) {
-    final prescriptions = appState.prescriptions;
-    final drugs = appState.dataService.drugs;
-
-    // Aggregate real dynamic class distribution
+  // --- Chart 2: Drug Class Distribution ---
+  Widget _buildDrugClassDistributionChart(AppState appState, List<Prescription> prescriptions) {
+    // Aggregate real dynamic class distribution for this doctor's prescriptions
     final Map<String, int> classCounts = {};
     for (final rx in prescriptions) {
       final cls = rx.drugClass.isNotEmpty ? rx.drugClass : 'General';
       classCounts[cls] = (classCounts[cls] ?? 0) + 1;
-    }
-    if (classCounts.isEmpty) {
-      for (final d in drugs) {
-        final cls = d.drugClass.isNotEmpty ? d.drugClass : 'General';
-        classCounts[cls] = (classCounts[cls] ?? 0) + 1;
-      }
     }
 
     final totalCount = classCounts.values.fold<int>(0, (sum, val) => sum + val);
@@ -747,9 +754,7 @@ class _DoctorOverviewDashboardScreenState
   }
 
   // --- Today's Patient Queue Widget ---
-  Widget _buildTodaysPatientQueue(AppState appState) {
-    final patients = appState.patientRecords;
-
+  Widget _buildTodaysPatientQueue(AppState appState, List<PatientRecord> patients) {
     return BentoCard(
       title: "Today's Patient Consultations Queue",
       subtitle: 'Registered clinical appointments & diagnosis logs',
