@@ -850,6 +850,11 @@ class DataService {
     }
   }
 
+  // Action: Delete Hospital
+  void deleteHospital(String id) {
+    _hospitals.removeWhere((h) => h.id == id);
+  }
+
   // Action: Add Doctor
   void addDoctor(Doctor doctor) {
     _doctors.add(doctor);
