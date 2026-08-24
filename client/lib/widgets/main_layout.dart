@@ -157,7 +157,7 @@ class _MainLayoutState extends State<MainLayout> {
                         Row(
                           children: [
                             Text(
-                              'Alternea',
+                              'Alternae',
                               style: AppFonts.googleSans(
                                 color: AppColors.textDark,
                                 fontSize: 18,
@@ -165,9 +165,9 @@ class _MainLayoutState extends State<MainLayout> {
                                 letterSpacing: -0.4,
                               ),
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 2),
                             Text(
-                              'Health',
+                              '.ai',
                               style: AppFonts.googleSans(
                                 color: AppColors.primaryTeal,
                                 fontSize: 18,
