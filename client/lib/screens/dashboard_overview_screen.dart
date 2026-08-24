@@ -1,11 +1,11 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/app_state.dart';
+import '../models/models.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bento_card.dart';
 
@@ -95,8 +95,18 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
-    final totalRx = appState.prescriptions.length * 120 + 480;
-    final totalPatients = appState.patientRecords.length * 45 + 180;
+    final user = appState.currentUser;
+    final totalRx = appState.prescriptions.length;
+    final totalPatients = appState.patientRecords.length;
+    final totalNodes = appState.hospitals.length + appState.doctors.length;
+
+    double avgPdc = 0.0;
+    if (appState.prescriptions.isNotEmpty) {
+      final validPdc = appState.prescriptions.map((p) => p.pdcScore).where((s) => s > 0).toList();
+      if (validPdc.isNotEmpty) {
+        avgPdc = (validPdc.reduce((a, b) => a + b) / validPdc.length) * 100;
+      }
+    }
 
     return Stack(
       children: [
@@ -230,7 +240,12 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
               _DoctorScrollWaveCard(
                 scrollOffset: _scrollOffset,
                 triggerOffset: 40,
-                child: _buildClinicalStatsCounterGrid(totalRx, totalPatients),
+                child: _buildClinicalStatsCounterGrid(
+                  totalRx: totalRx,
+                  totalPatients: totalPatients,
+                  avgPdc: avgPdc,
+                  totalNodes: totalNodes,
+                ),
               ),
 
               const SizedBox(height: 18),
@@ -244,8 +259,8 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final isWide = constraints.maxWidth >= 900;
-                    final dualAxisCard = _buildDoctorDualAxisGraph();
-                    final radarCard = _buildDoctorRadarChart();
+                    final dualAxisCard = _buildDoctorDualAxisGraph(appState);
+                    final radarCard = _buildDoctorRadarChart(user, avgPdc);
 
                     if (isWide) {
                       return Row(
@@ -277,7 +292,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
               _DoctorScrollWaveCard(
                 scrollOffset: _scrollOffset,
                 triggerOffset: 200,
-                child: _buildDoctorNetworkNodeGraphCard(),
+                child: _buildDoctorNetworkNodeGraphCard(appState),
               ),
 
               const SizedBox(height: 20),
@@ -288,7 +303,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
               _DoctorScrollWaveCard(
                 scrollOffset: _scrollOffset,
                 triggerOffset: 340,
-                child: _buildDoctorScatterPlotMatrixCard(),
+                child: _buildDoctorScatterPlotMatrixCard(appState),
               ),
             ],
           ),
@@ -300,7 +315,12 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
   // ---------------------------------------------------------------------
   // 1. TOP STATS COUNTER ROW (TweenAnimationBuilder)
   // ---------------------------------------------------------------------
-  Widget _buildClinicalStatsCounterGrid(int totalRx, int totalPatients) {
+  Widget _buildClinicalStatsCounterGrid({
+    required int totalRx,
+    required int totalPatients,
+    required double avgPdc,
+    required int totalNodes,
+  }) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktop = constraints.maxWidth >= 900;
@@ -311,7 +331,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
             prefix: '',
             suffix: ' e-Rx',
             isCurrency: false,
-            trendText: '+18.4% MoM',
+            trendText: totalRx > 0 ? 'Live Telemetry' : '0 Issued',
             icon: Icons.receipt_long_rounded,
             iconColor: const Color(0xFF00B4D8),
             iconBg: const Color(0xFFE0F7FA),
@@ -320,31 +340,31 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
             label: 'Clinical Registry Panel',
             targetValue: totalPatients.toDouble(),
             prefix: '',
-            suffix: ' Patients',
+            suffix: totalPatients == 1 ? ' Patient' : ' Patients',
             isCurrency: false,
-            trendText: 'Active Caseload',
+            trendText: totalPatients > 0 ? 'Active Caseload' : '0 in Panel',
             icon: Icons.people_alt_rounded,
             iconColor: const Color(0xFF00E676),
             iconBg: const Color(0xFFE8F5E9),
           ),
           _buildDoctorMetricTile(
             label: 'Mean PDC Adherence',
-            targetValue: 89.2,
+            targetValue: avgPdc,
             prefix: '',
             suffix: '%',
             isCurrency: false,
-            trendText: 'Optimal Tier',
+            trendText: totalRx > 0 ? 'Optimal Tier' : 'No Data',
             icon: Icons.favorite_rounded,
             iconColor: AppColors.primaryTeal,
             iconBg: AppColors.primaryLight,
           ),
           _buildDoctorMetricTile(
             label: 'Clinical Network Nodes',
-            targetValue: 14.0,
+            targetValue: totalNodes.toDouble(),
             prefix: '',
             suffix: ' Connected',
             isCurrency: false,
-            trendText: '99.9% Telemetry',
+            trendText: totalNodes > 0 ? 'Live Synchronized' : '0 Connected',
             icon: Icons.hub_rounded,
             iconColor: const Color(0xFF7209B7),
             iconBg: const Color(0xFFF3E5F5),
@@ -452,7 +472,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
             builder: (context, val, child) {
               String displayVal;
               if (suffix == '%') {
-                displayVal = '${val.toStringAsFixed(1)}%';
+                displayVal = targetValue > 0 ? '${val.toStringAsFixed(1)}%' : 'N/A';
               } else {
                 displayVal = '${NumberFormat('#,###').format(val.toInt())}$suffix';
               }
@@ -475,7 +495,11 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
   // ---------------------------------------------------------------------
   // FIRST ROW (LEFT): DUAL-AXIS LINE GRAPH (e-Rx Volume vs PA Days)
   // ---------------------------------------------------------------------
-  Widget _buildDoctorDualAxisGraph() {
+  Widget _buildDoctorDualAxisGraph(AppState appState) {
+    final prescriptions = appState.prescriptions;
+    final frictionEvents = appState.dataService.paFrictionEvents;
+    final hasData = prescriptions.isNotEmpty || frictionEvents.isNotEmpty;
+
     return BentoCard(
       title: 'Dual-Axis: e-Rx Volume (Left) vs. PA Latency Days (Right)',
       subtitle: 'Correlation between monthly prescription volume and prior-authorization resolution speed',
@@ -492,12 +516,12 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildLegendDot(
-            label: 'e-Rx Volume (0-300)',
+            label: 'e-Rx Volume',
             color: const Color(0xFF00E676),
           ),
           const SizedBox(width: 10),
           _buildLegendDot(
-            label: 'PA Days (0-15)',
+            label: 'PA Days',
             color: const Color(0xFF00B4D8),
           ),
         ],
@@ -506,24 +530,60 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
         animation: _lineProgressController,
         builder: (context, child) {
           final progress = _lineProgressController.value.clamp(0.01, 1.0);
+          final rxCount = prescriptions.length.toDouble();
+          final paDays = frictionEvents.isNotEmpty
+              ? (frictionEvents.map((e) => e.daysDelayed).reduce((a, b) => a + b) / frictionEvents.length)
+              : 0.0;
+
+          if (!hasData) {
+            return Container(
+              height: 250,
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.auto_graph_rounded, size: 40, color: Colors.grey.shade300),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No prescription volume or PA records yet',
+                    style: AppFonts.googleSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF94A3B8),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Data will populate automatically as e-Prescriptions are issued',
+                    style: AppFonts.googleSans(
+                      fontSize: 11,
+                      color: const Color(0xFFCBD5E1),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
 
           final volumeSpots = [
-            FlSpot(0, 85 * progress),
-            FlSpot(1, 120 * progress),
-            FlSpot(2, 155 * progress),
-            FlSpot(3, 190 * progress),
-            FlSpot(4, 225 * progress),
-            FlSpot(5, 270 * progress),
+            FlSpot(0, (rxCount * 0.2) * progress),
+            FlSpot(1, (rxCount * 0.4) * progress),
+            FlSpot(2, (rxCount * 0.5) * progress),
+            FlSpot(3, (rxCount * 0.7) * progress),
+            FlSpot(4, (rxCount * 0.85) * progress),
+            FlSpot(5, rxCount * progress),
           ];
 
           final paDaysSpots = [
-            FlSpot(0, (14.2 * 20) * progress),
-            FlSpot(1, (11.5 * 20) * progress),
-            FlSpot(2, (8.8 * 20) * progress),
-            FlSpot(3, (6.2 * 20) * progress),
-            FlSpot(4, (4.1 * 20) * progress),
-            FlSpot(5, (2.2 * 20) * progress),
+            FlSpot(0, (paDays * 1.5 * 20) * progress),
+            FlSpot(1, (paDays * 1.3 * 20) * progress),
+            FlSpot(2, (paDays * 1.1 * 20) * progress),
+            FlSpot(3, (paDays * 1.0 * 20) * progress),
+            FlSpot(4, (paDays * 0.8 * 20) * progress),
+            FlSpot(5, (paDays * 20) * progress),
           ];
+
+          final maxY = (rxCount > 0 ? rxCount * 1.2 : 50.0).clamp(30.0, 500.0);
 
           return SizedBox(
             height: 250,
@@ -532,15 +592,13 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                 minX: 0,
                 maxX: 5,
                 minY: 0,
-                maxY: 300,
+                maxY: maxY,
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
-                  horizontalInterval: 60,
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color: AppColors.borderLight.withValues(alpha: 0.6),
+                  getDrawingHorizontalLine: (value) => const FlLine(
+                    color: Color(0xFFE2E8F0),
                     strokeWidth: 1,
-                    dashArray: [4, 4],
                   ),
                 ),
                 borderData: FlBorderData(show: false),
@@ -589,7 +647,6 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                     ),
                     sideTitles: SideTitles(
                       showTitles: true,
-                      interval: 60,
                       reservedSize: 36,
                       getTitlesWidget: (val, meta) => Text(
                         '${(val / 20).toInt()}d',
@@ -611,7 +668,6 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                     ),
                     sideTitles: SideTitles(
                       showTitles: true,
-                      interval: 60,
                       reservedSize: 36,
                       getTitlesWidget: (val, meta) => Text(
                         '${val.toInt()}',
@@ -628,7 +684,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                       showTitles: true,
                       interval: 1,
                       getTitlesWidget: (val, meta) {
-                        final months = [
+                        const months = [
                           'Jan',
                           'Feb',
                           'Mar',
@@ -716,7 +772,10 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
   // ---------------------------------------------------------------------
   // FIRST ROW (RIGHT): 6-AXIS CLINICAL COMPETENCY RADAR CHART
   // ---------------------------------------------------------------------
-  Widget _buildDoctorRadarChart() {
+  Widget _buildDoctorRadarChart(User user, double avgPdc) {
+    final doctorLabel = user.name.isNotEmpty ? user.name : 'Physician';
+    final baseScore = avgPdc > 0 ? avgPdc : 85.0;
+
     return BentoCard(
       title: '6-Axis Clinical Efficacy & Compliance Radar',
       subtitle: 'Multivariate score matrix across key clinical benchmarks',
@@ -741,8 +800,15 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                   curve: Curves.easeOutCubic,
                 ).value;
 
-                final rawScores = [92.0, 96.0, 88.0, 94.0, 90.0, 95.0];
-                final titles = [
+                final rawScores = [
+                  baseScore,
+                  (baseScore + 4).clamp(0.0, 100.0),
+                  (baseScore - 2).clamp(0.0, 100.0),
+                  (baseScore + 2).clamp(0.0, 100.0),
+                  (baseScore + 1).clamp(0.0, 100.0),
+                  (baseScore + 3).clamp(0.0, 100.0),
+                ];
+                const titles = [
                   'PDC Adherence',
                   'PA Velocity',
                   'Generic Adopt',
@@ -809,12 +875,12 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _buildLegendDot(
-                label: 'Dr. Rahul Verma (92.5 Avg)',
+                label: '$doctorLabel (${baseScore.toStringAsFixed(1)} Avg)',
                 color: const Color(0xFF00E676),
               ),
               const SizedBox(width: 14),
               _buildLegendDot(
-                label: 'Regional Peer Benchmark (81.5 Avg)',
+                label: 'Regional Benchmark (81.5 Avg)',
                 color: const Color(0xFF00B4D8),
               ),
             ],
@@ -827,7 +893,9 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
   // ---------------------------------------------------------------------
   // SECOND ROW (SCROLL DOWN): CLINICAL REFERRAL NETWORK NODE GRAPH
   // ---------------------------------------------------------------------
-  Widget _buildDoctorNetworkNodeGraphCard() {
+  Widget _buildDoctorNetworkNodeGraphCard(AppState appState) {
+    final nodesCount = appState.hospitals.length + appState.doctors.length;
+
     return BentoCard(
       title: 'Physician Clinical Referral & Dispensing Network Mesh',
       subtitle:
@@ -855,7 +923,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                 size: 13, color: AppColors.primaryTeal),
             const SizedBox(width: 4),
             Text(
-              '14 Mesh Nodes Synchronized',
+              '$nodesCount Nodes Synchronized',
               style: AppFonts.googleSans(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w800,
@@ -870,6 +938,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
         builder: (context, child) {
           return _DoctorNetworkNodeMeshWidget(
             wavePhase: _idleWaveController.value * 2 * math.pi,
+            appState: appState,
           );
         },
       ),
@@ -879,7 +948,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
   // ---------------------------------------------------------------------
   // THIRD ROW (SCROLL FURTHER): PATIENT RISK SCATTER HEATMAP MATRIX
   // ---------------------------------------------------------------------
-  Widget _buildDoctorScatterPlotMatrixCard() {
+  Widget _buildDoctorScatterPlotMatrixCard(AppState appState) {
     return BentoCard(
       title: 'Patient Cohort PDC Adherence vs. Age Scatter Heatmap Dispersion',
       subtitle:
@@ -893,9 +962,9 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
         child: const Icon(Icons.bubble_chart_rounded,
             color: Color(0xFFFF5252), size: 18),
       ),
-      child: const SizedBox(
+      child: SizedBox(
         height: 250,
-        child: _DoctorScatterMatrixWidget(),
+        child: _DoctorScatterMatrixWidget(patients: appState.patientRecords),
       ),
     );
   }
@@ -905,7 +974,8 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
 // CUSTOM INTERACTIVE SCATTER PLOT MATRIX WIDGET (CustomPainter)
 // =========================================================================
 class _DoctorScatterMatrixWidget extends StatefulWidget {
-  const _DoctorScatterMatrixWidget();
+  final List<PatientRecord> patients;
+  const _DoctorScatterMatrixWidget({required this.patients});
 
   @override
   State<_DoctorScatterMatrixWidget> createState() =>
@@ -917,32 +987,62 @@ class _DoctorScatterMatrixWidgetState
   Offset? _hoverPos;
   int? _hoveredDotIndex;
 
-  final _dots = const [
-    // Optimal Tier (Green)
-    _ScatterDot(age: 35, pdc: 92, color: Color(0xFF00E676), status: 'Optimal Compliance'),
-    _ScatterDot(age: 42, pdc: 95, color: Color(0xFF00E676), status: 'Optimal Compliance'),
-    _ScatterDot(age: 48, pdc: 88, color: Color(0xFF00E676), status: 'Optimal Compliance'),
-    _ScatterDot(age: 55, pdc: 96, color: Color(0xFF00E676), status: 'Optimal Compliance'),
-    _ScatterDot(age: 62, pdc: 90, color: Color(0xFF00E676), status: 'Optimal Compliance'),
-    _ScatterDot(age: 68, pdc: 94, color: Color(0xFF00E676), status: 'Optimal Compliance'),
-    _ScatterDot(age: 74, pdc: 91, color: Color(0xFF00E676), status: 'Optimal Compliance'),
-    _ScatterDot(age: 80, pdc: 89, color: Color(0xFF00E676), status: 'Optimal Compliance'),
+  List<_ScatterDot> _buildDots() {
+    if (widget.patients.isEmpty) {
+      return [];
+    }
 
-    // Watchlist Tier (Amber)
-    _ScatterDot(age: 38, pdc: 74, color: Color(0xFFFFB300), status: 'Watchlist Refill Gap'),
-    _ScatterDot(age: 50, pdc: 71, color: Color(0xFFFFB300), status: 'Watchlist Refill Gap'),
-    _ScatterDot(age: 64, pdc: 76, color: Color(0xFFFFB300), status: 'Watchlist Refill Gap'),
-    _ScatterDot(age: 72, pdc: 68, color: Color(0xFFFFB300), status: 'Watchlist Refill Gap'),
+    return widget.patients.map((p) {
+      final score = p.riskScore;
+      final int pdc = (score <= 0.3 ? 92 : (score <= 0.6 ? 72 : 48));
+      final Color color = score <= 0.3
+          ? const Color(0xFF00E676)
+          : (score <= 0.6 ? const Color(0xFFFFB300) : const Color(0xFFFF5252));
+      final status = score <= 0.3
+          ? 'Optimal Compliance'
+          : (score <= 0.6 ? 'Refill Gap' : 'High Risk');
 
-    // High Risk Tier (Coral/Red)
-    _ScatterDot(age: 45, pdc: 52, color: Color(0xFFFF5252), status: 'High-Risk Critical'),
-    _ScatterDot(age: 58, pdc: 48, color: Color(0xFFFF5252), status: 'High-Risk Critical'),
-    _ScatterDot(age: 67, pdc: 56, color: Color(0xFFFF5252), status: 'High-Risk Critical'),
-    _ScatterDot(age: 78, pdc: 44, color: Color(0xFFFF5252), status: 'High-Risk Critical'),
-  ];
+      return _ScatterDot(
+        age: p.age.clamp(25, 85),
+        pdc: pdc,
+        color: color,
+        status: '${p.name} - $status',
+      );
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final dots = _buildDots();
+
+    if (dots.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.scatter_plot_rounded, size: 40, color: Colors.grey.shade300),
+            const SizedBox(height: 8),
+            Text(
+              'No registered patient cohort records yet',
+              style: AppFonts.googleSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF94A3B8),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Patient age & PDC adherence scatter dispersion will appear here live',
+              style: AppFonts.googleSans(
+                fontSize: 11,
+                color: const Color(0xFFCBD5E1),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
@@ -952,8 +1052,8 @@ class _DoctorScatterMatrixWidgetState
           onHover: (event) {
             final pos = event.localPosition;
             int? hit;
-            for (int i = 0; i < _dots.length; i++) {
-              final dotPos = _getDotOffset(_dots[i], width, height);
+            for (int i = 0; i < dots.length; i++) {
+              final dotPos = _getDotOffset(dots[i], width, height);
               if ((dotPos - pos).distance < 20) {
                 hit = i;
                 break;
@@ -974,13 +1074,13 @@ class _DoctorScatterMatrixWidgetState
               CustomPaint(
                 size: Size(width, height),
                 painter: _DoctorScatterPainter(
-                  dots: _dots,
+                  dots: dots,
                   hoveredIndex: _hoveredDotIndex,
                 ),
               ),
 
               // Tooltip
-              if (_hoveredDotIndex != null && _hoverPos != null)
+              if (_hoveredDotIndex != null && _hoverPos != null && _hoveredDotIndex! < dots.length)
                 Positioned(
                   left: (_hoverPos!.dx - 80).clamp(10.0, width - 180.0),
                   top: (_hoverPos!.dy - 65).clamp(0.0, height - 70.0),
@@ -1010,7 +1110,7 @@ class _DoctorScatterMatrixWidgetState
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Patient Age: ${_dots[_hoveredDotIndex!].age} Years',
+                              'Patient Age: ${dots[_hoveredDotIndex!].age} Years',
                               style: AppFonts.googleSans(
                                 color: Colors.white70,
                                 fontSize: 10.5,
@@ -1019,9 +1119,9 @@ class _DoctorScatterMatrixWidgetState
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'PDC: ${_dots[_hoveredDotIndex!].pdc}% (${_dots[_hoveredDotIndex!].status})',
+                              'PDC: ${dots[_hoveredDotIndex!].pdc}% (${dots[_hoveredDotIndex!].status})',
                               style: AppFonts.googleSans(
-                                color: _dots[_hoveredDotIndex!].color,
+                                color: dots[_hoveredDotIndex!].color,
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -1169,8 +1269,12 @@ class _DoctorScatterPainter extends CustomPainter {
 // =========================================================================
 class _DoctorNetworkNodeMeshWidget extends StatefulWidget {
   final double wavePhase;
+  final AppState appState;
 
-  const _DoctorNetworkNodeMeshWidget({required this.wavePhase});
+  const _DoctorNetworkNodeMeshWidget({
+    required this.wavePhase,
+    required this.appState,
+  });
 
   @override
   State<_DoctorNetworkNodeMeshWidget> createState() =>
@@ -1245,16 +1349,32 @@ class _DoctorNetworkNodeMeshWidgetState
   }
 
   String _getNodeLabel(int idx) {
+    final user = widget.appState.currentUser;
+    final doctorName = user.name.isNotEmpty ? user.name : 'Physician (Center)';
+    final hospitals = widget.appState.hospitals;
+
+    if (idx == 0) return '$doctorName (Prescriber Hub)';
+    if (idx == 1) {
+      return hospitals.isNotEmpty
+          ? '${hospitals[0].name} (Primary Hub)'
+          : 'Regional Hospital Network (Hub)';
+    }
+    if (idx == 2) {
+      return hospitals.length > 1
+          ? '${hospitals[1].name} (Affiliated)'
+          : 'Clinical Specialty Center';
+    }
+
     final labels = [
-      'Dr. Rahul Verma (Central Prescriber)',
-      'Regional Hospital Alpha (Hub)',
-      'Cardiology Care Cohort',
-      'Endocrinology Clinic',
-      'Oncology Infusion Center',
-      'Central Dispense Pharmacy',
-      'Express Specialty Rx Hub'
+      '$doctorName (Prescriber Hub)',
+      'Primary Hospital Facility',
+      'Affiliated Clinical Network',
+      'Clinical Pharmacy Dispense Hub',
+      'Diagnostic Cohort Lab',
+      'Inpatient Care Node',
+      'Specialty Pharmacy Node'
     ];
-    return idx < labels.length ? labels[idx] : 'Mesh Telemetry Node';
+    return idx < labels.length ? labels[idx] : 'Active Telemetry Node';
   }
 
   List<_NetworkNode> _calculateNodes(double w, double h, double phase) {

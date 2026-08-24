@@ -269,7 +269,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                 Expanded(
                   child: Text(
                     'Extracting EHR details via Client-Side OCR/AI Engine...',
-                    style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+                    style: AppFonts.googleSans(fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -353,7 +353,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
             backgroundColor: AppColors.successGreen,
             content: Text(
               'Successfully parsed EHR and auto-filled prescription regimen!',
-              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, color: Colors.white),
+              style: AppFonts.googleSans(fontWeight: FontWeight.w600, color: Colors.white),
             ),
           ),
         );
@@ -366,7 +366,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
             backgroundColor: AppColors.dangerText,
             content: Text(
               'Failed to process prescription via OCR: $e',
-              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+              style: AppFonts.googleSans(fontWeight: FontWeight.w600),
             ),
           ),
         );
@@ -412,33 +412,26 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
     String hospitalId = _selectedHospitalId ?? (appState.hospitals.isNotEmpty ? appState.hospitals.first.id : '');
 
     if (hospitalId.isEmpty) {
-      if (_createNewHospital &&
-          _hospitalNameController.text.trim().isNotEmpty &&
-          _hospitalAddressController.text.trim().isNotEmpty) {
-        final newHospital = Hospital(
-          id: 'HOSP-${DateTime.now().millisecondsSinceEpoch}',
-          name: _hospitalNameController.text.trim(),
-          address: _hospitalAddressController.text.trim(),
-          city: 'Phoenix',
-          state: 'AZ',
-          zip: '85054',
-          phone: '(602) 301-8000',
-        );
-        appState.addHospital(newHospital);
-        hospitalId = newHospital.id;
-      } else {
-        final defaultHosp = Hospital(
-          id: 'HOSP-MAYO-AZ',
-          name: appState.currentUser.hospitalName ?? 'Mayo Clinic Hospital - Phoenix',
-          address: '5777 E Mayo Blvd, Phoenix, AZ 85054',
-          city: 'Phoenix',
-          state: 'AZ',
-          zip: '85054',
-          phone: '(602) 301-8000',
-        );
-        appState.addHospital(defaultHosp);
-        hospitalId = defaultHosp.id;
-      }
+      final hospName = _hospitalNameController.text.trim().isNotEmpty
+          ? _hospitalNameController.text.trim()
+          : ((appState.currentUser.hospitalName != null && appState.currentUser.hospitalName!.isNotEmpty)
+              ? appState.currentUser.hospitalName!
+              : 'Medical Health Center');
+      final hospAddress = _hospitalAddressController.text.trim().isNotEmpty
+          ? _hospitalAddressController.text.trim()
+          : 'Healthcare Campus';
+
+      final newHosp = Hospital(
+        id: 'HOSP-${DateTime.now().millisecondsSinceEpoch}',
+        name: hospName,
+        address: hospAddress,
+        city: 'City Health District',
+        state: 'State',
+        zip: '00000',
+        phone: appState.currentUser.phone ?? '(555) 000-0000',
+      );
+      appState.addHospital(newHosp);
+      hospitalId = newHosp.id;
     }
 
     if (_prescribedItems.isEmpty) {
@@ -986,7 +979,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                 ),
                 label: Text(
                   '+ Register Custom ID',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -1025,7 +1018,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                       ),
                 label: Text(
                   'Upload EHR / OCR',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -1049,7 +1042,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                   ),
                   label: Text(
                     'Forward to Pharmacy',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppFonts.googleSans(
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
@@ -1062,7 +1055,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                         backgroundColor: const Color(0xFF10B981),
                         content: Text(
                           'Forwarding "${_uploadedPdfName ?? 'Prescription PDF'}" to Pharmacy Registry...',
-                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+                          style: AppFonts.googleSans(fontWeight: FontWeight.w600),
                         ),
                       ),
                     );
@@ -1094,7 +1087,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                           backgroundColor: AppColors.dangerBg,
                           content: Text(
                             'Error forwarding: $e',
-                            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, color: AppColors.dangerText),
+                            style: AppFonts.googleSans(fontWeight: FontWeight.w600, color: AppColors.dangerText),
                           ),
                         ),
                       );
@@ -1116,7 +1109,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                 ),
                 label: Text(
                   _createNewPatient ? 'Select Existing' : '+ New Patient',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppFonts.googleSans(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
                     color: AppColors.primaryTeal,

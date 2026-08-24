@@ -417,6 +417,14 @@ class DataService {
     }
   }
 
+  // Action: Delete Hospital
+  void deleteHospital(String id) {
+    _hospitals.removeWhere((h) => h.id == id);
+    if (supabaseService.isInitialized) {
+      supabaseService.deleteHospital(id);
+    }
+  }
+
   // Action: Add Doctor from scratch
   void addDoctor(Doctor doctor) {
     _doctors.add(doctor);

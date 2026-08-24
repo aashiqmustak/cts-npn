@@ -893,7 +893,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
         children: [
           Text(
             'Showing page $activePage of $totalPages',
-            style: GoogleFonts.plusJakartaSans(
+            style: AppFonts.googleSans(
               fontSize: 12.5,
               fontWeight: FontWeight.w700,
               color: AppColors.textMuted,
@@ -979,7 +979,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen> {
               },
               child: Text(
                 '$page',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppFonts.googleSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                 ),

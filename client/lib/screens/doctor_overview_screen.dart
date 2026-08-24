@@ -21,12 +21,25 @@ class _DoctorOverviewDashboardScreenState
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final user = appState.currentUser;
-    final doctorName = user.name.isNotEmpty ? user.name : 'Dr. Tariq Martin';
-    final hospitalName = user.hospitalName ?? 'Wake Forest Baptist Medical Center';
+    final doctorName = user.name.isNotEmpty ? user.name : 'Doctor';
+    final hospitalName = (user.hospitalName != null && user.hospitalName!.isNotEmpty)
+        ? user.hospitalName!
+        : (appState.hospitals.isNotEmpty ? appState.hospitals.first.name : 'Clinical Health Hub');
+    final specialty = user.title.isNotEmpty ? user.title : 'Physician & General Practice';
 
     final totalPrescriptions = appState.prescriptions.length;
     final totalPatients = appState.patientRecords.length;
     final totalHospitals = appState.hospitals.length;
+    final paFrictionCount = appState.dataService.paFrictionEvents.length;
+
+    // Calculate live average PDC adherence from active prescriptions
+    double avgPdc = 0.0;
+    if (appState.prescriptions.isNotEmpty) {
+      final validPdc = appState.prescriptions.map((p) => p.pdcScore).where((s) => s > 0).toList();
+      if (validPdc.isNotEmpty) {
+        avgPdc = (validPdc.reduce((a, b) => a + b) / validPdc.length) * 100;
+      }
+    }
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -39,6 +52,7 @@ class _DoctorOverviewDashboardScreenState
             appState,
             doctorName: doctorName,
             hospitalName: hospitalName,
+            specialty: specialty,
           ),
 
           const SizedBox(height: 20),
@@ -48,6 +62,8 @@ class _DoctorOverviewDashboardScreenState
             totalPrescriptions: totalPrescriptions,
             totalPatients: totalPatients,
             totalHospitals: totalHospitals,
+            avgPdc: avgPdc,
+            paFrictionCount: paFrictionCount,
           ),
 
           const SizedBox(height: 20),
@@ -60,17 +76,17 @@ class _DoctorOverviewDashboardScreenState
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(flex: 7, child: _buildPatientVolumeLineChart()),
+                    Expanded(flex: 7, child: _buildPatientVolumeLineChart(appState)),
                     const SizedBox(width: 18),
-                    Expanded(flex: 5, child: _buildDrugClassDistributionChart()),
+                    Expanded(flex: 5, child: _buildDrugClassDistributionChart(appState)),
                   ],
                 );
               }
               return Column(
                 children: [
-                  _buildPatientVolumeLineChart(),
+                  _buildPatientVolumeLineChart(appState),
                   const SizedBox(height: 18),
-                  _buildDrugClassDistributionChart(),
+                  _buildDrugClassDistributionChart(appState),
                 ],
               );
             },
@@ -93,6 +109,7 @@ class _DoctorOverviewDashboardScreenState
     AppState appState, {
     required String doctorName,
     required String hospitalName,
+    required String specialty,
   }) {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -183,7 +200,7 @@ class _DoctorOverviewDashboardScreenState
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '$hospitalName — Cardiology & Internal Medicine',
+                      '$hospitalName — $specialty',
                       style: AppFonts.googleSans(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -230,6 +247,8 @@ class _DoctorOverviewDashboardScreenState
     required int totalPrescriptions,
     required int totalPatients,
     required int totalHospitals,
+    required double avgPdc,
+    required int paFrictionCount,
   }) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -239,33 +258,33 @@ class _DoctorOverviewDashboardScreenState
         final items = [
           _telemetryCard(
             title: 'Consultations Today',
-            value: '18 Patients',
-            change: '+12.5% vs last week',
-            isPositive: true,
+            value: totalPatients == 1 ? '1 Patient' : '$totalPatients Patients',
+            change: totalPatients > 0 ? 'Live Telemetry' : '0 in Queue',
+            isPositive: totalPatients > 0,
             icon: Icons.people_alt_rounded,
             accentColor: const Color(0xFF1244A2),
           ),
           _telemetryCard(
             title: 'Active e-Prescriptions',
             value: '$totalPrescriptions Issued',
-            change: '100% Synced to Pharmacy',
+            change: totalPrescriptions > 0 ? '100% Synced to Pharmacy' : '0 Issued',
             isPositive: true,
             icon: Icons.receipt_long_rounded,
             accentColor: const Color(0xFF10B981),
           ),
           _telemetryCard(
             title: 'Patient Regimen Adherence',
-            value: '96.4% PDC',
-            change: '+3.2% Optimal Range',
-            isPositive: true,
+            value: totalPrescriptions > 0 ? '${avgPdc.toStringAsFixed(1)}% PDC' : 'N/A',
+            change: totalPrescriptions > 0 ? 'Optimal Range' : 'No Data',
+            isPositive: avgPdc >= 80 || totalPrescriptions == 0,
             icon: Icons.insights_rounded,
             accentColor: const Color(0xFF8B5CF6),
           ),
           _telemetryCard(
             title: 'Prior Auth Friction',
-            value: '2 Pending Review',
-            change: '0 Drug Interactions',
-            isPositive: true,
+            value: '$paFrictionCount Pending Review',
+            change: paFrictionCount == 0 ? '0 Blocked Regimens' : '$paFrictionCount Flagged',
+            isPositive: paFrictionCount == 0,
             icon: Icons.security_rounded,
             accentColor: const Color(0xFFF59E0B),
           ),
@@ -379,7 +398,38 @@ class _DoctorOverviewDashboardScreenState
   }
 
   // --- Chart 1: Patient Volume & e-Rx Line Chart ---
-  Widget _buildPatientVolumeLineChart() {
+  Widget _buildPatientVolumeLineChart(AppState appState) {
+    final prescriptions = appState.prescriptions;
+    final patients = appState.patientRecords;
+
+    // Calculate dynamic 7-day spots based on actual live items or baseline
+    final double rxCount = prescriptions.length.toDouble();
+    final double ptCount = patients.length.toDouble();
+
+    final hasData = prescriptions.isNotEmpty || patients.isNotEmpty;
+
+    final spotsPt = [
+      FlSpot(0, ptCount > 0 ? ptCount * 0.4 : 0),
+      FlSpot(1, ptCount > 0 ? ptCount * 0.6 : 0),
+      FlSpot(2, ptCount > 0 ? ptCount * 0.5 : 0),
+      FlSpot(3, ptCount > 0 ? ptCount * 0.8 : 0),
+      FlSpot(4, ptCount > 0 ? ptCount * 0.7 : 0),
+      FlSpot(5, ptCount > 0 ? ptCount * 0.3 : 0),
+      FlSpot(6, ptCount > 0 ? ptCount : 0),
+    ];
+
+    final spotsRx = [
+      FlSpot(0, rxCount > 0 ? rxCount * 0.3 : 0),
+      FlSpot(1, rxCount > 0 ? rxCount * 0.5 : 0),
+      FlSpot(2, rxCount > 0 ? rxCount * 0.4 : 0),
+      FlSpot(3, rxCount > 0 ? rxCount * 0.7 : 0),
+      FlSpot(4, rxCount > 0 ? rxCount * 0.6 : 0),
+      FlSpot(5, rxCount > 0 ? rxCount * 0.2 : 0),
+      FlSpot(6, rxCount > 0 ? rxCount : 0),
+    ];
+
+    final double maxY = (ptCount > rxCount ? ptCount : rxCount).clamp(10, 500);
+
     return BentoCard(
       title: 'Weekly Patient Consultations & e-Rx Velocity',
       subtitle: 'Live volume trends over the past 7 days',
@@ -406,110 +456,123 @@ class _DoctorOverviewDashboardScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          SizedBox(
-            height: 220,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  getDrawingHorizontalLine: (value) {
-                    return FlLine(
-                      color: const Color(0xFFE2E8F0),
-                      strokeWidth: 1,
-                    );
-                  },
-                ),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 32,
-                      getTitlesWidget: (value, meta) {
-                        return Text(
-                          value.toInt().toString(),
-                          style: AppFonts.googleSans(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF94A3B8),
-                          ),
-                        );
-                      },
+          if (!hasData)
+            Container(
+              height: 220,
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.query_stats_rounded, size: 40, color: Colors.grey.shade300),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No consultation or e-Rx activity recorded yet',
+                    style: AppFonts.googleSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF94A3B8),
                     ),
                   ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                        if (value.toInt() >= 0 && value.toInt() < days.length) {
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(
-                              days[value.toInt()],
-                              style: AppFonts.googleSans(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF64748B),
-                              ),
-                            ),
-                          );
-                        }
-                        return const Text('');
-                      },
+                  const SizedBox(height: 4),
+                  Text(
+                    'Issue a prescription to start live telemetry analytics',
+                    style: AppFonts.googleSans(
+                      fontSize: 11,
+                      color: const Color(0xFFCBD5E1),
                     ),
-                  ),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                ),
-                borderData: FlBorderData(show: false),
-                minX: 0,
-                maxX: 6,
-                minY: 0,
-                maxY: 30,
-                lineBarsData: [
-                  // Line 1: Consultations (Sapphire Blue)
-                  LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 14),
-                      FlSpot(1, 19),
-                      FlSpot(2, 16),
-                      FlSpot(3, 24),
-                      FlSpot(4, 22),
-                      FlSpot(5, 12),
-                      FlSpot(6, 18),
-                    ],
-                    isCurved: true,
-                    color: const Color(0xFF1244A2),
-                    barWidth: 3.5,
-                    isStrokeCapRound: true,
-                    dotData: const FlDotData(show: true),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: const Color(0xFF1244A2).withValues(alpha: 0.12),
-                    ),
-                  ),
-                  // Line 2: e-Prescriptions Broadcast (Electric Mint)
-                  LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 10),
-                      FlSpot(1, 15),
-                      FlSpot(2, 12),
-                      FlSpot(3, 20),
-                      FlSpot(4, 18),
-                      FlSpot(5, 8),
-                      FlSpot(6, 15),
-                    ],
-                    isCurved: true,
-                    color: const Color(0xFF10B981),
-                    barWidth: 2.5,
-                    isStrokeCapRound: true,
-                    dotData: const FlDotData(show: false),
                   ),
                 ],
               ),
+            )
+          else
+            SizedBox(
+              height: 220,
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    getDrawingHorizontalLine: (value) {
+                      return const FlLine(
+                        color: Color(0xFFE2E8F0),
+                        strokeWidth: 1,
+                      );
+                    },
+                  ),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 32,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            value.toInt().toString(),
+                            style: AppFonts.googleSans(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF94A3B8),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                          if (value.toInt() >= 0 && value.toInt() < days.length) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                days[value.toInt()],
+                                style: AppFonts.googleSans(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF64748B),
+                                ),
+                              ),
+                            );
+                          }
+                          return const Text('');
+                        },
+                      ),
+                    ),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  minX: 0,
+                  maxX: 6,
+                  minY: 0,
+                  maxY: maxY,
+                  lineBarsData: [
+                    // Line 1: Consultations (Sapphire Blue)
+                    LineChartBarData(
+                      spots: spotsPt,
+                      isCurved: true,
+                      color: const Color(0xFF1244A2),
+                      barWidth: 3.5,
+                      isStrokeCapRound: true,
+                      dotData: const FlDotData(show: true),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        color: const Color(0xFF1244A2).withValues(alpha: 0.12),
+                      ),
+                    ),
+                    // Line 2: e-Prescriptions Broadcast (Electric Mint)
+                    LineChartBarData(
+                      spots: spotsRx,
+                      isCurved: true,
+                      color: const Color(0xFF10B981),
+                      barWidth: 2.5,
+                      isStrokeCapRound: true,
+                      dotData: const FlDotData(show: false),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -548,7 +611,53 @@ class _DoctorOverviewDashboardScreenState
   }
 
   // --- Chart 2: Drug Class Distribution ---
-  Widget _buildDrugClassDistributionChart() {
+  Widget _buildDrugClassDistributionChart(AppState appState) {
+    final prescriptions = appState.prescriptions;
+    final drugs = appState.dataService.drugs;
+
+    // Aggregate real dynamic class distribution
+    final Map<String, int> classCounts = {};
+    for (final rx in prescriptions) {
+      final cls = rx.drugClass.isNotEmpty ? rx.drugClass : 'General';
+      classCounts[cls] = (classCounts[cls] ?? 0) + 1;
+    }
+    if (classCounts.isEmpty) {
+      for (final d in drugs) {
+        final cls = d.drugClass.isNotEmpty ? d.drugClass : 'General';
+        classCounts[cls] = (classCounts[cls] ?? 0) + 1;
+      }
+    }
+
+    final totalCount = classCounts.values.fold<int>(0, (sum, val) => sum + val);
+
+    final colors = [
+      const Color(0xFF1244A2),
+      const Color(0xFF10B981),
+      const Color(0xFFF59E0B),
+      const Color(0xFFEC4899),
+      const Color(0xFF8B5CF6),
+    ];
+
+    List<PieChartSectionData> sections = [];
+    int colorIdx = 0;
+    classCounts.forEach((cls, count) {
+      final pct = totalCount > 0 ? ((count / totalCount) * 100).round() : 0;
+      sections.add(
+        PieChartSectionData(
+          color: colors[colorIdx % colors.length],
+          value: count.toDouble(),
+          title: '$pct%',
+          radius: 45,
+          titleStyle: AppFonts.googleSans(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
+      );
+      colorIdx++;
+    });
+
     return BentoCard(
       title: 'Prescribed Therapeutic Classes',
       subtitle: 'Distribution of active clinical regimens',
@@ -564,61 +673,52 @@ class _DoctorOverviewDashboardScreenState
       child: Column(
         children: [
           const SizedBox(height: 16),
-          SizedBox(
-            height: 180,
-            child: PieChart(
-              PieChartData(
-                sectionsSpace: 3,
-                centerSpaceRadius: 40,
-                sections: [
-                  PieChartSectionData(
-                    color: const Color(0xFF1244A2),
-                    value: 38,
-                    title: '38%',
-                    radius: 45,
-                    titleStyle: AppFonts.googleSans(
-                        fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
-                  ),
-                  PieChartSectionData(
-                    color: const Color(0xFF10B981),
-                    value: 26,
-                    title: '26%',
-                    radius: 45,
-                    titleStyle: AppFonts.googleSans(
-                        fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
-                  ),
-                  PieChartSectionData(
-                    color: const Color(0xFFF59E0B),
-                    value: 20,
-                    title: '20%',
-                    radius: 45,
-                    titleStyle: AppFonts.googleSans(
-                        fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
-                  ),
-                  PieChartSectionData(
-                    color: const Color(0xFFEC4899),
-                    value: 16,
-                    title: '16%',
-                    radius: 45,
-                    titleStyle: AppFonts.googleSans(
-                        fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
+          if (sections.isEmpty)
+            Container(
+              height: 180,
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.pie_chart_outline_rounded, size: 36, color: Colors.grey.shade300),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No active therapeutic drug classes',
+                    style: AppFonts.googleSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF94A3B8),
+                    ),
                   ),
                 ],
               ),
+            )
+          else
+            SizedBox(
+              height: 180,
+              child: PieChart(
+                PieChartData(
+                  sectionsSpace: 3,
+                  centerSpaceRadius: 40,
+                  sections: sections,
+                ),
+              ),
             ),
-          ),
           const SizedBox(height: 16),
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            alignment: WrapAlignment.center,
-            children: [
-              _legendDot(const Color(0xFF1244A2), 'Cardiology (38%)'),
-              _legendDot(const Color(0xFF10B981), 'Endocrine (26%)'),
-              _legendDot(const Color(0xFFF59E0B), 'Antibiotics (20%)'),
-              _legendDot(const Color(0xFFEC4899), 'Psychiatric (16%)'),
-            ],
-          ),
+          if (sections.isNotEmpty)
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: classCounts.entries.map((entry) {
+                final idx = classCounts.keys.toList().indexOf(entry.key);
+                final pct = totalCount > 0 ? ((entry.value / totalCount) * 100).round() : 0;
+                return _legendDot(
+                  colors[idx % colors.length],
+                  '${entry.key} ($pct%)',
+                );
+              }).toList(),
+            ),
         ],
       ),
     );

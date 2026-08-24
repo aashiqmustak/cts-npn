@@ -24,9 +24,17 @@ class _AuthScreenState extends State<AuthScreen> {
   final _signInEmailController = TextEditingController();
   final _otpController = TextEditingController();
 
+  bool _regOtpSent = false;
+  final _regOtpController = TextEditingController();
+
   final _regNameController = TextEditingController();
   final _regEmailController = TextEditingController();
   final _regPasswordController = TextEditingController();
+  final _regHospitalController = TextEditingController();
+  final _regSpecialtyController = TextEditingController();
+  String? _selectedHospitalId;
+  bool _showHospitalSuggestions = false;
+
   String _selectedInsuranceCompany = 'Blue Cross Blue Shield';
   final Set<String> _selectedInsurancePlans = {
     'Blue Cross PPO Premier',
@@ -44,6 +52,9 @@ class _AuthScreenState extends State<AuthScreen> {
   void initState() {
     super.initState();
     _regPasswordController.addListener(_onPasswordChanged);
+    _regHospitalController.addListener(() {
+      if (mounted) setState(() {});
+    });
     _pageController = PageController();
     _carouselTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
       if (mounted && _pageController.hasClients) {
@@ -67,9 +78,12 @@ class _AuthScreenState extends State<AuthScreen> {
     _pageController.dispose();
     _signInEmailController.dispose();
     _otpController.dispose();
+    _regOtpController.dispose();
     _regNameController.dispose();
     _regEmailController.dispose();
     _regPasswordController.dispose();
+    _regHospitalController.dispose();
+    _regSpecialtyController.dispose();
     super.dispose();
   }
 
@@ -1127,11 +1141,38 @@ class _AuthScreenState extends State<AuthScreen> {
           onPressed: () async {
             final val = _signInEmailController.text.trim();
             final otp = _otpController.text.trim();
-            await appState.verifyOtpAndLogin(
+            if (val.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please enter your email or User ID.'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+              return;
+            }
+            if (otp.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please enter your 6-digit OTP verification code.'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+              return;
+            }
+            final messenger = ScaffoldMessenger.of(context);
+            final success = await appState.verifyOtpAndLogin(
               email: val,
               otp: otp,
               isPatient: _isPatientLoginMode,
             );
+            if (!success && mounted) {
+              messenger.showSnackBar(
+                const SnackBar(
+                  content: Text('Invalid verification code. Please check and try again.'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+            }
           },
         ),
 
@@ -1185,6 +1226,195 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Widget _buildRegisterTab(BuildContext context, AppState appState) {
+    if (_regOtpSent) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.mark_email_read_rounded,
+                  color: Color(0xFF10B981),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Verify Your Email Address',
+                      style: AppFonts.googleSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF0F172A),
+                      ),
+                    ),
+                    Text(
+                      'We sent a 6-digit OTP code to ${_regEmailController.text.trim()}',
+                      style: AppFonts.googleSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF64748B),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          _GlowBorderFormField(
+            controller: _regOtpController,
+            label: '6-DIGIT OTP VERIFICATION CODE',
+            hint: 'e.g. 123456',
+            icon: Icons.lock_clock_rounded,
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 20),
+          _GradientBlueCtaButton(
+            label: 'Verify OTP & Complete Account Setup →',
+            onPressed: () async {
+              final otp = _regOtpController.text.trim();
+              final email = _regEmailController.text.trim();
+              final name = _regNameController.text.trim();
+              final password = _regPasswordController.text.trim();
+
+              if (otp.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please enter the 6-digit verification code.'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+                return;
+              }
+
+              final messenger = ScaffoldMessenger.of(context);
+              final isValid = await appState.verifyOtp(
+                email: email,
+                otp: otp,
+              );
+
+              if (!isValid) {
+                if (mounted) {
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Invalid or expired verification code. Please try again or resend.'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+                return;
+              }
+
+              String? hospitalId = _selectedHospitalId;
+              final typedHospName = _regHospitalController.text.trim();
+              String? hospitalName = typedHospName.isNotEmpty ? typedHospName : null;
+
+              if (_selectedRole == UserRole.doctor && hospitalName != null) {
+                final match = appState.hospitals.where(
+                  (h) => (hospitalId != null && h.id == hospitalId) ||
+                      h.name.toLowerCase() == hospitalName!.toLowerCase(),
+                ).firstOrNull;
+
+                if (match != null) {
+                  hospitalId = match.id;
+                  hospitalName = match.name;
+                } else {
+                  hospitalId = 'HOSP-${DateTime.now().millisecondsSinceEpoch}';
+                  final newHosp = Hospital(
+                    id: hospitalId,
+                    name: hospitalName,
+                    address: 'Primary Healthcare Facility',
+                    city: 'Medical District',
+                    state: 'State',
+                    zip: '00000',
+                    phone: '(555) 000-0000',
+                  );
+                  appState.addHospital(newHosp);
+                }
+              }
+
+              List<String> finalPlans = _selectedInsurancePlans.toList();
+              if (finalPlans.isEmpty) {
+                finalPlans = ['Comprehensive Rx Plan'];
+              }
+
+              await appState.registerAccount(
+                name: name,
+                email: email,
+                password: password,
+                role: _selectedRole,
+                hospitalId: hospitalId,
+                hospitalName: hospitalName,
+                specialty: _regSpecialtyController.text.trim().isNotEmpty
+                    ? _regSpecialtyController.text.trim()
+                    : 'General Practice',
+                insuranceCompany: _selectedRole == UserRole.insuranceAgent ? _selectedInsuranceCompany : null,
+                insurancePlans: _selectedRole == UserRole.insuranceAgent ? finalPlans : const [],
+                insuranceMedicines: const [],
+                insuranceHospitals: const [],
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _regOtpSent = false;
+                    _regOtpController.clear();
+                  });
+                },
+                icon: const Icon(Icons.arrow_back_rounded, size: 14),
+                label: Text(
+                  'Edit Details',
+                  style: AppFonts.googleSans(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1244A2),
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final email = _regEmailController.text.trim();
+                  await appState.sendOtp(email);
+                  if (mounted) {
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Verification code resent to your email.'),
+                      ),
+                    );
+                  }
+                },
+                child: Text(
+                  'Resend Code',
+                  style: AppFonts.googleSans(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1D4ED8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1336,6 +1566,11 @@ class _AuthScreenState extends State<AuthScreen> {
 
         _PasswordStrengthMeter(password: _regPasswordController.text),
 
+        if (_selectedRole == UserRole.doctor) ...[
+          const SizedBox(height: 12),
+          _buildDoctorRegisterFields(appState),
+        ],
+
         if (_selectedRole == UserRole.insuranceAgent) ...[
           const SizedBox(height: 12),
           _buildInsuranceAgentRegisterFields(),
@@ -1367,30 +1602,67 @@ class _AuthScreenState extends State<AuthScreen> {
         const SizedBox(height: 16),
 
         _GradientBlueCtaButton(
-          label: 'CREATE ACCOUNT',
+          label: 'CONTINUE & VERIFY OTP →',
           onPressed: () async {
-            final name =
-                _regNameController.text.trim().isEmpty
-                    ? 'Authorized User'
-                    : _regNameController.text.trim();
+            final name = _regNameController.text.trim();
             final email = _regEmailController.text.trim();
             final password = _regPasswordController.text.trim();
 
-            List<String> finalPlans = _selectedInsurancePlans.toList();
-            if (finalPlans.isEmpty) {
-              finalPlans = ['Comprehensive Rx Plan'];
+            if (name.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please enter your full legal name.'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+              return;
             }
 
-            await appState.registerAccount(
-              name: name,
-              email: email,
-              password: password,
-              role: _selectedRole,
-              insuranceCompany: _selectedRole == UserRole.insuranceAgent ? _selectedInsuranceCompany : null,
-              insurancePlans: _selectedRole == UserRole.insuranceAgent ? finalPlans : const [],
-              insuranceMedicines: const [],
-              insuranceHospitals: const [],
-            );
+            if (email.isEmpty || !email.contains('@')) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please enter a valid email address.'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+              return;
+            }
+
+            if (password.length < 6) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Password must be at least 6 characters long.'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+              return;
+            }
+
+            if (!_agreeTerms) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please acknowledge the HIPAA & Clinical Data Agreement.'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+              return;
+            }
+
+            final messenger = ScaffoldMessenger.of(context);
+            await appState.sendOtp(email);
+            setState(() {
+              _regOtpSent = true;
+              _regOtpController.clear();
+            });
+
+            if (mounted) {
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text('6-Digit OTP verification code sent to $email'),
+                  backgroundColor: const Color(0xFF10B981),
+                ),
+              );
+            }
           },
         ),
 
@@ -1411,6 +1683,7 @@ class _AuthScreenState extends State<AuthScreen> {
               onTap: () {
                 setState(() {
                   _activeTabIndex = 0;
+                  _regOtpSent = false;
                 });
               },
               child: Text(
@@ -1425,6 +1698,326 @@ class _AuthScreenState extends State<AuthScreen> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildDoctorRegisterFields(AppState appState) {
+    final hospitals = appState.hospitals;
+    final query = _regHospitalController.text.trim().toLowerCase();
+    final matchingHospitals = hospitals.where((h) {
+      if (query.isEmpty) return true;
+      return h.name.toLowerCase().contains(query) ||
+          h.city.toLowerCase().contains(query) ||
+          h.address.toLowerCase().contains(query);
+    }).toList();
+
+    const commonSpecialties = [
+      'General Practice',
+      'Cardiology',
+      'Internal Medicine',
+      'Pediatrics',
+      'Neurology',
+      'Oncology',
+      'Dermatology',
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFCBD5E1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1244A2).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.local_hospital_rounded, color: Color(0xFF1244A2), size: 16),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'CLINICAL CREDENTIALS & AFFILIATION',
+                style: AppFonts.googleSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF1E293B),
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // 1. Hospital Searchable Dropdown Field
+          Text(
+            'AFFILIATED HOSPITAL / MEDICAL CENTER',
+            style: AppFonts.googleSans(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF475569),
+              letterSpacing: 0.4,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _showHospitalSuggestions ? const Color(0xFF1244A2) : const Color(0xFFE2E8F0),
+                width: _showHospitalSuggestions ? 1.5 : 1.0,
+              ),
+            ),
+            child: TextField(
+              controller: _regHospitalController,
+              onTap: () {
+                setState(() => _showHospitalSuggestions = true);
+              },
+              onChanged: (_) {
+                setState(() {
+                  _showHospitalSuggestions = true;
+                  _selectedHospitalId = null;
+                });
+              },
+              style: AppFonts.googleSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF0F172A),
+              ),
+              decoration: InputDecoration(
+                hintText: 'Select hospital or type to register new...',
+                hintStyle: AppFonts.googleSans(fontSize: 12, color: const Color(0xFF94A3B8)),
+                prefixIcon: const Icon(Icons.business_rounded, color: Color(0xFF1244A2), size: 18),
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_regHospitalController.text.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.clear_rounded, size: 16, color: Color(0xFF94A3B8)),
+                        onPressed: () {
+                          setState(() {
+                            _regHospitalController.clear();
+                            _selectedHospitalId = null;
+                          });
+                        },
+                      ),
+                    IconButton(
+                      icon: Icon(
+                        _showHospitalSuggestions
+                            ? Icons.arrow_drop_up_rounded
+                            : Icons.arrow_drop_down_rounded,
+                        color: const Color(0xFF1244A2),
+                        size: 24,
+                      ),
+                      onPressed: () {
+                        setState(() => _showHospitalSuggestions = !_showHospitalSuggestions);
+                      },
+                    ),
+                  ],
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: InputBorder.none,
+              ),
+            ),
+          ),
+
+          // 2. Interactive Suggestions Dropdown Overlay Box
+          if (_showHospitalSuggestions) ...[
+            const SizedBox(height: 6),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 200),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFCBD5E1)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ListView(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                children: [
+                  if (matchingHospitals.isEmpty && _regHospitalController.text.trim().isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Text(
+                        'No hospitals registered yet. Type to create a new facility.',
+                        style: AppFonts.googleSans(fontSize: 11.5, color: const Color(0xFF94A3B8)),
+                      ),
+                    )
+                  else ...[
+                    ...matchingHospitals.map((h) {
+                      final isSelected = _selectedHospitalId == h.id ||
+                          _regHospitalController.text.trim().toLowerCase() == h.name.toLowerCase();
+                      return InkWell(
+                        onTap: () {
+                          setState(() {
+                            _selectedHospitalId = h.id;
+                            _regHospitalController.text = h.name;
+                            _showHospitalSuggestions = false;
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          color: isSelected ? const Color(0xFFEFF6FF) : Colors.transparent,
+                          child: Row(
+                            children: [
+                              const Icon(Icons.local_hospital_rounded, size: 16, color: Color(0xFF1244A2)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      h.name,
+                                      style: AppFonts.googleSans(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    if (h.address.isNotEmpty || h.city.isNotEmpty)
+                                      Text(
+                                        '${h.address}${h.city.isNotEmpty ? ', ${h.city}' : ''}',
+                                        style: AppFonts.googleSans(fontSize: 10.5, color: const Color(0xFF64748B)),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE2E8F0),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'ID: ${h.id.length > 10 ? h.id.substring(0, 10) : h.id}',
+                                  style: AppFonts.googleSans(fontSize: 9, fontWeight: FontWeight.w600, color: const Color(0xFF475569)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                    if (_regHospitalController.text.trim().isNotEmpty &&
+                        !hospitals.any((h) => h.name.toLowerCase() == _regHospitalController.text.trim().toLowerCase()))
+                      InkWell(
+                        onTap: () {
+                          setState(() {
+                            _selectedHospitalId = null;
+                            _showHospitalSuggestions = false;
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          color: const Color(0xFFF0FDF4),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.add_circle_outline_rounded, size: 16, color: Color(0xFF10B981)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '+ Register as New Medical Facility: "${_regHospitalController.text.trim()}"',
+                                  style: AppFonts.googleSans(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF10B981),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 14),
+
+          // 3. Specialty Selection Field & Quick Suggestion Chips
+          Text(
+            'PRIMARY MEDICAL SPECIALTY',
+            style: AppFonts.googleSans(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF475569),
+              letterSpacing: 0.4,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: TextField(
+              controller: _regSpecialtyController,
+              style: AppFonts.googleSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF0F172A),
+              ),
+              decoration: InputDecoration(
+                hintText: 'e.g. Cardiology, Internal Medicine...',
+                hintStyle: AppFonts.googleSans(fontSize: 12, color: const Color(0xFF94A3B8)),
+                prefixIcon: const Icon(Icons.medical_services_outlined, color: Color(0xFF1244A2), size: 18),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: InputBorder.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: commonSpecialties.map((spec) {
+              final isSel = _regSpecialtyController.text == spec;
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _regSpecialtyController.text = spec;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isSel ? const Color(0xFF1244A2) : Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSel ? const Color(0xFF1244A2) : const Color(0xFFCBD5E1),
+                    ),
+                  ),
+                  child: Text(
+                    spec,
+                    style: AppFonts.googleSans(
+                      fontSize: 10,
+                      fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
+                      color: isSel ? Colors.white : const Color(0xFF475569),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 

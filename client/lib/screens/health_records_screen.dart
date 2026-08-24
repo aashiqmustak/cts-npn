@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bento_card.dart';
 
@@ -131,47 +130,36 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
 
               final recordsColumn = Column(
                 children: [
-                  _buildRecordCard(
-                    title: 'Complete Blood Count (CBC) Panel',
-                    tag: 'Lab Diagnostic',
-                    tagColor: AppColors.infoText,
-                    tagBg: AppColors.infoBg,
-                    icon: Icons.science_rounded,
-                    dateInfo: 'May 10, 2025 • 2.4 MB PDF',
-                    provider: 'Quest Diagnostics',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildRecordCard(
-                    title: 'Chest X-Ray Radiograph (AP/Lateral)',
-                    tag: 'Imaging & Scans',
-                    tagColor: AppColors.purpleText,
-                    tagBg: AppColors.purpleBg,
-                    icon: Icons.qr_code_scanner_rounded,
-                    dateInfo: 'Apr 22, 2025 • 18.2 MB DICOM',
-                    provider: 'MetroHealth Imaging Center',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildRecordCard(
-                    title: 'Annual Cardiology Clinical Summary',
-                    tag: 'Clinical Report',
-                    tagColor: AppColors.warningText,
-                    tagBg: AppColors.warningBg,
-                    icon: Icons.article_rounded,
-                    dateInfo: 'Mar 15, 2025 • 1.1 MB PDF',
-                    provider: 'Dr. Rahul Verma',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildRecordCard(
-                    title: 'COVID-19 & Influenza Vaccine Card',
-                    tag: 'Vaccination',
-                    tagColor: AppColors.successText,
-                    tagBg: AppColors.successBg,
-                    icon: Icons.verified_user_rounded,
-                    dateInfo: 'Jan 08, 2025 • 0.8 MB PDF',
-                    provider: 'CVS MinuteClinic',
-                  ),
-
-                  if (_userRecords.isNotEmpty)
+                  if (_userRecords.isEmpty)
+                    BentoCard(
+                      padding: const EdgeInsets.all(32),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.folder_open_rounded, size: 48, color: Colors.grey.shade300),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'No clinical health records uploaded yet',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textDark,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Tap "+ Upload Record" above to upload lab reports, clinical summaries, or imaging scans.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -354,98 +342,6 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
     );
   }
 
-  Widget _buildRecordCard({
-    required String title,
-    required String tag,
-    required Color tagColor,
-    required Color tagBg,
-    required IconData icon,
-    required String dateInfo,
-    required String provider,
-  }) {
-    return BentoCard(
-      enableHover: true,
-      padding: const EdgeInsets.all(18),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: tagBg,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: tagColor, size: 22),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      title,
-                      style: AppFonts.googleSans(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: tagBg,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        tag,
-                        style: AppFonts.googleSans(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: tagColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  'Provider: $provider • $dateInfo',
-                  style: AppFonts.googleSans(
-                    fontSize: 11.5,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.bgSlate,
-              foregroundColor: AppColors.primaryTeal,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: AppColors.metallicBorder),
-              ),
-            ),
-            onPressed: () {},
-            icon: const Icon(Icons.file_download_outlined, size: 16),
-            label: Text(
-              'Download',
-              style: AppFonts.googleSans(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildQuickActionsBento() {
     return BentoCard(
       title: 'Vault Operations',
@@ -497,18 +393,23 @@ class _HealthRecordsScreenState extends State<HealthRecordsScreen> {
   }
 
   Widget _buildCategoryCountListCard() {
+    final int consults = _userRecords.where((r) => (r['tag'] == 'Report' || r['tag'] == 'Clinical Report')).length;
+    final int diagnostics = _userRecords.where((r) => (r['tag'] == 'Lab Diagnostic' || r['tag'] == 'Lab')).length;
+    final int radiology = _userRecords.where((r) => (r['tag'] == 'Imaging & Scans' || r['tag'] == 'Imaging')).length;
+    final int vaccines = _userRecords.where((r) => (r['tag'] == 'Vaccination')).length;
+
     return BentoCard(
       title: 'Vault Distribution',
       subtitle: 'Categorized document allocation',
       child: Column(
         children: [
-          _buildCategoryRow('Clinical Consultations', '14 Files', Icons.article_rounded, AppColors.jewelTechCyan),
+          _buildCategoryRow('Clinical Consultations', '$consults ${consults == 1 ? 'File' : 'Files'}', Icons.article_rounded, AppColors.jewelTechCyan),
           const SizedBox(height: 8),
-          _buildCategoryRow('Diagnostic Panels', '8 Files', Icons.science_rounded, AppColors.jewelEmerald),
+          _buildCategoryRow('Diagnostic Panels', '$diagnostics ${diagnostics == 1 ? 'File' : 'Files'}', Icons.science_rounded, AppColors.jewelEmerald),
           const SizedBox(height: 8),
-          _buildCategoryRow('Radiology Scans', '3 Files', Icons.qr_code_scanner_rounded, AppColors.purpleText),
+          _buildCategoryRow('Radiology Scans', '$radiology ${radiology == 1 ? 'File' : 'Files'}', Icons.qr_code_scanner_rounded, AppColors.purpleText),
           const SizedBox(height: 8),
-          _buildCategoryRow('Immunization Records', '5 Files', Icons.verified_user_rounded, AppColors.jewelWarmAmber),
+          _buildCategoryRow('Immunization Records', '$vaccines ${vaccines == 1 ? 'File' : 'Files'}', Icons.verified_user_rounded, AppColors.jewelWarmAmber),
         ],
       ),
     );

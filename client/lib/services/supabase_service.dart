@@ -1,10 +1,9 @@
 import 'dart:math';
 import 'package:flutter/foundation.dart';
-import 'package:mailer/mailer.dart';
-import 'package:mailer/smtp_server.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../config/supabase_config.dart';
 import '../models/models.dart';
+import 'smtp_service.dart';
 
 class SupabaseService {
   static final SupabaseService _instance = SupabaseService._internal();
@@ -29,9 +28,12 @@ class SupabaseService {
         publishableKey: SupabaseConfig.supabaseAnonKey,
       );
       _isInitialized = true;
+      if (kDebugMode) {
+        print('Supabase initialized successfully.');
+      }
     } catch (e) {
       if (kDebugMode) {
-        print('Failed to initialize Supabase: $e');
+        print('Supabase init error: $e');
       }
     }
   }
@@ -42,23 +44,84 @@ class SupabaseService {
     required String password,
     required String name,
     required UserRole role,
+    String? hospitalId,
+    String? hospitalName,
+    String? specialty,
   }) async {
     if (!isInitialized) return null;
+    final cleanHospitalId = (hospitalId != null && hospitalId.trim().isNotEmpty) ? hospitalId.trim() : null;
     final res = await client.auth.signUp(
       email: email,
       password: password,
       data: {
         'name': name,
         'role': role.name,
+        'hospital_id': cleanHospitalId,
+        'hospital_name': hospitalName,
       },
     );
     if (res.user != null) {
+      // Ensure facility/hospital exists in public.hospitals if specified
+      if (cleanHospitalId != null && hospitalName != null && hospitalName.isNotEmpty) {
+        try {
+          await client.from('hospitals').upsert({
+            'id': cleanHospitalId,
+            'name': hospitalName,
+          }, onConflict: 'id');
+        } catch (e) {
+          if (kDebugMode) print('Hospital upsert error: $e');
+        }
+      }
+
+      String? doctorRecordId;
+      if (role == UserRole.doctor) {
+        doctorRecordId = 'DOC-${res.user!.id.replaceAll('-', '').substring(0, 8).toUpperCase()}';
+        try {
+          await client.from('doctors').upsert({
+            'id': doctorRecordId,
+            'name': name,
+            'specialty': (specialty != null && specialty.isNotEmpty) ? specialty : 'General Practice',
+            'email': email,
+            'phone': '',
+            'hospital_id': cleanHospitalId,
+          }, onConflict: 'id');
+          if (kDebugMode) print('Doctor record created successfully in public.doctors: $doctorRecordId');
+        } catch (e) {
+          if (kDebugMode) print('Doctor record creation error: $e');
+        }
+      }
+
+      String? patientRecordId;
+      if (role == UserRole.patient) {
+        patientRecordId = 'PAT-${res.user!.id.replaceAll('-', '').substring(0, 8).toUpperCase()}';
+        try {
+          await client.from('patients').upsert({
+            'id': patientRecordId,
+            'name': name,
+            'email': email,
+            'phone': '',
+            'age': 35,
+            'gender': 'Other',
+            'current_problem': 'General Wellness',
+            'visit_date': DateTime.now().toIso8601String().split('T').first,
+            'hospital_id': cleanHospitalId,
+          }, onConflict: 'id');
+          if (kDebugMode) print('Patient record created in public.patients: $patientRecordId');
+        } catch (e) {
+          if (kDebugMode) print('Patient record creation error: $e');
+        }
+      }
+
       await client.from('user_profiles').upsert({
         'id': res.user!.id,
         'email': email,
         'name': name,
         'role': _roleToDbString(role),
-        'title': _roleToTitle(role),
+        'title': (specialty != null && specialty.isNotEmpty) ? specialty : _roleToTitle(role),
+        'hospital_id': cleanHospitalId,
+        'hospital_name': hospitalName,
+        'doctor_id': doctorRecordId,
+        'patient_id': patientRecordId,
       });
     }
     return res;
@@ -83,9 +146,7 @@ class SupabaseService {
         redirectTo: kIsWeb ? null : 'io.supabase.alternea://login-callback/',
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('Supabase signInWithOAuth error: $e');
-      }
+      if (kDebugMode) print('Google Sign-In Error: $e');
       return false;
     }
   }
@@ -164,7 +225,7 @@ class SupabaseService {
       }
     }
 
-    if (normalizedOtp == '123456' || normalizedOtp.length == 6) {
+    if (normalizedOtp == '123456') {
       return true;
     }
     return false;
@@ -172,23 +233,13 @@ class SupabaseService {
 
   void _sendSmtpEmail({required String email, required String otpCode}) async {
     try {
-      final smtpServer = gmail('alternea.health@gmail.com', 'smtp_app_password');
-      final message = Message()
-        ..from = const Address('alternea.health@gmail.com', 'Alternea Clinical Portal')
-        ..recipients.add(email)
-        ..subject = 'Alternea Verification Code: $otpCode'
-        ..html = '''
-          <div style="font-family: Arial, sans-serif; max-width: 600px; padding: 24px; border: 1px solid #E2E8F0; border-radius: 12px;">
-            <h2 style="color: #1244A2;">Alternea Health Clinical Verification</h2>
-            <p>Your one-time zero-trust login code is:</p>
-            <div style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #1D4ED8; margin: 20px 0;">$otpCode</div>
-            <p style="color: #64748B; font-size: 13px;">This code will expire in 10 minutes. If you did not request this, please ignore this email.</p>
-          </div>
-        ''';
-      await send(message, smtpServer);
-    } catch (_) {
+      await SmtpEmailService.sendOtpEmail(
+        recipientEmail: email,
+        otpCode: otpCode,
+      );
+    } catch (e) {
       if (kDebugMode) {
-        print('SMTP Dispatch logged for $email -> OTP: $otpCode');
+        print('SMTP Dispatch error for $email -> $e');
       }
     }
   }
@@ -273,6 +324,17 @@ class SupabaseService {
     }
   }
 
+  Future<bool> deleteHospital(String id) async {
+    if (!isInitialized) return false;
+    try {
+      await client.from('hospitals').delete().eq('id', id);
+      return true;
+    } catch (e) {
+      if (kDebugMode) print('deleteHospital error: $e');
+      return false;
+    }
+  }
+
   // Doctors Operations
   Future<List<Doctor>> fetchDoctors() async {
     if (!isInitialized) return [];
@@ -342,6 +404,9 @@ class SupabaseService {
     required String patientId,
     required String doctorId,
     required String hospitalId,
+    String? doctorName,
+    String? hospitalName,
+    String? hospitalAddress,
     required String diagnosis,
     required String notes,
     required List<Map<String, dynamic>> items,
@@ -363,8 +428,8 @@ class SupabaseService {
         try {
           await client.from('doctors').upsert({
             'id': doctorId,
-            'name': 'Dr. Samantha Harris',
-            'specialty': 'General Physician',
+            'name': (doctorName != null && doctorName.isNotEmpty) ? doctorName : 'Attending Physician',
+            'specialty': 'General Practice',
           }, onConflict: 'id');
         } catch (_) {}
       }
@@ -374,8 +439,8 @@ class SupabaseService {
         try {
           await client.from('hospitals').upsert({
             'id': hospitalId,
-            'name': 'Cedars-Sinai Medical Center',
-            'address': '8700 Beverly Blvd, Los Angeles, CA 90048',
+            'name': (hospitalName != null && hospitalName.isNotEmpty) ? hospitalName : 'Medical Center',
+            'address': (hospitalAddress != null && hospitalAddress.isNotEmpty) ? hospitalAddress : 'Clinical Health Hub',
           }, onConflict: 'id');
         } catch (_) {}
       }
@@ -503,6 +568,10 @@ class SupabaseService {
     String? hospitalId,
     String? doctorId,
     required UserRole role,
+    String? insuranceCompany,
+    List<String> insurancePlans = const [],
+    List<String> insuranceMedicines = const [],
+    List<String> insuranceHospitals = const [],
   }) async {
     final roleStr = _roleToDbString(role);
     final titleStr = _roleToTitle(role);
@@ -516,6 +585,10 @@ class SupabaseService {
       'doctor_id': doctorId,
       'role': roleStr,
       'title': titleStr,
+      if (insuranceCompany != null) 'insurance_company': insuranceCompany,
+      if (insurancePlans.isNotEmpty) 'insurance_plans': insurancePlans,
+      if (insuranceMedicines.isNotEmpty) 'insurance_medicines': insuranceMedicines,
+      if (insuranceHospitals.isNotEmpty) 'insurance_hospitals': insuranceHospitals,
     };
 
     if (isInitialized) {
