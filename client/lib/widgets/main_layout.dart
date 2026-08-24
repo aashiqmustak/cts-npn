@@ -126,6 +126,14 @@ class _MainLayoutState extends State<MainLayout> {
               (appState.currentUser.role == UserRole.patient ||
                appState.currentUser.role == UserRole.doctor))
             _DraggableNotificationCard(appState: appState),
+
+          // Real-time Doctor Approval Bill & Dispense Overlay for Pharmacist
+          if (appState.latestApprovedRequest != null &&
+              appState.currentUser.role == UserRole.pharmacist)
+            _PharmacistApprovalBillOverlay(
+              appState: appState,
+              request: appState.latestApprovedRequest!,
+            ),
         ],
       ),
     );
@@ -2687,6 +2695,256 @@ class _InsuranceAgentSetupDialogState extends State<_InsuranceAgentSetupDialog> 
                     child: Text(
                       'Save Agency Portfolio →',
                       style: AppFonts.googleSans(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PharmacistApprovalBillOverlay extends StatelessWidget {
+  final AppState appState;
+  final AlternativeApprovalRequest request;
+
+  const _PharmacistApprovalBillOverlay({
+    required this.appState,
+    required this.request,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: 80,
+      right: 24,
+      width: 440,
+      child: Material(
+        elevation: 16,
+        borderRadius: BorderRadius.circular(22),
+        color: Colors.white,
+        shadowColor: const Color(0xFF10B981).withValues(alpha: 0.3),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: const Color(0xFF10B981), width: 2),
+            gradient: const LinearGradient(
+              colors: [Color(0xFFF0FDF4), Colors.white],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.verified_rounded, color: Colors.white, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Doctor Approved Alternative Bill',
+                            style: AppFonts.googleSans(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF065F46),
+                            ),
+                          ),
+                          Text(
+                            'Ready for Immediate Dispense',
+                            style: AppFonts.googleSans(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF059669),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF94A3B8)),
+                    onPressed: () => appState.clearLatestApprovedRequest(),
+                    tooltip: 'Dismiss',
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 14),
+              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              const SizedBox(height: 14),
+
+              // Patient & Doctor Info
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Patient:', style: AppFonts.googleSans(fontSize: 11.5, color: const Color(0xFF64748B))),
+                        Text('${request.patientName} (${request.patientAge}y)',
+                            style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w800, color: const Color(0xFF0F172A))),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Supervising Doctor:', style: AppFonts.googleSans(fontSize: 11.5, color: const Color(0xFF64748B))),
+                        Text(request.doctorName,
+                            style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w800, color: const Color(0xFF1E293B))),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Indication:', style: AppFonts.googleSans(fontSize: 11.5, color: const Color(0xFF64748B))),
+                        Text(request.indication,
+                            style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF334155))),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Medication & Cost Bill Breakdown
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.medication_rounded, size: 16, color: Color(0xFF10B981)),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            request.recommendedAlternative,
+                            style: AppFonts.googleSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF0F172A),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Original Prescribed Copay:',
+                            style: AppFonts.googleSans(fontSize: 11.5, color: const Color(0xFF64748B), decoration: TextDecoration.lineThrough)),
+                        Text('\$${request.originalCopay.toStringAsFixed(2)}',
+                            style: AppFonts.googleSans(fontSize: 12, color: const Color(0xFF94A3B8), decoration: TextDecoration.lineThrough)),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Approved Tier 1 Copay:',
+                            style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w800, color: const Color(0xFF059669))),
+                        Text('\$${request.alternativeCopay.toStringAsFixed(2)}',
+                            style: AppFonts.googleSans(fontSize: 15, fontWeight: FontWeight.w900, color: const Color(0xFF059669))),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.savings_rounded, size: 13, color: Color(0xFF059669)),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Patient Saves \$${request.monthlySavings.toStringAsFixed(2)} / month with FDA Bioequivalent',
+                            style: AppFonts.googleSans(fontSize: 10.5, fontWeight: FontWeight.w800, color: const Color(0xFF059669)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Action Row
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () => appState.clearLatestApprovedRequest(),
+                      child: Text('Close Bill',
+                          style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF64748B))),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        elevation: 4,
+                        shadowColor: const Color(0xFF10B981).withValues(alpha: 0.4),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.check_circle_rounded, size: 16),
+                      label: Text('Dispense Approved Alternative',
+                          style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w900)),
+                      onPressed: () {
+                        appState.dispenseApprovedAlternative(requestId: request.id);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: const Color(0xFF10B981),
+                            content: Text('🎉 Dispensed ${request.recommendedAlternative} for ${request.patientName}! Added to Dispense Engine.'),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],

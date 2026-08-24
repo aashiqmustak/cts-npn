@@ -1046,3 +1046,59 @@ class PharmacistDispenseRecord {
         'notes': notes,
       };
 }
+
+class AlternativeApprovalRequest {
+  final String id;
+  final String prescriptionId;
+  final String patientId;
+  final String patientName;
+  final int patientAge;
+  final String doctorId;
+  final String doctorName;
+  final String indication;
+  final String originalDrug;
+  final int originalTier;
+  final double originalCopay;
+  final String recommendedAlternative;
+  final int alternativeTier;
+  final double alternativeCopay;
+  final String clinicalClass;
+  final String clinicalRationale;
+  String status; // 'pending', 'approved', 'denied', 'dispensed'
+  final DateTime requestedAt;
+  DateTime? respondedAt;
+  String? doctorNote;
+
+  AlternativeApprovalRequest({
+    required this.id,
+    required this.prescriptionId,
+    required this.patientId,
+    required this.patientName,
+    required this.patientAge,
+    required this.doctorId,
+    required this.doctorName,
+    required this.indication,
+    required this.originalDrug,
+    required this.originalTier,
+    required this.originalCopay,
+    required this.recommendedAlternative,
+    required this.alternativeTier,
+    required this.alternativeCopay,
+    required this.clinicalClass,
+    required this.clinicalRationale,
+    this.status = 'pending',
+    required this.requestedAt,
+    this.respondedAt,
+    this.doctorNote,
+  });
+
+  bool get isPending => status == 'pending';
+  bool get isApproved => status == 'approved';
+  bool get isDenied => status == 'denied';
+  bool get isDispensed => status == 'dispensed';
+
+  double get monthlySavings => (originalCopay - alternativeCopay).clamp(0.0, 9999.0);
+  double get annualSavings => monthlySavings * 12;
+  double get patientSavings => monthlySavings;
+  String get createdAt => requestedAt.toIso8601String();
+}

@@ -814,6 +814,12 @@ class DataService {
         _dispenseRecords.clear();
         _dispenseRecords.addAll(recs);
       }
+
+      final altApprovals = await supabaseService.fetchAlternativeApprovals();
+      if (altApprovals.isNotEmpty) {
+        _alternativeApprovalRequests.clear();
+        _alternativeApprovalRequests.addAll(altApprovals);
+      }
     } catch (_) {
       // Gracefully retain pre-populated clinical state
     }
@@ -941,6 +947,25 @@ class DataService {
       notes: notes,
     );
     _prescriptions.insert(0, rxRecord);
+
+    if (!_patientRecords.any((p) => p.id.toLowerCase() == patientId.toLowerCase())) {
+      _patientRecords.insert(
+        0,
+        PatientRecord(
+          id: patientId,
+          name: patientName,
+          email: '${patientId.toLowerCase()}@health.org',
+          phone: '(555) 019-2830',
+          age: 52,
+          gender: 'Female',
+          currentProblem: diagnosis,
+          visitDate: DateTime.now(),
+          assignedDoctorId: doctorId,
+          assignedDoctorName: doc.name,
+          hospitalName: doc.specialty,
+        ),
+      );
+    }
 
     // 3. If PA is required, create a live PAFrictionEvent for Insurance Portal
     if (triggersPa && paDrugName != null) {
@@ -1073,6 +1098,16 @@ class DataService {
         }
       }
     }
+  }
+
+  void addAlternatePrescriptionRecord({
+    required Prescription rx,
+    required PrescriptionItem item,
+  }) {
+    _prescriptions.removeWhere((r) => r.id.toLowerCase() == rx.id.toLowerCase());
+    _prescriptions.insert(0, rx);
+    _prescriptionItems.removeWhere((i) => i.id.toLowerCase() == item.id.toLowerCase());
+    _prescriptionItems.insert(0, item);
   }
 
   // Pharmacist Action: Dispense item, create dispense audit, and update adherence
@@ -1509,6 +1544,95 @@ class DataService {
     if (index != -1) {
       _tierConfigs[index].defaultCopay = copay;
       _tierConfigs[index].coinsurancePct = coinsurance;
+    }
+  }
+
+  // --- Alternative Drug Approvals Pipeline ---
+  final List<AlternativeApprovalRequest> _alternativeApprovalRequests = [
+    AlternativeApprovalRequest(
+      id: 'REQ-1787543533571',
+      prescriptionId: 'RX-1787543533571',
+      patientId: 'PAT_00402',
+      patientName: 'Eleanor Vance',
+      patientAge: 52,
+      doctorId: 'DOC_001',
+      doctorName: 'Dr. Samantha Harris',
+      indication: 'Epilepsy / Seizure Disorder',
+      originalDrug: 'Levetiracetam 500 MG Oral Tablet (Tier 2, Copay: \$45.00)',
+      originalTier: 2,
+      originalCopay: 45.0,
+      recommendedAlternative: 'Lamotrigine 100 MG Oral Tablet (Tier 1, Copay: \$10.00)',
+      alternativeTier: 1,
+      alternativeCopay: 10.0,
+      clinicalClass: 'Neurology (Antiepileptic / Anticonvulsant) -> Alternative',
+      clinicalRationale:
+          'Tier 1 preferred antiepileptic with broad-spectrum seizure control and excellent neuro-psychiatric tolerability.',
+      status: 'pending',
+      requestedAt: DateTime.now().subtract(const Duration(minutes: 15)),
+    ),
+    AlternativeApprovalRequest(
+      id: 'REQ-1787543522104',
+      prescriptionId: 'RX-1787543522104',
+      patientId: 'PAT_00105',
+      patientName: 'Marcus Bennett',
+      patientAge: 64,
+      doctorId: 'DOC_001',
+      doctorName: 'Dr. Samantha Harris',
+      indication: 'Hyperlipidemia & Coronary Prevention',
+      originalDrug: 'Lipitor 40 MG Oral Tablet (Tier 3, Copay: \$285.00)',
+      originalTier: 3,
+      originalCopay: 285.0,
+      recommendedAlternative: 'Rosuvastatin 10 MG Oral Tablet (Tier 1, Copay: \$10.00)',
+      alternativeTier: 1,
+      alternativeCopay: 10.0,
+      clinicalClass: 'Cardiovascular (HMG-CoA Reductase Inhibitor) -> Statin',
+      clinicalRationale:
+          'Tier 1 high-potency statin eliminating prior authorization friction, reducing monthly copay to \$10.00 with 100% safety match.',
+      status: 'dispensed',
+      requestedAt: DateTime.now().subtract(const Duration(days: 2)),
+      respondedAt: DateTime.now().subtract(const Duration(days: 2, hours: -1)),
+      doctorNote: 'Approved. Patient has verified LDL tolerance.',
+    ),
+    AlternativeApprovalRequest(
+      id: 'REQ-1787543511892',
+      prescriptionId: 'RX-1787543511892',
+      patientId: 'PAT_00289',
+      patientName: 'Clara Oswald',
+      patientAge: 48,
+      doctorId: 'DOC_001',
+      doctorName: 'Dr. Samantha Harris',
+      indication: 'Essential Hypertension',
+      originalDrug: 'Prinivil 20 MG Oral Tablet (Tier 2, Copay: \$40.00)',
+      originalTier: 2,
+      originalCopay: 40.0,
+      recommendedAlternative: 'Telmisartan 40 MG Oral Tablet (Tier 1, Copay: \$10.00)',
+      alternativeTier: 1,
+      alternativeCopay: 10.0,
+      clinicalClass: 'Cardiovascular (Angiotensin Receptor Blocker) -> ARB',
+      clinicalRationale:
+          'Telmisartan offers 24h sustained blood pressure control, improved tolerability, and \$30.00/mo direct copay savings.',
+      status: 'approved',
+      requestedAt: DateTime.now().subtract(const Duration(days: 4)),
+      respondedAt: DateTime.now().subtract(const Duration(days: 4, hours: -2)),
+      doctorNote: 'Approved substitution to Tier 1 ARB.',
+    ),
+  ];
+  List<AlternativeApprovalRequest> get alternativeApprovalRequests =>
+      List.unmodifiable(_alternativeApprovalRequests);
+
+  void addAlternativeApprovalRequest(AlternativeApprovalRequest req) {
+    _alternativeApprovalRequests.removeWhere((r) => r.prescriptionId == req.prescriptionId);
+    _alternativeApprovalRequests.insert(0, req);
+  }
+
+  void updateAlternativeApprovalStatus(String reqId, String status, {String? note}) {
+    final idx = _alternativeApprovalRequests.indexWhere((r) => r.id == reqId);
+    if (idx != -1) {
+      _alternativeApprovalRequests[idx].status = status;
+      _alternativeApprovalRequests[idx].respondedAt = DateTime.now();
+      if (note != null) {
+        _alternativeApprovalRequests[idx].doctorNote = note;
+      }
     }
   }
 }

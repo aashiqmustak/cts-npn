@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/models.dart';
 import '../providers/app_state.dart';
+import '../services/api_config.dart';
 import '../services/prescription_ocr_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bento_card.dart';
@@ -186,8 +187,7 @@ class _RxAgentEvaluationScreenState extends State<RxAgentEvaluationScreen>
 
     // 2. Call Backend 7-Stage Multi-Agent Orchestrator
     try {
-      final host = kIsWeb ? (Uri.base.host.isEmpty ? '127.0.0.1' : Uri.base.host) : '127.0.0.1';
-      final backendUrl = Uri.parse('http://$host:8000/api/v1/orchestrate/evaluate-prescription');
+      final backendUrl = Uri.parse(ApiConfig.instance.orchestratorEvaluateEndpoint);
       final payload = {
         'patient_id': rx.patientId,
         'prescription_text': _origDrugName,
@@ -1280,56 +1280,130 @@ class _RxAgentEvaluationScreenState extends State<RxAgentEvaluationScreen>
   Widget _buildActionFooter(BuildContext context, AppState appState) {
     return BentoCard(
       padding: const EdgeInsets.all(20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              side: const BorderSide(color: Color(0xFF1244A2)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
-            icon: const Icon(Icons.picture_as_pdf_rounded, size: 16, color: Color(0xFF1244A2)),
-            label: Text('Export Decision PDF', style: AppFonts.googleSans(fontWeight: FontWeight.w800, color: const Color(0xFF1244A2))),
-            onPressed: () => _exportDecisionSummaryPdf(),
-          ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF10B981),
-              foregroundColor: Colors.white,
-              elevation: 4,
-              shadowColor: const Color(0xFF10B981).withValues(alpha: 0.4),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-            icon: const Icon(Icons.check_circle_rounded, size: 18),
-            label: Text(
-              'Switch to Alternative & Auto-Dispense',
-              style: AppFonts.googleSans(fontWeight: FontWeight.w900, fontSize: 13),
-            ),
-            onPressed: () {
-              appState.switchPrescriptionToAlternative(
-                rxId: widget.prescriptionId,
-                alternativeDrugName: _altDrugName,
-                newDosage: _ocrResult?.dose ?? '1 Tablet (Oral)',
-                newCopay: _altMonthlyCopay,
-              );
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isDesktop = constraints.maxWidth >= 780;
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  behavior: SnackBarBehavior.floating,
-                  backgroundColor: const Color(0xFF10B981),
-                  content: Text(
-                    '✅ Prescription #${widget.prescriptionId} switched to $_altDrugName and queued for immediate dispense!',
-                    style: AppFonts.googleSans(fontWeight: FontWeight.w600),
+          final buttons = [
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                side: const BorderSide(color: Color(0xFF1244A2)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Icons.picture_as_pdf_rounded, size: 16, color: Color(0xFF1244A2)),
+              label: Text('Export Decision PDF',
+                  style: AppFonts.googleSans(fontWeight: FontWeight.w800, color: const Color(0xFF1244A2))),
+              onPressed: () => _exportDecisionSummaryPdf(),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8B5CF6),
+                foregroundColor: Colors.white,
+                elevation: 4,
+                shadowColor: const Color(0xFF8B5CF6).withValues(alpha: 0.4),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Icons.send_rounded, size: 16),
+              label: Text(
+                'Send Decision to Doctor for Approval',
+                style: AppFonts.googleSans(fontWeight: FontWeight.w900, fontSize: 12.5),
+              ),
+              onPressed: () {
+                final patientName = _ocrResult?.patientName ?? "Eleanor Vance";
+                final patientAge = _ocrResult?.patientAge ?? 52;
+                final doctorId = appState.currentUser.doctorId ?? 'DOC_001';
+                final doc = appState.doctors.firstWhere((d) => d.id == doctorId, orElse: () => appState.doctors.first);
+
+                appState.sendAlternativeToDoctor(
+                  rxId: widget.prescriptionId,
+                  patientId: _ocrResult?.patientId ?? 'PAT_00402',
+                  patientName: patientName,
+                  patientAge: patientAge,
+                  doctorId: doc.id,
+                  doctorName: doc.name,
+                  indication: _origDiagnosis,
+                  originalDrug: '$_origDrugName (Tier $_origTier, Copay: \$${_origMonthlyCopay.toStringAsFixed(2)})',
+                  originalTier: _origTier,
+                  originalCopay: _origMonthlyCopay,
+                  recommendedAlternative: '$_altDrugName (Tier $_altTier, Copay: \$${_altMonthlyCopay.toStringAsFixed(2)})',
+                  alternativeTier: _altTier,
+                  alternativeCopay: _altMonthlyCopay,
+                  clinicalClass: '$_origClass -> Alternative',
+                  clinicalRationale: _clinicalRationale,
+                );
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: const Color(0xFF8B5CF6),
+                    content: Text(
+                      '📤 Alternative decision report sent to ${doc.name} for clinical approval!',
+                      style: AppFonts.googleSans(fontWeight: FontWeight.w700),
+                    ),
                   ),
-                ),
-              );
+                );
 
-              appState.setEvaluatingPrescriptionId(null);
-            },
-          ),
-        ],
+                appState.setEvaluatingPrescriptionId(null);
+              },
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF10B981),
+                foregroundColor: Colors.white,
+                elevation: 4,
+                shadowColor: const Color(0xFF10B981).withValues(alpha: 0.4),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Icons.check_circle_rounded, size: 16),
+              label: Text(
+                'Switch & Auto-Dispense',
+                style: AppFonts.googleSans(fontWeight: FontWeight.w900, fontSize: 12.5),
+              ),
+              onPressed: () {
+                appState.switchPrescriptionToAlternative(
+                  rxId: widget.prescriptionId,
+                  alternativeDrugName: _altDrugName,
+                  newDosage: _ocrResult?.dose ?? '1 Tablet (Oral)',
+                  newCopay: _altMonthlyCopay,
+                );
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: const Color(0xFF10B981),
+                    content: Text(
+                      '✅ Prescription #${widget.prescriptionId} switched to $_altDrugName and queued for immediate dispense!',
+                      style: AppFonts.googleSans(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                );
+
+                appState.setEvaluatingPrescriptionId(null);
+              },
+            ),
+          ];
+
+          if (isDesktop) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: buttons,
+            );
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              buttons[0],
+              const SizedBox(height: 10),
+              buttons[1],
+              const SizedBox(height: 10),
+              buttons[2],
+            ],
+          );
+        },
       ),
     );
   }
@@ -1345,22 +1419,26 @@ class _RxAgentEvaluationScreenState extends State<RxAgentEvaluationScreen>
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text('PHARMAASSIST CLINICAL DECISION SUPPORT REPORT', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-                pw.Text('7-Stage Multi-Agent AI Alternative Analysis', style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
+                pw.Text('PHARMAASSIST CLINICAL DECISION SUPPORT REPORT',
+                    style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                pw.Text('7-Stage Multi-Agent AI Alternative Analysis',
+                    style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
                 pw.Divider(),
                 pw.SizedBox(height: 8),
                 pw.Text('Prescription ID: #${widget.prescriptionId}'),
-                pw.Text('Patient: ${_ocrResult?.patientName ?? "James Cole"} (Age: ${_ocrResult?.patientAge ?? 48})'),
+                pw.Text(
+                    'Patient: ${_ocrResult?.patientName ?? "Eleanor Vance"} (Age: ${_ocrResult?.patientAge ?? 52})'),
                 pw.Text('Indication: $_origDiagnosis'),
                 pw.SizedBox(height: 12),
-                pw.Text('Original Drug Prescribed: $_origDrugName (Tier $_origTier, Copay: \$${_origMonthlyCopay.toStringAsFixed(2)})'),
-                pw.Text('Recommended Alternative: $_altDrugName (Tier $_altTier, Copay: \$${_altMonthlyCopay.toStringAsFixed(2)})', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.teal)),
+                pw.Text(
+                    'Original Drug Prescribed: $_origDrugName (Tier $_origTier, Copay: \$${_origMonthlyCopay.toStringAsFixed(2)})'),
+                pw.Text(
+                    'Recommended Alternative: $_altDrugName (Tier $_altTier, Copay: \$${_altMonthlyCopay.toStringAsFixed(2)})',
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.teal)),
                 pw.SizedBox(height: 8),
-                pw.Text('Clinical Class: $_origClass -> ARB Alternative'),
+                pw.Text('Clinical Class: $_origClass -> Alternative'),
                 pw.SizedBox(height: 12),
                 pw.Text('Clinical Rationale: $_clinicalRationale'),
-                pw.SizedBox(height: 24),
-                pw.Text('Official Signature: _______________________ (Dispensing Pharmacist)'),
               ],
             ),
           );

@@ -314,6 +314,9 @@ class _DoctorOverviewDashboardScreenState
 
           const SizedBox(height: 18),
 
+          // 1.5. Pharmacy Alternative Approval Requests (CDS Feed)
+          _buildAlternativeApprovalRequestsSection(appState),
+
           // 2. Core Telemetry Bento Grid (4 Summary Cards)
           _buildTelemetryBentoGrid(
             totalPrescriptions: totalPrescriptions,
@@ -489,6 +492,341 @@ class _DoctorOverviewDashboardScreenState
               elevation: 3,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // =========================================================================
+  // 1.5. PHARMACY ALTERNATIVE APPROVAL REQUESTS (CDS DECISIONS FEED)
+  // =========================================================================
+  Widget _buildAlternativeApprovalRequestsSection(AppState appState) {
+    final pending = appState.pendingAlternativeApprovalRequests;
+    if (pending.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFDF4FF),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFC084FC), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8B5CF6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Pharmacy Alternative Regimen Approvals (CDS Feed)',
+                        style: AppFonts.googleSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF4C1D95),
+                        ),
+                      ),
+                      Text(
+                        '${pending.length} Alternative medication change requests sent by Pharmacist awaiting physician sign-off',
+                        style: AppFonts.googleSans(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF7C3AED),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.pending_actions_rounded, size: 14, color: Colors.white),
+                    const SizedBox(width: 5),
+                    Text(
+                      '${pending.length} PENDING REVIEW',
+                      style: AppFonts.googleSans(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          ...pending.map((req) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFFE9D5FF)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Patient Details Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3E8FF),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.person_rounded, size: 16, color: Color(0xFF7C3AED)),
+                          ),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${req.patientName} (${req.patientAge}y)',
+                                style: AppFonts.googleSans(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.textDark,
+                                ),
+                              ),
+                              Text(
+                                'Prescription ID: #${req.prescriptionId} • Indication: ${req.indication}',
+                                style: AppFonts.googleSans(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          'Save \$${req.monthlySavings.toStringAsFixed(2)} / month',
+                          style: AppFonts.googleSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF059669),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 14),
+                  Divider(height: 1, color: const Color(0xFFF3E8FF)),
+                  const SizedBox(height: 14),
+
+                  // Original vs Alternative Comparison
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFCA5A5)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'ORIGINAL DRUG PRESCRIBED',
+                                style: AppFonts.googleSans(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF991B1B),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                req.originalDrug,
+                                style: AppFonts.googleSans(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFF7F1D1D),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Icon(Icons.arrow_forward_rounded, color: Color(0xFF8B5CF6), size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFECFDF5),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFF6EE7B7)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'RECOMMENDED ALTERNATIVE',
+                                style: AppFonts.googleSans(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF065F46),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                req.recommendedAlternative,
+                                style: AppFonts.googleSans(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFF064E3B),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Clinical Class & Rationale
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Clinical Class: ${req.clinicalClass}',
+                          style: AppFonts.googleSans(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF334155),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Clinical Rationale: ${req.clinicalRationale}',
+                          style: AppFonts.googleSans(
+                            fontSize: 11,
+                            color: const Color(0xFF64748B),
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Action Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFFEF4444),
+                          side: const BorderSide(color: Color(0xFFFCA5A5)),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.close_rounded, size: 15),
+                        label: Text('Deny Alternative',
+                            style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                        onPressed: () {
+                          appState.denyAlternativeDrug(requestId: req.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: const Color(0xFFEF4444),
+                              content: Text('❌ Alternative denied for ${req.patientName}. Pharmacist notified.'),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF10B981),
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.check_circle_rounded, size: 16),
+                        label: Text('Approve Alternative Medicine',
+                            style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w900)),
+                        onPressed: () {
+                          appState.approveAlternativeDrug(requestId: req.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: const Color(0xFF10B981),
+                              content: Text(
+                                  '✅ Approved ${req.recommendedAlternative} for ${req.patientName}! Voice notification dispatched to Pharmacist.'),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }),
         ],
       ),
     );

@@ -22,7 +22,7 @@ class DoctorClinicalDashboardScreen extends StatefulWidget {
 class _DoctorClinicalDashboardScreenState
     extends State<DoctorClinicalDashboardScreen>
     with SingleTickerProviderStateMixin {
-  late ClinicalMedicineComparison _selectedMedicine;
+  ClinicalMedicineComparison? _selectedMedicine;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedTimePeriod = 'Last 30 Days';
@@ -37,11 +37,14 @@ class _DoctorClinicalDashboardScreenState
   late Animation<double> _chartAnim;
 
   int _selectedNavIndex = 3; // 3: Analytics (Active)
+  int _approvalFeedTab = 0; // 0: Pending, 1: History
+  int _historyFilterIndex = 0; // 0: All, 1: Dispensed, 2: Approved, 3: Denied
+  final TextEditingController _historySearchController = TextEditingController();
+  String _historySearchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    _selectedMedicine = DoctorClinicalData.defaultMedicine;
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 650),
@@ -56,12 +59,13 @@ class _DoctorClinicalDashboardScreenState
   @override
   void dispose() {
     _searchController.dispose();
+    _historySearchController.dispose();
     _animController.dispose();
     super.dispose();
   }
 
   void _onMedicineSelected(ClinicalMedicineComparison med) {
-    if (_selectedMedicine.cleanName == med.cleanName) return;
+    if (_selectedMedicine?.cleanName == med.cleanName) return;
     setState(() {
       _selectedMedicine = med;
     });
@@ -71,7 +75,7 @@ class _DoctorClinicalDashboardScreenState
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context, listen: false);
+    final appState = Provider.of<AppState>(context);
     final user = appState.currentUser;
     final doctorName = user.name.isNotEmpty ? user.name : 'Dr. Ananya Sharma';
     final doctorSpecialty = (user.title.isNotEmpty && user.title != 'Attending Physician')
@@ -81,97 +85,102 @@ class _DoctorClinicalDashboardScreenState
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth >= 1080;
 
+    final dynamicMedicines = _getDynamicMedicines(appState);
+    final currentMed = (_selectedMedicine != null &&
+            dynamicMedicines.any((m) => m.cleanName.toLowerCase() == _selectedMedicine!.cleanName.toLowerCase()))
+        ? dynamicMedicines.firstWhere((m) => m.cleanName.toLowerCase() == _selectedMedicine!.cleanName.toLowerCase())
+        : (dynamicMedicines.isNotEmpty ? dynamicMedicines.first : DoctorClinicalData.defaultMedicine);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FB),
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 1. Dark Navy Sidebar (matching reference mockup)
+          // 1. Dark Navy Sidebar
           if (widget.showSidebar && isDesktop)
             _buildDarkNavySidebar(context, appState),
 
           // 2. Main Dashboard Content Canvas
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Top Header Bar
-                _buildTopHeaderBar(
-                  doctorName: doctorName,
-                  doctorSpecialty: doctorSpecialty,
-                ),
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Top Header Bar
+                  _buildTopHeaderBar(
+                    doctorName: doctorName,
+                    doctorSpecialty: doctorSpecialty,
+                  ),
 
-                // Full-width 5 KPI Telemetry Cards Strip
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
-                  child: _buildPrescriptionTelemetryStrip(),
-                ),
+                  // Full-width 5 KPI Telemetry Cards Strip
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
+                    child: _buildPrescriptionTelemetryStrip(appState),
+                  ),
 
-                // Main Body: Left Medicine Selector + Right Chart & Insights
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 14, 24, 20),
+                  // Pharmacy Alternative Regimen Approvals (CDS Feed)
+                  _buildAlternativeApprovalRequestsSection(appState),
+
+                  // Main Body: Left Medicine Selector + Right Chart & Insights
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 14, 24, 24),
                     child: isDesktop
                         ? Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Left Column: Select Prescribed Medicine List
                               SizedBox(
                                 width: 290,
-                                child: _buildMedicineSelectionPanel(),
+                                height: 750,
+                                child: _buildMedicineSelectionPanel(appState, currentMed),
                               ),
                               const SizedBox(width: 20),
 
                               // Right Column: Overview Card + Usage Chart + Insight
                               Expanded(
-                                child: SingleChildScrollView(
-                                  physics: const BouncingScrollPhysics(),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      // 1. Top Medicine Comparison Info Bar
-                                      _buildMedicineComparisonInfoBar(),
-                                      const SizedBox(height: 16),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    // 1. Top Medicine Comparison Info Bar
+                                    _buildMedicineComparisonInfoBar(currentMed),
+                                    const SizedBox(height: 16),
 
-                                      // 2. Dual-Bar Patient Usage Comparison Chart
-                                      _buildPatientUsageChartCard(),
-                                      const SizedBox(height: 16),
+                                    // 2. Dual-Bar Patient Usage Comparison Chart
+                                    _buildPatientUsageChartCard(currentMed),
+                                    const SizedBox(height: 16),
 
-                                      // 3. Dynamic Insight Banner
-                                      _buildDynamicInsightCard(),
-                                      const SizedBox(height: 20),
+                                    // 3. Dynamic Insight Banner
+                                    _buildDynamicInsightCard(currentMed),
+                                    const SizedBox(height: 20),
 
-                                      // 4. Interactive Clinical Alerts Section
-                                      _buildClinicalAlertsSection(),
-                                    ],
-                                  ),
+                                    // 4. Interactive Clinical Alerts Section
+                                    _buildClinicalAlertsSection(appState),
+                                  ],
                                 ),
                               ),
                             ],
                           )
-                        : SingleChildScrollView(
-                            physics: const BouncingScrollPhysics(),
-                            child: Column(
-                              children: [
-                                _buildMedicineComparisonInfoBar(),
-                                const SizedBox(height: 16),
-                                SizedBox(
-                                  height: 380,
-                                  child: _buildMedicineSelectionPanel(),
-                                ),
-                                const SizedBox(height: 16),
-                                _buildPatientUsageChartCard(),
-                                const SizedBox(height: 16),
-                                _buildDynamicInsightCard(),
-                                const SizedBox(height: 20),
-                                _buildClinicalAlertsSection(),
-                              ],
-                            ),
+                        : Column(
+                            children: [
+                              _buildMedicineComparisonInfoBar(currentMed),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                height: 400,
+                                child: _buildMedicineSelectionPanel(appState, currentMed),
+                              ),
+                              const SizedBox(height: 16),
+                              _buildPatientUsageChartCard(currentMed),
+                              const SizedBox(height: 16),
+                              _buildDynamicInsightCard(currentMed),
+                              const SizedBox(height: 20),
+                              _buildClinicalAlertsSection(appState),
+                            ],
                           ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -241,7 +250,7 @@ class _DoctorClinicalDashboardScreenState
                       'Alternea',
                       style: GoogleFonts.inter(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.3,
                       ),
@@ -526,68 +535,42 @@ class _DoctorClinicalDashboardScreenState
   }
 
   // =========================================================================
-  // PRESCRIPTION PROCESS LIFECYCLE TELEMETRY STRIP (5 CARDS)
+  // PRESCRIPTION PROCESS LIFECYCLE TELEMETRY STRIP (LIVE SUPABASE / DB METRICS)
   // =========================================================================
-  Map<String, String> _getTelemetryMetrics() {
-    switch (_selectedTimePeriod) {
-      case 'Last 7 Days':
-        return {
-          'received': '320',
-          'processed': '290',
-          'approved': '240',
-          'pending': '38',
-          'rejected': '12',
-          'receivedSub': '+6.2% wk',
-          'processedSub': '90.6% flow',
-          'approvedSub': '82.8% rate',
-          'pendingSub': '13.1% queue',
-          'rejectedSub': '4.1% friction',
-        };
-      case 'Last 90 Days':
-        return {
-          'received': '4,150',
-          'processed': '3,820',
-          'approved': '3,190',
-          'pending': '480',
-          'rejected': '150',
-          'receivedSub': '+15.8% qtr',
-          'processedSub': '92.0% flow',
-          'approvedSub': '83.5% rate',
-          'pendingSub': '12.6% queue',
-          'rejectedSub': '3.9% friction',
-        };
-      case 'This Year':
-        return {
-          'received': '16,840',
-          'processed': '15,920',
-          'approved': '13,410',
-          'pending': '1,890',
-          'rejected': '620',
-          'receivedSub': '+21.4% yr',
-          'processedSub': '94.5% flow',
-          'approvedSub': '84.2% rate',
-          'pendingSub': '11.9% queue',
-          'rejectedSub': '3.9% friction',
-        };
-      case 'Last 30 Days':
-      default:
-        return {
-          'received': '1,420',
-          'processed': '1,280',
-          'approved': '1,045',
-          'pending': '185',
-          'rejected': '50',
-          'receivedSub': '+12.4% mo',
-          'processedSub': '90.1% flow',
-          'approvedSub': '81.6% rate',
-          'pendingSub': '14.5% queue',
-          'rejectedSub': '3.9% friction',
-        };
-    }
+  Map<String, String> _getTelemetryMetrics(AppState appState) {
+    final int totalRx = appState.prescriptions.length;
+    final int totalApprovals = appState.allAlternativeHistory.length;
+    final int pendingApprovals = appState.pendingAlternativeApprovalRequests.length;
+    final int approvedAlternatives = appState.approvedAlternativeHistory.length;
+    final int deniedAlternatives = appState.allAlternativeHistory.where((r) => r.status == 'denied').length;
+
+    final int receivedCount = totalRx + totalApprovals;
+    final int processedCount = appState.prescriptions.where((r) => r.status.toLowerCase() != 'draft').length + totalApprovals;
+    final int approvedCount = approvedAlternatives + appState.prescriptions.where((r) => r.status.toLowerCase() == 'active' || r.status.toLowerCase() == 'dispensed' || r.status.toLowerCase() == 'approved').length;
+    final int pendingCount = pendingApprovals;
+    final int rejectedCount = deniedAlternatives;
+
+    final procRate = receivedCount > 0 ? ((processedCount / receivedCount) * 100).toStringAsFixed(1) : '100.0';
+    final appRate = processedCount > 0 ? ((approvedCount / processedCount) * 100).clamp(0.0, 100.0).toStringAsFixed(1) : '100.0';
+    final pendRate = receivedCount > 0 ? ((pendingCount / receivedCount) * 100).clamp(0.0, 100.0).toStringAsFixed(1) : '0.0';
+    final rejRate = receivedCount > 0 ? ((rejectedCount / receivedCount) * 100).clamp(0.0, 100.0).toStringAsFixed(1) : '0.0';
+
+    return {
+      'received': receivedCount.toString(),
+      'processed': processedCount.toString(),
+      'approved': approvedCount.toString(),
+      'pending': pendingCount.toString(),
+      'rejected': rejectedCount.toString(),
+      'receivedSub': 'Live DB records',
+      'processedSub': '$procRate% flow',
+      'approvedSub': '$appRate% rate',
+      'pendingSub': '$pendRate% queue',
+      'rejectedSub': '$rejRate% friction',
+    };
   }
 
-  Widget _buildPrescriptionTelemetryStrip() {
-    final telemetry = _getTelemetryMetrics();
+  Widget _buildPrescriptionTelemetryStrip(AppState appState) {
+    final telemetry = _getTelemetryMetrics(appState);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -616,59 +599,55 @@ class _DoctorClinicalDashboardScreenState
             value: telemetry['approved']!,
             subtitle: telemetry['approvedSub']!,
             icon: Icons.check_circle_outline_rounded,
-            accentColor: const Color(0xFF16A34A),
-            badgeColor: const Color(0xFFF0FDF4),
+            accentColor: const Color(0xFF10B981),
+            badgeColor: const Color(0xFFECFDF5),
           ),
           _buildTelemetryMetricCard(
             title: 'Pending Review',
             value: telemetry['pending']!,
             subtitle: telemetry['pendingSub']!,
             icon: Icons.hourglass_top_rounded,
-            accentColor: const Color(0xFFD97706),
-            badgeColor: const Color(0xFFFFFBEB),
+            accentColor: const Color(0xFFF59E0B),
+            badgeColor: const Color(0xFFFEF3C7),
           ),
           _buildTelemetryMetricCard(
             title: 'Rejected',
             value: telemetry['rejected']!,
             subtitle: telemetry['rejectedSub']!,
             icon: Icons.highlight_off_rounded,
-            accentColor: const Color(0xFFDC2626),
+            accentColor: const Color(0xFFEF4444),
             badgeColor: const Color(0xFFFEF2F2),
           ),
         ];
 
         if (isVeryCompact) {
-          return Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(child: cards[0]),
-                  const SizedBox(width: 8),
-                  Expanded(child: cards[1]),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(child: cards[2]),
-                  const SizedBox(width: 8),
-                  Expanded(child: cards[3]),
-                  const SizedBox(width: 8),
-                  Expanded(child: cards[4]),
-                ],
-              ),
-            ],
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: cards
+                  .map(
+                    (card) => Container(
+                      width: 175,
+                      margin: const EdgeInsets.only(right: 12),
+                      child: card,
+                    ),
+                  )
+                  .toList(),
+            ),
           );
         }
 
         return Row(
           children: cards
-              .map((c) => Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: c,
-                    ),
-                  ))
+              .map(
+                (card) => Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: card,
+                  ),
+                ),
+              )
               .toList(),
         );
       },
@@ -684,16 +663,16 @@ class _DoctorClinicalDashboardScreenState
     required Color badgeColor,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.025),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -704,23 +683,27 @@ class _DoctorClinicalDashboardScreenState
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.all(7),
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: badgeColor,
                   borderRadius: BorderRadius.circular(9),
                 ),
-                child: Icon(icon, color: accentColor, size: 16),
+                child: Icon(icon, color: accentColor, size: 17),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 7,
+                  vertical: 2.5,
+                ),
                 decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.08),
+                  color: badgeColor,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   subtitle,
                   style: GoogleFonts.inter(
-                    fontSize: 9.5,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.w700,
                     color: accentColor,
                   ),
@@ -732,17 +715,17 @@ class _DoctorClinicalDashboardScreenState
           Text(
             value,
             style: GoogleFonts.inter(
-              fontSize: 18,
+              fontSize: 21,
               fontWeight: FontWeight.w900,
               color: const Color(0xFF0F172A),
-              letterSpacing: -0.4,
+              letterSpacing: -0.5,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             title,
             style: GoogleFonts.inter(
-              fontSize: 10.5,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF64748B),
             ),
@@ -755,10 +738,105 @@ class _DoctorClinicalDashboardScreenState
   }
 
   // =========================================================================
+  // DYNAMIC MEDICINES GENERATOR (FROM SUPABASE & APPROVED ALTERNATIVES)
+  // =========================================================================
+  List<ClinicalMedicineComparison> _getDynamicMedicines(AppState appState) {
+    final List<ClinicalMedicineComparison> dynamicList = [];
+
+    // 1. Live Approved and historical Alternative Approvals from Supabase / AppState
+    for (final req in appState.alternativeApprovalRequests) {
+      final origParts = _splitDrugNameAndStrength(req.originalDrug);
+      final altParts = _splitDrugNameAndStrength(req.recommendedAlternative);
+
+      if (!dynamicList.any((m) => m.cleanName.toLowerCase() == origParts.$1.toLowerCase())) {
+        final double prescribedPct = (req.isApproved || req.isDispensed) ? 66.0 : 72.0;
+        final double altPct = (req.isApproved || req.isDispensed) ? 59.0 : 48.0;
+
+        dynamicList.add(
+          ClinicalMedicineComparison(
+            cleanName: origParts.$1,
+            strength: origParts.$2,
+            altName: altParts.$1,
+            altStrength: altParts.$2,
+            therapeuticCategory: req.clinicalClass.isNotEmpty ? req.clinicalClass : 'Clinical Alternative Therapy',
+            prescribedPct: prescribedPct,
+            prescribedRangeMin: (prescribedPct - 8).clamp(0.0, 100.0),
+            prescribedRangeMax: (prescribedPct + 7).clamp(0.0, 100.0),
+            altPct: altPct,
+            altRangeMin: (altPct - 8).clamp(0.0, 100.0),
+            altRangeMax: (altPct + 7).clamp(0.0, 100.0),
+            customInsight: req.clinicalRationale.isNotEmpty
+                ? req.clinicalRationale
+                : '${prescribedPct.toInt()}% of patients used ${origParts.$1} ${origParts.$2}, while ${altPct.toInt()}% switched to alternative ${altParts.$1} ${altParts.$2}.',
+          ),
+        );
+      }
+    }
+
+    // 2. Add any prescription items from live patient records
+    for (final rx in appState.prescriptions) {
+      final drug = rx.drugName;
+      if (drug.isNotEmpty && !drug.startsWith('RX-') && !dynamicList.any((m) => m.cleanName.toLowerCase() == drug.toLowerCase())) {
+        final parts = _splitDrugNameAndStrength(drug);
+        dynamicList.add(
+          ClinicalMedicineComparison(
+            cleanName: parts.$1,
+            strength: parts.$2,
+            altName: _inferAlternativeName(parts.$1),
+            altStrength: parts.$2,
+            therapeuticCategory: rx.drugClass.isNotEmpty ? rx.drugClass : 'General Formulary',
+            prescribedPct: 68.0,
+            prescribedRangeMin: 60.0,
+            prescribedRangeMax: 76.0,
+            altPct: 52.0,
+            altRangeMin: 44.0,
+            altRangeMax: 60.0,
+          ),
+        );
+      }
+    }
+
+    // Filter by search query
+    if (_searchQuery.isEmpty) return dynamicList;
+    final q = _searchQuery.toLowerCase();
+    return dynamicList.where((m) =>
+        m.cleanName.toLowerCase().contains(q) ||
+        m.altName.toLowerCase().contains(q) ||
+        m.therapeuticCategory.toLowerCase().contains(q)).toList();
+  }
+
+  (String, String) _splitDrugNameAndStrength(String raw) {
+    final cleaned = raw.replaceAll(RegExp(r'\(.*?\)'), '').trim();
+    final match = RegExp(r'^([A-Za-z\s]+)\s+(\d+\s*(?:mg|ml|mcg|g)?(?:\s*Oral\s*Tablet|\s*Tablet|\s*Capsule)?.*)$', caseSensitive: false).firstMatch(cleaned);
+    if (match != null) {
+      final name = match.group(1)?.trim() ?? cleaned;
+      final strength = match.group(2)?.replaceAll('Oral Tablet', '')
+          .replaceAll('Tablet', '')
+          .replaceAll('Capsule', '')
+          .trim() ?? '';
+      return (name, strength.isNotEmpty ? strength : '5 mg');
+    }
+    return (cleaned, '5 mg');
+  }
+
+  String _inferAlternativeName(String drugName) {
+    final lower = drugName.toLowerCase();
+    if (lower.contains('levetiracetam') || lower.contains('keppra')) return 'Lamotrigine';
+    if (lower.contains('lipitor') || lower.contains('atorvastatin')) return 'Rosuvastatin';
+    if (lower.contains('metformin')) return 'Glimepiride';
+    if (lower.contains('lisinopril') || lower.contains('prinivil')) return 'Telmisartan';
+    if (lower.contains('levocetirizine')) return 'Cetirizine';
+    if (lower.contains('cetirizine')) return 'Levocetirizine';
+    if (lower.contains('omeprazole')) return 'Pantoprazole';
+    if (lower.contains('paracetamol')) return 'Dolo';
+    return 'Tier 1 Alternative';
+  }
+
+  // =========================================================================
   // 3. LEFT COLUMN: SELECT PRESCRIBED MEDICINE
   // =========================================================================
-  Widget _buildMedicineSelectionPanel() {
-    final filteredList = DoctorClinicalData.search(_searchQuery);
+  Widget _buildMedicineSelectionPanel(AppState appState, ClinicalMedicineComparison selectedMed) {
+    final filteredList = _getDynamicMedicines(appState);
 
     return Container(
       decoration: BoxDecoration(
@@ -767,7 +845,7 @@ class _DoctorClinicalDashboardScreenState
         border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity(0.03),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -852,78 +930,107 @@ class _DoctorClinicalDashboardScreenState
 
           // Scrollable Medicine List
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              itemCount: filteredList.length,
-              physics: const BouncingScrollPhysics(),
-              itemBuilder: (context, index) {
-                final med = filteredList[index];
-                final isSelected =
-                    _selectedMedicine.cleanName == med.cleanName;
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 5),
-                  child: InkWell(
-                    onTap: () => _onMedicineSelected(med),
-                    borderRadius: BorderRadius.circular(10),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? const Color(0xFFEAF2FF)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: isSelected
-                              ? const Color(0xFF0062FF)
-                              : Colors.transparent,
-                          width: 1.2,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.medication_liquid_rounded,
-                            size: 16,
-                            color: isSelected
-                                ? const Color(0xFF0062FF)
-                                : const Color(0xFF94A3B8),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              med.cleanName,
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: isSelected
-                                    ? FontWeight.w800
-                                    : FontWeight.w500,
-                                color: isSelected
-                                    ? const Color(0xFF0062FF)
-                                    : const Color(0xFF1E293B),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Icon(
-                            Icons.chevron_right_rounded,
-                            size: 16,
-                            color: isSelected
-                                ? const Color(0xFF0062FF)
-                                : const Color(0xFFCBD5E1),
-                          ),
-                        ],
+            child: filteredList.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        'No clinical prescription records yet.\nApprove alternative medicines from pharmacy to populate.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF94A3B8)),
                       ),
                     ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    itemCount: filteredList.length,
+                    physics: const BouncingScrollPhysics(),
+                    itemBuilder: (context, index) {
+                      final med = filteredList[index];
+                      final isSelected =
+                          selectedMed.cleanName.toLowerCase() == med.cleanName.toLowerCase();
+
+                      final isApprovedAlt = appState.allAlternativeHistory.any((r) =>
+                          r.originalDrug.toLowerCase().contains(med.cleanName.toLowerCase()) ||
+                          r.recommendedAlternative.toLowerCase().contains(med.cleanName.toLowerCase()));
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 5),
+                        child: InkWell(
+                          onTap: () => _onMedicineSelected(med),
+                          borderRadius: BorderRadius.circular(10),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFFEAF2FF)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: isSelected
+                                    ? const Color(0xFF0062FF)
+                                    : Colors.transparent,
+                                width: 1.2,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  isApprovedAlt ? Icons.auto_awesome_rounded : Icons.medication_liquid_rounded,
+                                  size: 16,
+                                  color: isSelected
+                                      ? const Color(0xFF0062FF)
+                                      : (isApprovedAlt ? const Color(0xFF8B5CF6) : const Color(0xFF94A3B8)),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        med.cleanName,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13,
+                                          fontWeight: isSelected
+                                              ? FontWeight.w800
+                                              : FontWeight.w500,
+                                          color: isSelected
+                                              ? const Color(0xFF0062FF)
+                                              : const Color(0xFF1E293B),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      if (isApprovedAlt)
+                                        Text(
+                                          'Approved Alternative',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: const Color(0xFF7C3AED),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right_rounded,
+                                  size: 16,
+                                  color: isSelected
+                                      ? const Color(0xFF0062FF)
+                                      : const Color(0xFFCBD5E1),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
 
           const Divider(height: 1, color: Color(0xFFF1F5F9)),
@@ -948,7 +1055,7 @@ class _DoctorClinicalDashboardScreenState
   // =========================================================================
   // 4. RIGHT TOP INFO BAR: PRESCRIBED VS ALTERNATIVE + CATEGORY
   // =========================================================================
-  Widget _buildMedicineComparisonInfoBar() {
+  Widget _buildMedicineComparisonInfoBar(ClinicalMedicineComparison selectedMed) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
       decoration: BoxDecoration(
@@ -984,7 +1091,7 @@ class _DoctorClinicalDashboardScreenState
                   children: [
                     Flexible(
                       child: Text(
-                        _selectedMedicine.cleanName,
+                        selectedMed.cleanName,
                         style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
@@ -1005,7 +1112,7 @@ class _DoctorClinicalDashboardScreenState
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        _selectedMedicine.strength,
+                        selectedMed.strength,
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -1056,7 +1163,7 @@ class _DoctorClinicalDashboardScreenState
                   children: [
                     Flexible(
                       child: Text(
-                        _selectedMedicine.altName,
+                        selectedMed.altName,
                         style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
@@ -1077,7 +1184,7 @@ class _DoctorClinicalDashboardScreenState
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        _selectedMedicine.altStrength,
+                        selectedMed.altStrength,
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -1127,7 +1234,7 @@ class _DoctorClinicalDashboardScreenState
                       ),
                     ),
                     Text(
-                      _selectedMedicine.therapeuticCategory,
+                      selectedMed.therapeuticCategory,
                       style: GoogleFonts.inter(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,
@@ -1147,7 +1254,7 @@ class _DoctorClinicalDashboardScreenState
   // =========================================================================
   // 5. CENTER CARD: PATIENT USAGE COMPARISON DUAL-BAR CHART
   // =========================================================================
-  Widget _buildPatientUsageChartCard() {
+  Widget _buildPatientUsageChartCard(ClinicalMedicineComparison selectedMed) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -1226,15 +1333,15 @@ class _DoctorClinicalDashboardScreenState
                   painter: _TwoBarWhiskerChartPainter(
                     animationProgress: _chartAnim.value,
                     prescribedName:
-                        '${_selectedMedicine.cleanName} ${_selectedMedicine.strength}',
-                    prescribedPct: _selectedMedicine.prescribedPct,
-                    prescribedMin: _selectedMedicine.prescribedRangeMin,
-                    prescribedMax: _selectedMedicine.prescribedRangeMax,
+                        '${selectedMed.cleanName} ${selectedMed.strength}',
+                    prescribedPct: selectedMed.prescribedPct,
+                    prescribedMin: selectedMed.prescribedRangeMin,
+                    prescribedMax: selectedMed.prescribedRangeMax,
                     altName:
-                        '${_selectedMedicine.altName} ${_selectedMedicine.altStrength}',
-                    altPct: _selectedMedicine.altPct,
-                    altMin: _selectedMedicine.altRangeMin,
-                    altMax: _selectedMedicine.altRangeMax,
+                        '${selectedMed.altName} ${selectedMed.altStrength}',
+                    altPct: selectedMed.altPct,
+                    altMin: selectedMed.altRangeMin,
+                    altMax: selectedMed.altRangeMax,
                   ),
                 ),
               );
@@ -1260,7 +1367,7 @@ class _DoctorClinicalDashboardScreenState
                       border: Border.all(color: const Color(0xFFBFDBFE)),
                     ),
                     child: Text(
-                      'Usage Range: ${_selectedMedicine.prescribedRangeMin.toInt()}% - ${_selectedMedicine.prescribedRangeMax.toInt()}%',
+                      'Usage Range: ${selectedMed.prescribedRangeMin.toInt()}% - ${selectedMed.prescribedRangeMax.toInt()}%',
                       style: GoogleFonts.inter(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
@@ -1283,7 +1390,7 @@ class _DoctorClinicalDashboardScreenState
                       border: Border.all(color: const Color(0xFFBBF7D0)),
                     ),
                     child: Text(
-                      'Usage Range: ${_selectedMedicine.altRangeMin.toInt()}% - ${_selectedMedicine.altRangeMax.toInt()}%',
+                      'Usage Range: ${selectedMed.altRangeMin.toInt()}% - ${selectedMed.altRangeMax.toInt()}%',
                       style: GoogleFonts.inter(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
@@ -1369,7 +1476,7 @@ class _DoctorClinicalDashboardScreenState
   // =========================================================================
   // 6. BOTTOM DYNAMIC INSIGHT BANNER
   // =========================================================================
-  Widget _buildDynamicInsightCard() {
+  Widget _buildDynamicInsightCard(ClinicalMedicineComparison selectedMed) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
@@ -1407,7 +1514,7 @@ class _DoctorClinicalDashboardScreenState
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  _selectedMedicine.insightText,
+                  selectedMed.insightText,
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -1424,10 +1531,142 @@ class _DoctorClinicalDashboardScreenState
   }
 
   // =========================================================================
-  // 7. INTERACTIVE CLINICAL ALERTS SECTION (5 DYNAMIC CARDS FROM DATASET)
+  // 7. INTERACTIVE CLINICAL ALERTS SECTION (DYNAMIC SUPABASE & APPSTATE RECORDS)
   // =========================================================================
-  Widget _buildClinicalAlertsSection() {
-    final alertCounts = ClinicalAlertsDataset.getCountsForTimeframe(_selectedTimePeriod);
+  List<ClinicalAlertRecord> _getDynamicAlertRecords(AppState appState) {
+    final List<ClinicalAlertRecord> records = [];
+
+    // 1. Lower-Cost Alternatives (from live alternativeApprovalRequests)
+    for (int i = 0; i < appState.alternativeApprovalRequests.length; i++) {
+      final req = appState.alternativeApprovalRequests[i];
+      records.add(
+        ClinicalAlertRecord(
+          id: 'ALT-REQ-${req.id}',
+          patientId: req.patientId.isNotEmpty ? req.patientId : 'PAT_${1000 + i}',
+          patientName: req.patientName.isNotEmpty ? req.patientName : 'Patient Record',
+          prescriptionId: req.prescriptionId.isNotEmpty ? req.prescriptionId : 'RX_${2000 + i}',
+          drugName: req.originalDrug,
+          strength: 'Standard Dose',
+          therapeuticClass: req.clinicalClass.isNotEmpty ? req.clinicalClass : 'Alternative Regimen',
+          indication: req.clinicalRationale.isNotEmpty ? req.clinicalRationale : 'Therapeutic Switch Recommendation',
+          alertType: ClinicalAlertType.lowerCostAlternative,
+          severity: 'Medium',
+          title: 'Lower-Cost Alternative Available: ${req.recommendedAlternative}',
+          detailText: req.clinicalRationale.isNotEmpty
+              ? req.clinicalRationale
+              : 'Switch from ${req.originalDrug} to ${req.recommendedAlternative} saves patient money and improves formulary adherence.',
+          alternativeDrug: req.recommendedAlternative,
+          savingsEstimate: 'Save \$${req.patientSavings.toStringAsFixed(2)}/mo (\$${req.annualSavings.toStringAsFixed(2)}/yr)',
+          timestampStr: req.createdAt.isNotEmpty ? req.createdAt : 'Just now',
+        ),
+      );
+    }
+
+    // 2. PA Pending / Prescriptions (from live prescriptions)
+    for (int i = 0; i < appState.prescriptions.length; i++) {
+      final rx = appState.prescriptions[i];
+      final rxNotes = rx.notes ?? '';
+      final rxDiag = rx.diagnosis ?? 'Chronic Condition';
+      final isPa = rx.status.toLowerCase().contains('pa') || rx.status.toLowerCase().contains('pending');
+      final isInteract = rxNotes.toLowerCase().contains('interaction') || rxNotes.toLowerCase().contains('warning');
+
+      if (isPa) {
+        records.add(
+          ClinicalAlertRecord(
+            id: 'PA-PEND-${rx.id}',
+            patientId: rx.patientId.isNotEmpty ? rx.patientId : 'PAT_${1000 + i}',
+            patientName: rx.patientName.isNotEmpty ? rx.patientName : 'Patient Record',
+            prescriptionId: rx.id.isNotEmpty ? rx.id : 'RX_${2000 + i}',
+            drugName: rx.drugName,
+            strength: 'Standard Dose',
+            therapeuticClass: rx.drugClass.isNotEmpty ? rx.drugClass : 'Clinical Category',
+            indication: rxDiag,
+            alertType: ClinicalAlertType.paPending,
+            severity: 'High',
+            title: 'Prior Authorization Review Required for ${rx.drugName}',
+            detailText: 'Clinical PA documentation submitted to payer. Awaiting payer determination.',
+            paStatus: 'Under Review',
+            timestampStr: rx.prescribedDate?.toIso8601String() ?? rx.lastFillDate.toIso8601String(),
+          ),
+        );
+      }
+
+      if (isInteract) {
+        records.add(
+          ClinicalAlertRecord(
+            id: 'INTERACT-${rx.id}',
+            patientId: rx.patientId.isNotEmpty ? rx.patientId : 'PAT_${1000 + i}',
+            patientName: rx.patientName.isNotEmpty ? rx.patientName : 'Patient Record',
+            prescriptionId: rx.id.isNotEmpty ? rx.id : 'RX_${2000 + i}',
+            drugName: rx.drugName,
+            strength: 'Standard Dose',
+            therapeuticClass: rx.drugClass.isNotEmpty ? rx.drugClass : 'Clinical Category',
+            indication: rxDiag,
+            alertType: ClinicalAlertType.drugInteraction,
+            severity: 'High',
+            title: 'Safety Warning / Interaction for ${rx.drugName}',
+            detailText: rxNotes.isNotEmpty ? rxNotes : 'Potential drug-drug interaction or metabolic flag detected by CDS engine.',
+            interactionWarning: 'Monitor metabolic & kidney labs',
+            timestampStr: rx.prescribedDate?.toIso8601String() ?? rx.lastFillDate.toIso8601String(),
+          ),
+        );
+      }
+
+      if (rx.status.toLowerCase() == 'dispensed' || rx.status.toLowerCase() == 'active' || rx.status.toLowerCase() == 'approved') {
+        records.add(
+          ClinicalAlertRecord(
+            id: 'PROC-${rx.id}',
+            patientId: rx.patientId.isNotEmpty ? rx.patientId : 'PAT_${1000 + i}',
+            patientName: rx.patientName.isNotEmpty ? rx.patientName : 'Patient Record',
+            prescriptionId: rx.id.isNotEmpty ? rx.id : 'RX_${2000 + i}',
+            drugName: rx.drugName,
+            strength: 'Standard Dose',
+            therapeuticClass: rx.drugClass.isNotEmpty ? rx.drugClass : 'Formulary Tier 1',
+            indication: rxDiag,
+            alertType: ClinicalAlertType.successfullyProcessed,
+            severity: 'Info',
+            title: 'Prescription Successfully Processed: ${rx.drugName}',
+            detailText: 'Full claim adjudication passed. Copay collected and prescription dispensed to patient.',
+            timestampStr: rx.prescribedDate?.toIso8601String() ?? rx.lastFillDate.toIso8601String(),
+          ),
+        );
+      }
+    }
+
+    // 3. High Adherence Risk (from live patientRecords)
+    for (int i = 0; i < appState.patientRecords.length; i++) {
+      final p = appState.patientRecords[i];
+      if (p.riskScore >= 0.70) {
+        records.add(
+          ClinicalAlertRecord(
+            id: 'ADH-${p.id}',
+            patientId: p.id,
+            patientName: p.name,
+            prescriptionId: 'RX_ADH_${1000 + i}',
+            drugName: p.currentProblem.isNotEmpty ? p.currentProblem : 'Maintenance Regimen',
+            strength: 'Standard',
+            therapeuticClass: 'Adherence Monitoring',
+            indication: p.currentProblem,
+            alertType: ClinicalAlertType.highAdherenceRisk,
+            severity: 'High',
+            title: 'High Adherence Risk: ${p.name}',
+            detailText: 'Proportion of Days Covered (PDC) below 80%. Automated refill reminders and consultation recommended.',
+            pdcScore: '${(p.riskScore * 100).toInt()}%',
+            timestampStr: p.visitDate.toIso8601String(),
+          ),
+        );
+      }
+    }
+
+    return records;
+  }
+
+  Widget _buildClinicalAlertsSection(AppState appState) {
+    final int highAdherenceCount = appState.patientRecords.where((p) => p.riskScore >= 0.70).length;
+    final int paPendingCount = appState.prescriptions.where((p) => p.status.toLowerCase().contains('pa') || p.status.toLowerCase().contains('pending')).length;
+    final int lowerCostAltCount = appState.alternativeApprovalRequests.length;
+    final int drugInteractionCount = appState.prescriptions.where((p) => (p.notes ?? '').toLowerCase().contains('interaction') || (p.notes ?? '').toLowerCase().contains('warning')).length;
+    final int processedCount = appState.prescriptions.where((p) => p.status.toLowerCase() == 'dispensed' || p.status.toLowerCase() == 'active' || p.status.toLowerCase() == 'approved').length + appState.approvedAlternativeHistory.length;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1487,7 +1726,7 @@ class _DoctorClinicalDashboardScreenState
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              'Live Dataset Pipeline',
+                              'Live Database Records',
                               style: GoogleFonts.inter(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w700,
@@ -1499,7 +1738,7 @@ class _DoctorClinicalDashboardScreenState
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Dynamic patient safety, adherence, and prior authorization flags from dataset',
+                        'Dynamic patient safety, adherence, and alternative drug flags from live records',
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
@@ -1528,7 +1767,7 @@ class _DoctorClinicalDashboardScreenState
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                onPressed: () => _showAllAlertsModal(context),
+                onPressed: () => _showAllAlertsModal(context, appState),
               ),
             ],
           ),
@@ -1542,8 +1781,9 @@ class _DoctorClinicalDashboardScreenState
               final cards = [
                 // 1. High Adherence Risk
                 _buildClinicalAlertCard(
+                  appState: appState,
                   title: 'High Adherence Risk Patients',
-                  count: '${alertCounts['highAdherence']}',
+                  count: '$highAdherenceCount',
                   subtitle: 'PDC < 80% • Refill Gaps',
                   icon: Icons.warning_rounded,
                   accentColor: const Color(0xFFDC2626),
@@ -1553,8 +1793,9 @@ class _DoctorClinicalDashboardScreenState
                 ),
                 // 2. PA Pending
                 _buildClinicalAlertCard(
+                  appState: appState,
                   title: 'Prior Authorization Pending',
-                  count: '${alertCounts['paPending']}',
+                  count: '$paPendingCount',
                   subtitle: 'Awaiting Payer Review',
                   icon: Icons.hourglass_top_rounded,
                   accentColor: const Color(0xFFD97706),
@@ -1564,8 +1805,9 @@ class _DoctorClinicalDashboardScreenState
                 ),
                 // 3. Lower Cost Alternatives
                 _buildClinicalAlertCard(
+                  appState: appState,
                   title: 'Eligible for Lower-Cost Alt',
-                  count: '${alertCounts['lowerCostAlt']}',
+                  count: '$lowerCostAltCount',
                   subtitle: 'Tier 1 Generic Savings',
                   icon: Icons.savings_rounded,
                   accentColor: const Color(0xFFB45309),
@@ -1575,8 +1817,9 @@ class _DoctorClinicalDashboardScreenState
                 ),
                 // 4. Drug Interactions
                 _buildClinicalAlertCard(
+                  appState: appState,
                   title: 'Drug Interaction Alerts',
-                  count: '${alertCounts['drugInteraction']}',
+                  count: '$drugInteractionCount',
                   subtitle: 'Metabolic & Safety Flags',
                   icon: Icons.shield_outlined,
                   accentColor: const Color(0xFF0062FF),
@@ -1586,8 +1829,9 @@ class _DoctorClinicalDashboardScreenState
                 ),
                 // 5. Successfully Processed
                 _buildClinicalAlertCard(
+                  appState: appState,
                   title: 'Prescriptions Processed',
-                  count: '${alertCounts['processed']}',
+                  count: '$processedCount',
                   subtitle: 'Claim Paid • 100% Verified',
                   icon: Icons.check_circle_outline_rounded,
                   accentColor: const Color(0xFF16A34A),
@@ -1639,6 +1883,7 @@ class _DoctorClinicalDashboardScreenState
   }
 
   Widget _buildClinicalAlertCard({
+    required AppState appState,
     required String title,
     required String count,
     required String subtitle,
@@ -1650,7 +1895,7 @@ class _DoctorClinicalDashboardScreenState
   }) {
     return InkWell(
       borderRadius: BorderRadius.circular(14),
-      onTap: () => _showAlertDetailModal(context, alertType, count, title),
+      onTap: () => _showAlertDetailModal(context, appState, alertType, count, title),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.all(14),
@@ -1712,11 +1957,12 @@ class _DoctorClinicalDashboardScreenState
   // =========================================================================
   void _showAlertDetailModal(
     BuildContext context,
+    AppState appState,
     ClinicalAlertType alertType,
     String totalCount,
     String categoryTitle,
   ) {
-    final allRecords = ClinicalAlertsDataset.getAllAlertRecords()
+    final allRecords = _getDynamicAlertRecords(appState)
         .where((r) => r.alertType == alertType)
         .toList();
 
@@ -1763,7 +2009,7 @@ class _DoctorClinicalDashboardScreenState
                               ),
                             ),
                             Text(
-                              '$totalCount Total Patients In Cohort • ${allRecords.length} High-Priority Action Items',
+                              '$totalCount Total Patients In Cohort • ${allRecords.length} Active Records',
                               style: GoogleFonts.inter(
                                 fontSize: 11.5,
                                 color: Colors.white70,
@@ -1782,15 +2028,25 @@ class _DoctorClinicalDashboardScreenState
 
                 // Body List
                 Expanded(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(20),
-                    itemCount: allRecords.length,
-                    separatorBuilder: (context, idx) => const SizedBox(height: 12),
-                    itemBuilder: (context, idx) {
-                      final rec = allRecords[idx];
-                      return _buildAlertRecordItem(rec);
-                    },
-                  ),
+                  child: allRecords.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(
+                              'No active alert records in this cohort.',
+                              style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B)),
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.all(20),
+                          itemCount: allRecords.length,
+                          separatorBuilder: (context, idx) => const SizedBox(height: 12),
+                          itemBuilder: (context, idx) {
+                            final rec = allRecords[idx];
+                            return _buildAlertRecordItem(rec);
+                          },
+                        ),
                 ),
 
                 // Footer
@@ -1805,7 +2061,7 @@ class _DoctorClinicalDashboardScreenState
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Adjudicated from pharmaassist_full_50000.csv dataset',
+                        'Adjudicated from live Supabase & physician records',
                         style: GoogleFonts.inter(
                           fontSize: 11.5,
                           color: const Color(0xFF64748B),
@@ -1835,9 +2091,9 @@ class _DoctorClinicalDashboardScreenState
   // =========================================================================
   // MODAL 2: UNIFIED "VIEW ALL ALERTS" MODAL (WITH CATEGORY TABS)
   // =========================================================================
-  void _showAllAlertsModal(BuildContext context) {
+  void _showAllAlertsModal(BuildContext context, AppState appState) {
     int activeTab = 0; // 0: All, 1: Adherence, 2: PA, 3: Alternatives, 4: Interactions, 5: Processed
-    final allRecords = ClinicalAlertsDataset.getAllAlertRecords();
+    final allRecords = _getDynamicAlertRecords(appState);
 
     showDialog(
       context: context,
@@ -1944,15 +2200,25 @@ class _DoctorClinicalDashboardScreenState
 
                     // Body
                     Expanded(
-                      child: ListView.separated(
-                        padding: const EdgeInsets.all(20),
-                        itemCount: displayed.length,
-                        separatorBuilder: (context, idx) => const SizedBox(height: 12),
-                        itemBuilder: (context, idx) {
-                          final rec = displayed[idx];
-                          return _buildAlertRecordItem(rec);
-                        },
-                      ),
+                      child: displayed.isEmpty
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Text(
+                                  'No clinical alerts found for the selected tab.',
+                                  style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B)),
+                                ),
+                              ),
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.all(20),
+                              itemCount: displayed.length,
+                              separatorBuilder: (context, idx) => const SizedBox(height: 12),
+                              itemBuilder: (context, idx) {
+                                final rec = displayed[idx];
+                                return _buildAlertRecordItem(rec);
+                              },
+                            ),
                     ),
 
                     // Footer
@@ -2196,6 +2462,825 @@ class _DoctorClinicalDashboardScreenState
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  // =========================================================================
+  // PHARMACY ALTERNATIVE REGIMEN APPROVALS & HISTORY (CDS AUDIT)
+  // =========================================================================
+  String _formatApprovalDate(DateTime? dt) {
+    if (dt == null) return 'Recent';
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+    final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+    final min = dt.minute.toString().padLeft(2, '0');
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year} at $hour:$min $ampm';
+  }
+
+  Widget _buildAlternativeApprovalRequestsSection(AppState appState) {
+    final pending = appState.pendingAlternativeApprovalRequests;
+    final allHistory = appState.allAlternativeHistory;
+
+    // Filter history by search and sub-tab
+    final filteredHistory = allHistory.where((req) {
+      if (_historyFilterIndex == 1 && !req.isDispensed) return false;
+      if (_historyFilterIndex == 2 && req.status != 'approved') return false;
+      if (_historyFilterIndex == 3 && req.status != 'denied') return false;
+
+      if (_historySearchQuery.isEmpty) return true;
+      final q = _historySearchQuery.toLowerCase();
+      return req.patientName.toLowerCase().contains(q) ||
+          req.patientId.toLowerCase().contains(q) ||
+          req.prescriptionId.toLowerCase().contains(q) ||
+          req.originalDrug.toLowerCase().contains(q) ||
+          req.recommendedAlternative.toLowerCase().contains(q) ||
+          req.indication.toLowerCase().contains(q);
+    }).toList();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE9D5FF), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top Section Header with Tab Switcher
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B5CF6),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 18),
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Pharmacy Alternative Regimen Approvals & Audit Feed',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF4C1D95),
+                          ),
+                        ),
+                        Text(
+                          'Track live pharmacist alternative requests and historical physician approval records',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF7C3AED),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                // Tab Switcher: Pending vs History
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3E8FF),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Pending Tab Button
+                      InkWell(
+                        onTap: () => setState(() => _approvalFeedTab = 0),
+                        borderRadius: BorderRadius.circular(9),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _approvalFeedTab == 0 ? const Color(0xFF8B5CF6) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(9),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.pending_actions_rounded,
+                                size: 14,
+                                color: _approvalFeedTab == 0 ? Colors.white : const Color(0xFF6B21A8),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Pending Approvals (${pending.length})',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: _approvalFeedTab == 0 ? Colors.white : const Color(0xFF6B21A8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+
+                      // History Tab Button
+                      InkWell(
+                        onTap: () => setState(() => _approvalFeedTab = 1),
+                        borderRadius: BorderRadius.circular(9),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _approvalFeedTab == 1 ? const Color(0xFF8B5CF6) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(9),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.history_edu_rounded,
+                                size: 14,
+                                color: _approvalFeedTab == 1 ? Colors.white : const Color(0xFF6B21A8),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Approval History (${allHistory.length})',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: _approvalFeedTab == 1 ? Colors.white : const Color(0xFF6B21A8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 14),
+
+            // ===============================================================
+            // TAB 0: PENDING APPROVALS LIST
+            // ===============================================================
+            if (_approvalFeedTab == 0) ...[
+              if (pending.isEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDF4FF),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE9D5FF)),
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.check_circle_outline_rounded, size: 32, color: Color(0xFF10B981)),
+                      const SizedBox(height: 8),
+                      Text(
+                        'No Pending Alternative Requests',
+                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF1E293B)),
+                      ),
+                      Text(
+                        'All pharmacy medication substitution recommendations have been reviewed and approved.',
+                        style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748B)),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ...pending.map((req) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFAF5FF),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFC084FC)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF8B5CF6).withValues(alpha: 0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Patient Details Header
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(7),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF3E8FF),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.person_rounded, size: 15, color: Color(0xFF7C3AED)),
+                                ),
+                                const SizedBox(width: 8),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${req.patientName} (${req.patientAge}y)',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w900,
+                                        color: const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Prescription ID: #${req.prescriptionId} • Indication: ${req.indication}',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFECFDF5),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                              ),
+                              child: Text(
+                                'Save \$${req.monthlySavings.toStringAsFixed(2)} / mo',
+                                style: GoogleFonts.inter(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF059669),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 12),
+                        const Divider(height: 1, color: Color(0xFFF3E8FF)),
+                        const SizedBox(height: 12),
+
+                        // Comparison Blocks
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFEF2F2),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFFFCA5A5)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'ORIGINAL DRUG PRESCRIBED',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w800,
+                                        color: const Color(0xFF991B1B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      req.originalDrug,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                        color: const Color(0xFF7F1D1D),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.arrow_forward_rounded, color: Color(0xFF8B5CF6), size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFECFDF5),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFF6EE7B7)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'RECOMMENDED ALTERNATIVE',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w800,
+                                        color: const Color(0xFF065F46),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      req.recommendedAlternative,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                        color: const Color(0xFF064E3B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        // Rationale
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Clinical Class: ${req.clinicalClass}',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF334155),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Clinical Rationale: ${req.clinicalRationale}',
+                                style: GoogleFonts.inter(
+                                  fontSize: 10.5,
+                                  color: const Color(0xFF64748B),
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Actions
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFFEF4444),
+                                side: const BorderSide(color: Color(0xFFFCA5A5)),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              icon: const Icon(Icons.close_rounded, size: 14),
+                              label: Text('Deny Alternative',
+                                  style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700)),
+                              onPressed: () {
+                                appState.denyAlternativeDrug(requestId: req.id);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: const Color(0xFFEF4444),
+                                    content: Text('❌ Alternative denied for ${req.patientName}. Pharmacist notified.'),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF10B981),
+                                foregroundColor: Colors.white,
+                                elevation: 2,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              icon: const Icon(Icons.check_circle_rounded, size: 15),
+                              label: Text('Approve Alternative Medicine',
+                                  style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w900)),
+                              onPressed: () {
+                                appState.approveAlternativeDrug(requestId: req.id);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: const Color(0xFF10B981),
+                                    content: Text(
+                                        '✅ Approved ${req.recommendedAlternative} for ${req.patientName}! Logged in Alternative History and Voice alert sent to Pharmacist.'),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+            ],
+
+            // ===============================================================
+            // TAB 1: ALTERNATIVE PRESCRIPTION APPROVAL HISTORY (NEW FEATURE)
+            // ===============================================================
+            if (_approvalFeedTab == 1) ...[
+              // Search Bar & Filter Chips
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: TextField(
+                        controller: _historySearchController,
+                        onChanged: (val) => setState(() => _historySearchQuery = val),
+                        style: GoogleFonts.inter(fontSize: 12.5, color: const Color(0xFF1E293B)),
+                        decoration: InputDecoration(
+                          hintText: 'Search alternative history by patient, drug, or Rx ID...',
+                          hintStyle: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF94A3B8)),
+                          prefixIcon: const Icon(Icons.search_rounded, size: 16, color: Color(0xFF94A3B8)),
+                          suffixIcon: _historySearchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear, size: 14),
+                                  onPressed: () {
+                                    _historySearchController.clear();
+                                    setState(() => _historySearchQuery = '');
+                                  },
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+
+                  // Filter Chips
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildHistoryFilterChip(0, 'All (${allHistory.length})'),
+                        const SizedBox(width: 6),
+                        _buildHistoryFilterChip(1, 'Dispensed (${allHistory.where((r) => r.isDispensed).length})'),
+                        const SizedBox(width: 6),
+                        _buildHistoryFilterChip(2, 'Approved (${allHistory.where((r) => r.status == 'approved').length})'),
+                        const SizedBox(width: 6),
+                        _buildHistoryFilterChip(3, 'Denied (${allHistory.where((r) => r.status == 'denied').length})'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              if (filteredHistory.isEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 28),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.history_toggle_off_rounded, size: 32, color: Color(0xFF94A3B8)),
+                      const SizedBox(height: 8),
+                      Text(
+                        'No Alternative Approval Records Found',
+                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF1E293B)),
+                      ),
+                      Text(
+                        'Alternative prescriptions approved by physicians will be archived here with full CDS clinical audit records.',
+                        style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748B)),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ...filteredHistory.map((req) {
+                  final isDispensed = req.isDispensed;
+                  final isApproved = req.status == 'approved';
+                  final isDenied = req.status == 'denied';
+
+                  final badgeColor = isDispensed
+                      ? const Color(0xFF10B981)
+                      : (isApproved ? const Color(0xFF0062FF) : const Color(0xFFEF4444));
+                  final badgeBg = isDispensed
+                      ? const Color(0xFFECFDF5)
+                      : (isApproved ? const Color(0xFFEFF6FF) : const Color(0xFFFEF2F2));
+                  final badgeText = isDispensed
+                      ? '✨ DISPENSED & FULFILLED'
+                      : (isApproved ? '🟢 APPROVED • PENDING DISPENSE' : '🔴 ALTERNATIVE DENIED');
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // History Item Header: Status + Date
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: badgeBg,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: badgeColor.withValues(alpha: 0.4)),
+                              ),
+                              child: Text(
+                                badgeText,
+                                style: GoogleFonts.inter(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  color: badgeColor,
+                                ),
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                const Icon(Icons.schedule_rounded, size: 13, color: Color(0xFF94A3B8)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _formatApprovalDate(req.respondedAt ?? req.requestedAt),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        // Patient Info Row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE2E8F0),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.person_outline_rounded, size: 14, color: Color(0xFF475569)),
+                                ),
+                                const SizedBox(width: 8),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${req.patientName} (${req.patientAge}y)',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Prescription ID: #${req.prescriptionId} • Indication: ${req.indication}',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        color: const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            if (!isDenied)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFECFDF5),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                                ),
+                                child: Text(
+                                  'Patient Saved \$${req.monthlySavings.toStringAsFixed(2)} / mo (\$${req.annualSavings.toStringAsFixed(2)}/yr)',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF059669),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 10),
+                        const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                        const SizedBox(height: 10),
+
+                        // Comparison Display
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'ORIGINAL PRESCRIBED',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 8.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      req.originalDrug,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF334155),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              isDenied ? Icons.close_rounded : Icons.arrow_forward_rounded,
+                              color: isDenied ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: isDenied ? const Color(0xFFFEF2F2) : const Color(0xFFECFDF5),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: isDenied ? const Color(0xFFFCA5A5) : const Color(0xFF6EE7B7),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      isDenied ? 'DENIED SUBSTITUTION' : 'APPROVED ALTERNATIVE',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 8.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: isDenied ? const Color(0xFF991B1B) : const Color(0xFF065F46),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      req.recommendedAlternative,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: isDenied ? const Color(0xFF7F1D1D) : const Color(0xFF064E3B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // Rationale & Doctor Decision Note
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFF1F5F9)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Clinical Class: ${req.clinicalClass}',
+                                style: GoogleFonts.inter(fontSize: 10.5, fontWeight: FontWeight.w700, color: const Color(0xFF475569)),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Rationale: ${req.clinicalRationale}',
+                                style: GoogleFonts.inter(fontSize: 10, color: const Color(0xFF64748B), fontStyle: FontStyle.italic),
+                              ),
+                              if (req.doctorNote != null && req.doctorNote!.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.verified_user_rounded, size: 12, color: Color(0xFF10B981)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Physician Sign-off Note: "${req.doctorNote}"',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryFilterChip(int index, String label) {
+    final isSelected = _historyFilterIndex == index;
+    return InkWell(
+      onTap: () => setState(() => _historyFilterIndex = index),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: isSelected ? const Color(0xFF7C3AED) : const Color(0xFFE2E8F0)),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            color: isSelected ? Colors.white : const Color(0xFF475569),
+          ),
+        ),
       ),
     );
   }

@@ -948,4 +948,407 @@ class PdfExportService {
       name: 'e-Rx_${rx.id}.pdf',
     );
   }
+
+  /// Generate a PDF document for an Approved Alternative e-Prescription
+  Future<Uint8List> generateAlternativePrescriptionPdf({
+    required AlternativeApprovalRequest req,
+  }) async {
+    final fontRegular = await PdfGoogleFonts.openSansRegular();
+    final fontBold = await PdfGoogleFonts.openSansBold();
+
+    pw.MemoryImage? logoImage;
+    try {
+      final logoBytes = await rootBundle.load('assets/images/app_logo.png');
+      logoImage = pw.MemoryImage(logoBytes.buffer.asUint8List());
+    } catch (e) {
+      debugPrint('PDF Logo Asset load note: $e');
+    }
+
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: fontRegular,
+        bold: fontBold,
+      ),
+    );
+
+    final doctorName = req.doctorName.isNotEmpty ? req.doctorName : 'Dr. Sarah Jenkins, MD';
+    final patientName = req.patientName.isNotEmpty ? req.patientName : 'Patient';
+    final patientId = req.patientId.isNotEmpty ? req.patientId : 'PAT-001';
+    final rxId = req.prescriptionId.isNotEmpty ? req.prescriptionId : 'RX-ALT-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+
+    final pageTheme = pw.PageTheme(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.all(32),
+      buildBackground: (pw.Context context) {
+        return pw.FullPage(
+          ignoreMargins: true,
+          child: pw.Center(
+            child: pw.Transform.rotateBox(
+              angle: -0.25,
+              child: pw.Opacity(
+                opacity: 0.08,
+                child: pw.Column(
+                  mainAxisAlignment: pw.MainAxisAlignment.center,
+                  children: [
+                    if (logoImage != null)
+                      pw.Image(logoImage, width: 140, height: 140),
+                    pw.SizedBox(height: 10),
+                    pw.Text(
+                      'PHYSICIAN-APPROVED ALTERNATIVE REGIMEN',
+                      style: pw.TextStyle(
+                        fontSize: 10,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColor.fromHex('#0062FF'),
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    pw.Text(
+                      'OFFICIAL e-PRESCRIPTION CERTIFICATE',
+                      style: pw.TextStyle(
+                        fontSize: 8.5,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColor.fromHex('#0062FF'),
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    pdf.addPage(
+      pw.Page(
+        pageTheme: pageTheme,
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              // Header Banner
+              pw.Container(
+                padding: const pw.EdgeInsets.all(16),
+                decoration: pw.BoxDecoration(
+                  color: PdfColor.fromHex('#0062FF'),
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(
+                          'ALTERNEA HEALTH CLINICAL NETWORK',
+                          style: pw.TextStyle(
+                            color: PdfColors.white,
+                            fontSize: 14,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                        pw.SizedBox(height: 2),
+                        pw.Text(
+                          'Official Physician-Approved Alternative e-Prescription',
+                          style: const pw.TextStyle(
+                            color: PdfColors.white,
+                            fontSize: 9,
+                          ),
+                        ),
+                      ],
+                    ),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColor.fromHex('#10B981'),
+                        borderRadius: pw.BorderRadius.circular(4),
+                      ),
+                      child: pw.Text(
+                        'DOCTOR APPROVED',
+                        style: pw.TextStyle(
+                          color: PdfColors.white,
+                          fontSize: 9,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              pw.SizedBox(height: 16),
+
+              // Metadata Details Box
+              pw.Container(
+                padding: const pw.EdgeInsets.all(14),
+                decoration: pw.BoxDecoration(
+                  color: PdfColor.fromHex('#F8FAFC'),
+                  borderRadius: pw.BorderRadius.circular(6),
+                  border: pw.Border.all(color: PdfColor.fromHex('#CBD5E1')),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildPdfField('Prescription Record ID', '#$rxId'),
+                        _buildPdfField('Date Approved', '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}'),
+                      ],
+                    ),
+                    pw.SizedBox(height: 8),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildPdfField('Patient Name', patientName),
+                        _buildPdfField('Patient ID', patientId),
+                        _buildPdfField('Patient Age', '${req.patientAge} Years'),
+                      ],
+                    ),
+                    pw.SizedBox(height: 8),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildPdfField('Prescribing Physician', doctorName),
+                        _buildPdfField('Doctor ID', req.doctorId.isNotEmpty ? req.doctorId : 'DOC-201'),
+                        _buildPdfField('Facility', 'MetroHealth Pharmacy Hub (#402)'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              pw.SizedBox(height: 16),
+
+              // Prescribed Alternative Medication Highlight Box
+              pw.Container(
+                padding: const pw.EdgeInsets.all(16),
+                decoration: pw.BoxDecoration(
+                  color: PdfColor.fromHex('#ECFDF5'),
+                  borderRadius: pw.BorderRadius.circular(8),
+                  border: pw.Border.all(color: PdfColor.fromHex('#10B981'), width: 1.5),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text(
+                          'PRESCRIBED ALTERNATIVE MEDICATION (ACTIVE)',
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColor.fromHex('#059669'),
+                          ),
+                        ),
+                        pw.Text(
+                          'Tier ${req.alternativeTier} Preferred • \$${req.alternativeCopay.toStringAsFixed(2)} Copay',
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColor.fromHex('#059669'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    pw.SizedBox(height: 6),
+                    pw.Text(
+                      req.recommendedAlternative,
+                      style: pw.TextStyle(
+                        fontSize: 16,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColor.fromHex('#064E3B'),
+                      ),
+                    ),
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      'Dosage: 1 Tablet Oral Daily • 30-Day Supply with Refills Authorized',
+                      style: pw.TextStyle(
+                        fontSize: 10,
+                        color: PdfColor.fromHex('#047857'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              pw.SizedBox(height: 12),
+
+              // Discontinued Original Drug & Savings Comparison
+              pw.Container(
+                padding: const pw.EdgeInsets.all(12),
+                decoration: pw.BoxDecoration(
+                  color: PdfColor.fromHex('#EFF6FF'),
+                  borderRadius: pw.BorderRadius.circular(6),
+                  border: pw.Border.all(color: PdfColor.fromHex('#BFDBFE')),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(
+                          'Discontinued Original Drug:',
+                          style: pw.TextStyle(fontSize: 8.5, color: PdfColor.fromHex('#1E40AF')),
+                        ),
+                        pw.Text(
+                          req.originalDrug,
+                          style: pw.TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: pw.FontWeight.bold,
+                            decoration: pw.TextDecoration.lineThrough,
+                            color: PdfColor.fromHex('#1E3A8A'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: [
+                        pw.Text(
+                          'Patient Monthly / Annual Savings:',
+                          style: pw.TextStyle(fontSize: 8.5, color: PdfColor.fromHex('#059669')),
+                        ),
+                        pw.Text(
+                          'Save \$${req.monthlySavings.toStringAsFixed(2)}/mo (\$${req.annualSavings.toStringAsFixed(2)}/yr)',
+                          style: pw.TextStyle(
+                            fontSize: 11,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColor.fromHex('#047857'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              pw.SizedBox(height: 14),
+
+              // Clinical Rationale & Doctor Note
+              pw.Container(
+                padding: const pw.EdgeInsets.all(12),
+                decoration: pw.BoxDecoration(
+                  color: PdfColor.fromHex('#F8FAFC'),
+                  borderRadius: pw.BorderRadius.circular(6),
+                  border: pw.Border.all(color: PdfColor.fromHex('#E2E8F0')),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      'Physician Clinical Rationale & Endorsement:',
+                      style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex('#334155')),
+                    ),
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      req.doctorNote?.isNotEmpty == true
+                          ? req.doctorNote!
+                          : (req.clinicalRationale.isNotEmpty
+                              ? req.clinicalRationale
+                              : 'Therapeutic substitution approved by attending physician for improved cost efficiency and verified bioequivalence.'),
+                      style: pw.TextStyle(fontSize: 9, color: PdfColor.fromHex('#475569')),
+                    ),
+                  ],
+                ),
+              ),
+
+              pw.Spacer(),
+
+              // Signatures & Stamp
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        'DIGITALLY SIGNED & VERIFIED BY:',
+                        style: pw.TextStyle(fontSize: 8, color: PdfColors.grey),
+                      ),
+                      pw.SizedBox(height: 2),
+                      pw.Text(
+                        doctorName,
+                        style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex('#0062FF')),
+                      ),
+                      pw.Text(
+                        'Attending Physician • Alternea Health Network',
+                        style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey),
+                      ),
+                    ],
+                  ),
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: pw.BoxDecoration(
+                      border: pw.Border.all(color: PdfColor.fromHex('#10B981'), width: 1.5),
+                      borderRadius: pw.BorderRadius.circular(6),
+                    ),
+                    child: pw.Column(
+                      children: [
+                        pw.Text(
+                          'PHARMACY DISPENSED',
+                          style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex('#10B981')),
+                        ),
+                        pw.Text(
+                          'METROHEALTH HUB #402',
+                          style: pw.TextStyle(fontSize: 7.5, color: PdfColor.fromHex('#059669')),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              pw.SizedBox(height: 10),
+              pw.Divider(color: PdfColor.fromHex('#CBD5E1')),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    'Generated by Alternea Health Vault Telemetry • Official Medical e-Prescription',
+                    style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey),
+                  ),
+                  pw.Text(
+                    'Page 1 of 1',
+                    style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  /// Download or Share Alternative Prescription PDF
+  Future<void> downloadOrShareAlternativePrescriptionPdf({
+    required AlternativeApprovalRequest req,
+  }) async {
+    final bytes = await generateAlternativePrescriptionPdf(req: req);
+    final fileName = 'Alternative_eRx_${req.recommendedAlternative.replaceAll(' ', '_')}_${req.patientName.replaceAll(' ', '_')}.pdf';
+
+    await FileDownloader.downloadBytes(
+      bytes: bytes,
+      fileName: fileName,
+      mimeType: 'application/pdf',
+    );
+  }
+
+  /// Print or Preview Alternative Prescription PDF
+  Future<void> printAlternativePrescriptionPdf({
+    required AlternativeApprovalRequest req,
+  }) async {
+    final bytes = await generateAlternativePrescriptionPdf(req: req);
+    final fileName = 'Alternative_eRx_${req.recommendedAlternative.replaceAll(' ', '_')}.pdf';
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => bytes,
+      name: fileName,
+    );
+  }
 }

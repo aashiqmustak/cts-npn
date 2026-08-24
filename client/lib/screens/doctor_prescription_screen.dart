@@ -8,6 +8,7 @@ import '../providers/app_state.dart';
 import '../services/prescription_ocr_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bento_card.dart';
+import '../services/web_audio.dart';
 
 class DoctorPrescriptionScreen extends StatefulWidget {
   const DoctorPrescriptionScreen({super.key});
@@ -510,13 +511,23 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
       items: List.from(_prescribedItems),
     );
 
+    final patientDisplayName = _patientNameController.text.trim().isNotEmpty
+        ? _patientNameController.text.trim()
+        : 'Patient $patientId';
+
+    playWebAudio(
+      null,
+      'Prescription successfully signed and forwarded to pharmacy live queue for patient $patientDisplayName.',
+    );
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: AppColors.primaryTeal,
+          backgroundColor: const Color(0xFF10B981),
+          behavior: SnackBarBehavior.floating,
           content: Text(
-            'e-Prescription Issued Successfully! Broadcast to in-network Dispense Queue.',
-            style: AppFonts.googleSans(fontWeight: FontWeight.w600),
+            '✅ Prescription successfully forwarded to Pharmacy Portal Live Queue for $patientDisplayName!',
+            style: AppFonts.googleSans(fontWeight: FontWeight.w700),
           ),
         ),
       );
@@ -791,6 +802,44 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
           ),
 
           const SizedBox(height: 18),
+
+          if (appState.pendingAlternativeApprovalRequests.isNotEmpty) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFDF4FF),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFC084FC)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.auto_awesome_rounded, color: Color(0xFF8B5CF6), size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '${appState.pendingAlternativeApprovalRequests.length} Alternative medication change request(s) awaiting your clinical review.',
+                      style: AppFonts.googleSans(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF581C87),
+                      ),
+                    ),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF8B5CF6),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: () => appState.setNavIndex(0),
+                    child: Text('Review Requests', style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w800)),
+                  ),
+                ],
+              ),
+            ),
+          ],
 
           // 2. Asymmetric Bento 2-Column Clinical Studio
           Form(
@@ -1780,7 +1829,7 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
                     color: AppColors.primaryDark,
                   ),
                   label: Text(
-                    'Sign & Issue e-Rx',
+                    'Sign & Forward to Pharmacy ➔',
                     style: AppFonts.googleSans(
                       fontSize: 12,
                       fontWeight: FontWeight.w900,

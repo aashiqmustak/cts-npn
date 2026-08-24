@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
+import 'api_config.dart';
 
 enum PipecatState {
   disconnected,
@@ -45,13 +46,7 @@ class PipecatService extends ChangeNotifier {
   String? _serverPcId;
 
   // Getter for dynamically determining API url based on page host
-  String get apiBaseUrl {
-    final host = Uri.base.host;
-    const port = 7860;
-    // Default to localhost for non-web, or the page host for web
-    final finalHost = host.isEmpty ? 'localhost' : host;
-    return 'http://$finalHost:$port';
-  }
+  String get apiBaseUrl => ApiConfig.instance.baseUrl;
 
   Future<void> initialize() async {
     if (_initialized) return;

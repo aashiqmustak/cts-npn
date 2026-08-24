@@ -10,6 +10,7 @@ import 'package:fl_chart/fl_chart.dart';
 
 import '../models/models.dart';
 import '../providers/app_state.dart';
+import '../services/pdf_export_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bento_card.dart';
 
@@ -102,9 +103,12 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen>
     final query = _searchController.text.trim().toLowerCase();
     final pharmacistDoctorId = appState.currentUser.doctorId;
 
-    // Filter prescriptions by doctor ID (or all if not filtered)
+    // Filter prescriptions by doctor ID (or all if not filtered or no match)
     final allPrescriptions = appState.prescriptions.toList();
-    final filteredPrescriptions = pharmacistDoctorId == null
+    final filteredPrescriptions = (pharmacistDoctorId == null ||
+            pharmacistDoctorId.isEmpty ||
+            pharmacistDoctorId == 'ALL' ||
+            !allPrescriptions.any((rx) => rx.doctorId?.toLowerCase() == pharmacistDoctorId.toLowerCase()))
         ? allPrescriptions
         : allPrescriptions
             .where((rx) => rx.doctorId?.toLowerCase() == pharmacistDoctorId.toLowerCase())
@@ -119,6 +123,14 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen>
     final dispensedCount = appState.dataService.dispenseRecords.length;
     final refillRequests = appState.prescriptions.where((rx) => rx.status.toLowerCase().contains('refill')).toList();
     final highRiskCount = allPrescriptions.where((rx) => rx.pdcScore < 0.70).length;
+
+    // Approved alternative requests
+    final approvedAlternatives = appState.alternativeApprovalRequests
+        .where((r) => r.isApproved || r.status == 'approved' || r.isDispensed || r.status == 'dispensed')
+        .toList();
+    final pendingApprovedCount = appState.alternativeApprovalRequests
+        .where((r) => r.isApproved || r.status == 'approved')
+        .length;
 
     // Filter matching patients based on search and selected queue tab
     final matchingPatients = appState.patientRecords.where((p) {
@@ -154,7 +166,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 1. Enterprise Bento Hero Banner
-          _buildHeroHeader(pendingCount, dispensedCount, highRiskCount),
+          _buildHeroHeader(pendingCount, dispensedCount, highRiskCount, pendingApprovedCount),
 
           const SizedBox(height: 20),
 
@@ -173,21 +185,29 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen>
 
           const SizedBox(height: 20),
 
-          // 5. Command Search Bar & Queue Navigation Tabs
-          _buildSearchAndQueueFilterBar(pendingCount, highRiskCount, dispensedCount, refillRequests.length),
+          // 5. Approved Alternatives Top Callout Banner (if any pending)
+          if (pendingApprovedCount > 0) ...[
+            _buildApprovedAlternativesTopBanner(context, appState, pendingApprovedCount),
+            const SizedBox(height: 16),
+          ],
+
+          // 6. Command Search Bar & Queue Navigation Tabs
+          _buildSearchAndQueueFilterBar(pendingCount, highRiskCount, dispensedCount, refillRequests.length, approvedAlternatives.length),
 
           const SizedBox(height: 16),
 
-          // 6. Supervising Doctor Selector
+          // 7. Supervising Doctor Selector
           _buildSupervisingDoctorSelector(appState, pharmacistDoctorId),
 
           const SizedBox(height: 20),
 
-          // 7. Main Queue Content / Audit Log Table / Refill Requests
+          // 8. Main Queue Content / Audit Log Table / Refill Requests / Approved Alternatives
           if (_activeFilterTab == 3)
             _buildDispensedAuditLogView(appState)
           else if (_activeFilterTab == 4)
             _buildRefillRequestsView(appState, refillRequests)
+          else if (_activeFilterTab == 5)
+            _buildApprovedAlternativesView(appState, approvedAlternatives)
           else
             _buildPatientQueueView(appState, matchingPatients, filteredPrescriptions, filteredPrescriptionItems),
 
@@ -200,7 +220,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen>
   // =========================================================================
   // 1. HERO HEADER
   // =========================================================================
-  Widget _buildHeroHeader(int pendingCount, int dispensedCount, int highRiskCount) {
+  Widget _buildHeroHeader(int pendingCount, int dispensedCount, int highRiskCount, [int approvedAltCount = 0]) {
     return BentoHeroBanner(
       title: 'Clinical Dispense Engine & Pharmacy Intelligence Hub',
       subtitle:
@@ -210,6 +230,15 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen>
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (approvedAltCount > 0) ...[
+            _buildHeaderStatPill(
+              '✨ $approvedAltCount Doctor Approved',
+              const Color(0xFFECFDF5),
+              const Color(0xFF059669),
+              Icons.verified_rounded,
+            ),
+            const SizedBox(width: 8),
+          ],
           _buildHeaderStatPill(
             '$pendingCount Pending',
             const Color(0xFFFEF3C7),
@@ -865,7 +894,7 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen>
   // =========================================================================
   // 5. SEARCH & QUEUE FILTER BAR
   // =========================================================================
-  Widget _buildSearchAndQueueFilterBar(int pendingCount, int highRiskCount, int dispensedCount, int refillCount) {
+  Widget _buildSearchAndQueueFilterBar(int pendingCount, int highRiskCount, int dispensedCount, int refillCount, [int approvedCount = 0]) {
     return BentoCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -924,6 +953,8 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen>
                 _queueTabButton(0, 'All Active Queue', Icons.all_inbox_rounded),
                 const SizedBox(width: 8),
                 _queueTabButton(1, '⚠️ Pending Verification ($pendingCount)', Icons.pending_actions_rounded),
+                const SizedBox(width: 8),
+                _queueTabButton(5, '✨ Doctor Approved ($approvedCount)', Icons.verified_rounded),
                 const SizedBox(width: 8),
                 _queueTabButton(2, '🔥 High ML Risk ($highRiskCount)', Icons.warning_amber_rounded),
                 const SizedBox(width: 8),
@@ -1674,6 +1705,600 @@ class _PharmacistDispenseScreenState extends State<PharmacistDispenseScreen>
             },
           ),
         ],
+      ),
+    );
+  }
+
+  // =========================================================================
+  // 9. APPROVED ALTERNATIVES TOP CALLOUT BANNER
+  // =========================================================================
+  Widget _buildApprovedAlternativesTopBanner(BuildContext context, AppState appState, int count) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF064E3B), Color(0xFF047857), Color(0xFF0D9488)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF059669).withValues(alpha: 0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+            ),
+            child: const Icon(Icons.verified_rounded, color: Colors.white, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      '✨ $count Physician-Approved Alternative Drug Regimen(s)',
+                      style: AppFonts.googleSans(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFBBF24),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'ACTION REQUIRED',
+                        style: AppFonts.googleSans(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF78350F),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'The doctor has authorized alternative medication switches for patient cost-savings and adherence. Generate the official prescription and transmit to patient portal.',
+                  style: AppFonts.googleSans(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF065F46),
+              elevation: 3,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.arrow_forward_rounded, size: 16, color: Color(0xFF065F46)),
+            label: Text(
+              'Review & Generate',
+              style: AppFonts.googleSans(fontSize: 12.5, fontWeight: FontWeight.w900),
+            ),
+            onPressed: () {
+              setState(() {
+                _activeFilterTab = 5;
+                _currentPage = 1;
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =========================================================================
+  // 10. APPROVED ALTERNATIVES FULL QUEUE VIEW
+  // =========================================================================
+  Widget _buildApprovedAlternativesView(AppState appState, List<AlternativeApprovalRequest> list) {
+    if (list.isEmpty) {
+      return BentoCard(
+        padding: const EdgeInsets.all(40),
+        child: Center(
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF1F5F9),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.verified_outlined, size: 36, color: Color(0xFF94A3B8)),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'No Approved Alternative Requests Yet',
+                style: AppFonts.googleSans(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'When physicians approve alternative medication recommendations, they will appear here ready to generate prescriptions.',
+                style: AppFonts.googleSans(fontSize: 12.5, color: AppColors.textMuted),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: list.map((req) {
+        final isDispensed = req.isDispensed || req.status == 'dispensed';
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          child: BentoCard(
+            enableHover: true,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isDispensed
+                              ? [const Color(0xFF10B981), const Color(0xFF059669)]
+                              : [const Color(0xFF8B5CF6), const Color(0xFF6D28D9)],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (isDispensed ? const Color(0xFF10B981) : const Color(0xFF8B5CF6)).withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        isDispensed ? Icons.check_circle_rounded : Icons.verified_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Physician-Approved Alternative Drug Regimen',
+                                  style: AppFonts.googleSans(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.textDark,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: isDispensed ? const Color(0xFFECFDF5) : const Color(0xFFF3E8FF),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: isDispensed ? const Color(0xFF10B981).withValues(alpha: 0.3) : const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      isDispensed ? Icons.done_all_rounded : Icons.star_rounded,
+                                      size: 13,
+                                      color: isDispensed ? const Color(0xFF059669) : const Color(0xFF7C3AED),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      isDispensed ? 'Prescription Generated & Sent' : 'Ready to Generate & Send',
+                                      style: AppFonts.googleSans(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                        color: isDispensed ? const Color(0xFF059669) : const Color(0xFF7C3AED),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Approved by Dr. ${req.doctorName} • Req ID: ${req.id} • ${DateFormat('MMM dd, yyyy').format(req.requestedAt)}',
+                            style: AppFonts.googleSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.person_rounded, size: 16, color: Color(0xFF1244A2)),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Patient: ',
+                        style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF334155)),
+                      ),
+                      Text(
+                        '${req.patientName} (${req.patientId})',
+                        style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w800, color: const Color(0xFF1244A2)),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '•  Age: ${req.patientAge} Yrs  •  Indication: ${req.indication}',
+                        style: AppFonts.googleSans(fontSize: 12, color: const Color(0xFF64748B), fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ORIGINAL DISCONTINUED',
+                              style: AppFonts.googleSans(fontSize: 9.5, fontWeight: FontWeight.w800, color: const Color(0xFFDC2626)),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              req.originalDrug,
+                              style: AppFonts.googleSans(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF1F2937),
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            ),
+                            Text(
+                              'Tier ${req.originalTier} • \$${req.originalCopay.toStringAsFixed(2)} Copay',
+                              style: AppFonts.googleSans(fontSize: 11, color: const Color(0xFF6B7280), fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                              blurRadius: 6,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.arrow_forward_rounded, color: Color(0xFF059669), size: 18),
+                      ),
+
+                      const SizedBox(width: 14),
+
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '✨ DOCTOR APPROVED ALTERNATIVE',
+                              style: AppFonts.googleSans(fontSize: 9.5, fontWeight: FontWeight.w800, color: const Color(0xFF059669)),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              req.recommendedAlternative,
+                              style: AppFonts.googleSans(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w900,
+                                color: const Color(0xFF065F46),
+                              ),
+                            ),
+                            Text(
+                              'Tier ${req.alternativeTier} Preferred • \$${req.alternativeCopay.toStringAsFixed(2)} Copay',
+                              style: AppFonts.googleSans(fontSize: 11, color: const Color(0xFF047857), fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.savings_rounded, size: 14, color: Color(0xFF2563EB)),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Saves \$${req.monthlySavings.toStringAsFixed(2)} / month (\$${req.annualSavings.toStringAsFixed(2)} / yr)',
+                            style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w800, color: const Color(0xFF1D4ED8)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Text(
+                          'Note: ${req.doctorNote?.isNotEmpty == true ? req.doctorNote : req.clinicalRationale}',
+                          style: AppFonts.googleSans(fontSize: 11, color: const Color(0xFF475569), fontStyle: FontStyle.italic),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+                Divider(height: 1, color: const Color(0xFFE2E8F0)),
+                const SizedBox(height: 14),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        backgroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.download_rounded, size: 15, color: Color(0xFF334155)),
+                      label: Text(
+                        'Download e-Rx PDF',
+                        style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF334155)),
+                      ),
+                      onPressed: () {
+                        PdfExportService.instance.downloadOrShareAlternativePrescriptionPdf(req: req);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: const Color(0xFF10B981),
+                            content: Text(
+                              '📄 Downloaded official PDF for ${req.recommendedAlternative}!',
+                              style: AppFonts.googleSans(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 8),
+
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        backgroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.print_rounded, size: 15, color: Color(0xFF334155)),
+                      label: Text(
+                        'Print e-Rx',
+                        style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF334155)),
+                      ),
+                      onPressed: () {
+                        PdfExportService.instance.printAlternativePrescriptionPdf(req: req);
+                      },
+                    ),
+                    const SizedBox(width: 10),
+
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDispensed ? const Color(0xFF059669) : const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        elevation: 2,
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: Icon(
+                        isDispensed ? Icons.check_circle_rounded : Icons.auto_awesome_rounded,
+                        size: 16,
+                      ),
+                      label: Text(
+                        isDispensed ? 'Re-send Alternate e-Rx to Patient' : '✨ Generate & Send Alternate Prescription to Patient',
+                        style: AppFonts.googleSans(fontSize: 12.5, fontWeight: FontWeight.w800),
+                      ),
+                      onPressed: () async {
+                        await appState.generateAndSendAlternatePrescription(req: req);
+                        if (context.mounted) {
+                          _showAlternatePrescriptionSentSuccessDialog(context, req);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  // =========================================================================
+  // 11. ALTERNATE PRESCRIPTION SENT SUCCESS MODAL
+  // =========================================================================
+  void _showAlternatePrescriptionSentSuccessDialog(BuildContext context, AlternativeApprovalRequest req) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        contentPadding: const EdgeInsets.all(24),
+        content: SizedBox(
+          width: 500,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3), width: 2),
+                ),
+                child: const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 48),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Alternate Prescription Generated!',
+                style: AppFonts.googleSans(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.textDark),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'The doctor-approved prescription for ${req.recommendedAlternative} has been synchronized to patient ${req.patientName}\'s cabinet and health vault.',
+                style: AppFonts.googleSans(fontSize: 13, color: AppColors.textMuted),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Prescribed Medication:', style: AppFonts.googleSans(fontSize: 12, color: const Color(0xFF64748B))),
+                        Text(req.recommendedAlternative, style: AppFonts.googleSans(fontSize: 12.5, fontWeight: FontWeight.w800, color: const Color(0xFF065F46))),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Patient Copay Savings:', style: AppFonts.googleSans(fontSize: 12, color: const Color(0xFF64748B))),
+                        Text('Save \$${req.monthlySavings.toStringAsFixed(2)} / mo', style: AppFonts.googleSans(fontSize: 12.5, fontWeight: FontWeight.w800, color: const Color(0xFF2563EB))),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Approved By:', style: AppFonts.googleSans(fontSize: 12, color: const Color(0xFF64748B))),
+                        Text('Dr. ${req.doctorName}', style: AppFonts.googleSans(fontSize: 12.5, fontWeight: FontWeight.w800, color: AppColors.textDark)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.print_rounded, size: 16, color: Color(0xFF334155)),
+                      label: Text('Print e-Rx', style: AppFonts.googleSans(fontWeight: FontWeight.w800, color: const Color(0xFF334155))),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        PdfExportService.instance.printAlternativePrescriptionPdf(req: req);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1244A2),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.download_rounded, size: 16),
+                      label: Text('Download PDF', style: AppFonts.googleSans(fontWeight: FontWeight.w800)),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        PdfExportService.instance.downloadOrShareAlternativePrescriptionPdf(req: req);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
