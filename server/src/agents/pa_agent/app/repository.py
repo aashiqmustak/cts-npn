@@ -56,9 +56,7 @@ class PARepository:
         with open(path, mode="r", encoding="utf-8-sig") as file:
             reader = csv.DictReader(file)
             for row in reader:
-                pa_req = parse_bool(
-                    row.get("pa_required") or row.get("prior_auth_required")
-                )
+                pa_req = parse_bool(row.get("pa_required") or row.get("prior_auth_required"))
                 self.records.append(
                     {
                         "patient_id": row.get("patient_id"),
@@ -73,22 +71,14 @@ class PARepository:
                         "pa_previous_therapy_required": parse_bool(
                             row.get("pa_previous_therapy_required")
                         ),
-                        "pa_diagnosis_required": parse_bool(
-                            row.get("pa_diagnosis_required")
-                        ),
+                        "pa_diagnosis_required": parse_bool(row.get("pa_diagnosis_required")),
                         "pa_lab_required": parse_bool(row.get("pa_lab_required")),
-                        "pa_specialist_required": parse_bool(
-                            row.get("pa_specialist_required")
-                        ),
+                        "pa_specialist_required": parse_bool(row.get("pa_specialist_required")),
                         "pa_documentation_required": parse_bool(
                             row.get("pa_documentation_required")
                         ),
-                        "pa_submission_ready": parse_bool(
-                            row.get("pa_submission_ready")
-                        ),
-                        "pa_missing_information": parse_bool(
-                            row.get("pa_missing_information")
-                        ),
+                        "pa_submission_ready": parse_bool(row.get("pa_submission_ready")),
+                        "pa_missing_information": parse_bool(row.get("pa_missing_information")),
                         "pa_status": row.get("pa_status") or "NOT_REQUIRED",
                         "step_therapy_steps": parse_int(row.get("step_therapy_steps")),
                         "previous_therapies_required": parse_bool(
@@ -98,15 +88,11 @@ class PARepository:
                             row.get("previous_therapy_completed")
                         ),
                         "step_therapy_status": row.get("step_therapy_status"),
-                        "previous_failed_therapy": parse_bool(
-                            row.get("previous_failed_therapy")
-                        ),
+                        "previous_failed_therapy": parse_bool(row.get("previous_failed_therapy")),
                         "previous_same_class_medication": parse_bool(
                             row.get("previous_same_class_medication")
                         ),
-                        "contraindication_flag": parse_bool(
-                            row.get("contraindication_flag")
-                        ),
+                        "contraindication_flag": parse_bool(row.get("contraindication_flag")),
                         "evidence_available": row.get("evidence_available") or "PASS",
                     }
                 )
@@ -127,8 +113,7 @@ class PARepository:
             for record in self.records:
                 if (
                     str(record.get("drug_id") or "").strip().lower() == d_id
-                    and str(record.get("insurance_plan_id") or "").strip().lower()
-                    == p_id
+                    and str(record.get("insurance_plan_id") or "").strip().lower() == p_id
                     and str(record.get("patient_id") or "").strip().lower() == pat_id
                 ):
                     return record
@@ -147,8 +132,7 @@ class PARepository:
             for record in self.records:
                 if (
                     str(record.get("drug_id") or "").strip().lower() == d_id
-                    and str(record.get("insurance_plan_id") or "").strip().lower()
-                    == p_id
+                    and str(record.get("insurance_plan_id") or "").strip().lower() == p_id
                 ):
                     return record
 
@@ -161,13 +145,7 @@ class PARepository:
 
     def get_patient_records(self, patient_id: str) -> list[dict[str, Any]]:
         pat_id = (patient_id or "").strip().lower()
-        return [
-            r
-            for r in self.records
-            if str(r.get("patient_id") or "").strip().lower() == pat_id
-        ]
+        return [r for r in self.records if str(r.get("patient_id") or "").strip().lower() == pat_id]
 
-    def get_pa_policy(
-        self, drug_id: str, plan_id: str | None = None
-    ) -> dict[str, Any] | None:
+    def get_pa_policy(self, drug_id: str, plan_id: str | None = None) -> dict[str, Any] | None:
         return self.find_record(drug_id=drug_id, plan_id=plan_id)

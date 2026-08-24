@@ -185,9 +185,7 @@ def compute_ranking_score(
     else:
         adherence_score = 12.0
 
-    total_score = round(
-        safety_score + class_score + affordability_score + adherence_score, 1
-    )
+    total_score = round(safety_score + class_score + affordability_score + adherence_score, 1)
 
     breakdown = ScoreBreakdown(
         safety_score=safety_score,
@@ -275,16 +273,10 @@ def rank_candidate_drugs(row: dict[str, Any]) -> RankingOutput:
         interaction_found = (
             interaction_flag
             or (
-                (
-                    cand_name_lower in {"drug_c", "rx_200002"}
-                    or cand_id_upper == "RX_200002"
-                )
+                (cand_name_lower in {"drug_c", "rx_200002"} or cand_id_upper == "RX_200002")
                 and any("drug_x" in m or "drug_c" in m for m in current_meds_list)
             )
-            or any(
-                "warfarin" in cand_name_lower and "aspirin" in m
-                for m in current_meds_list
-            )
+            or any("warfarin" in cand_name_lower and "aspirin" in m for m in current_meds_list)
         )
         interaction_result = {
             "status": "REJECT" if interaction_found else "PASS",
@@ -430,9 +422,7 @@ def rank_candidate_drugs(row: dict[str, Any]) -> RankingOutput:
             else ""
         )
         rev_text = (
-            f" {rev_count} candidate(s) flagged for clinical review."
-            if rev_count > 0
-            else ""
+            f" {rev_count} candidate(s) flagged for clinical review." if rev_count > 0 else ""
         )
         summary = (
             f"Top 1 recommended alternative is {top_name} (Rank 1, Score: {top_score}/100). "

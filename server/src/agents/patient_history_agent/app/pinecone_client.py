@@ -22,15 +22,10 @@ class PineconePatientHistoryClient:
         embedding_model: str | None = None,
     ):
         self.api_key = api_key or os.getenv("PINECONE_API_KEY", "").strip()
-        self.index_name = (
-            index_name or os.getenv("PINECONE_INDEX_NAME", "cts-npn").strip()
-        )
-        self.namespace = (
-            namespace or os.getenv("PINECONE_NAMESPACE", "patient-history").strip()
-        )
+        self.index_name = index_name or os.getenv("PINECONE_INDEX_NAME", "cts-npn").strip()
+        self.namespace = namespace or os.getenv("PINECONE_NAMESPACE", "patient-history").strip()
         self.embedding_model = (
-            embedding_model
-            or os.getenv("EMBEDDING_PROVIDER", "llama-text-embed-v2").strip()
+            embedding_model or os.getenv("EMBEDDING_PROVIDER", "llama-text-embed-v2").strip()
         )
 
         self._pc = None
@@ -157,9 +152,7 @@ class PineconePatientHistoryClient:
                 continue
 
             vectors = []
-            for j, (rec, text, emb) in enumerate(
-                zip(chunk, texts, embeddings, strict=False)
-            ):
+            for j, (rec, text, emb) in enumerate(zip(chunk, texts, embeddings, strict=False)):
                 vec_id = self.generate_record_id(rec, index_idx=i + j)
                 metadata = {
                     "patient_id": str(rec.get("patient_id") or "").strip().lower(),
@@ -177,9 +170,7 @@ class PineconePatientHistoryClient:
             try:
                 self._index.upsert(vectors=vectors, namespace=ns)
                 total_upserted += len(vectors)
-                logger.info(
-                    "Upserted %d records to Pinecone namespace '%s'", len(vectors), ns
-                )
+                logger.info("Upserted %d records to Pinecone namespace '%s'", len(vectors), ns)
             except (TimeoutError, OSError, RuntimeError, ValueError) as exc:
                 logger.error("Failed to upsert vectors to Pinecone: %s", exc)
 
@@ -228,9 +219,7 @@ class PineconePatientHistoryClient:
     ) -> list[dict[str, Any]]:
         """Retrieve semantically relevant records for a patient from Pinecone."""
         if not self.is_available or not self._index:
-            logger.warning(
-                "Pinecone is not available; unable to perform vector search."
-            )
+            logger.warning("Pinecone is not available; unable to perform vector search.")
             return []
 
         ns = namespace or self.namespace
@@ -281,9 +270,7 @@ class PineconePatientHistoryClient:
                 )
             return results
         except (TimeoutError, OSError, RuntimeError, ValueError) as exc:
-            logger.error(
-                "Error executing Pinecone query for patient '%s': %s", patient_id, exc
-            )
+            logger.error("Error executing Pinecone query for patient '%s': %s", patient_id, exc)
             return []
 
     def get_stats(self) -> dict[str, Any]:

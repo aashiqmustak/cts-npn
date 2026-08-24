@@ -194,9 +194,7 @@ async def search_formulary(query: str = "", limit: int = 20) -> list[dict[str, A
 async def get_formulary_drug(drug_id: str) -> dict[str, Any]:
     details = formulary_agent.get_drug_details(drug_id=drug_id)
     if details is None:
-        raise HTTPException(
-            status_code=404, detail=f"Drug '{drug_id}' not found in formulary"
-        )
+        raise HTTPException(status_code=404, detail=f"Drug '{drug_id}' not found in formulary")
     return details
 
 
@@ -237,18 +235,14 @@ async def evaluate_pa(data: PARequest) -> PAResponse:
     try:
         return pa_agent.process_request(data)
     except FileNotFoundError as exc:
-        raise HTTPException(
-            status_code=503, detail=f"PA dataset unavailable: {exc}"
-        ) from exc
+        raise HTTPException(status_code=503, detail=f"PA dataset unavailable: {exc}") from exc
 
 
 @get("/policy/{drug_id:str}")
 async def get_pa_policy(drug_id: str, plan_id: str | None = None) -> dict[str, Any]:
     policy = pa_agent.get_pa_policy(drug_id=drug_id, plan_id=plan_id)
     if policy is None:
-        raise HTTPException(
-            status_code=404, detail=f"PA policy for drug '{drug_id}' not found"
-        )
+        raise HTTPException(status_code=404, detail=f"PA policy for drug '{drug_id}' not found")
     return policy
 
 
@@ -703,9 +697,7 @@ async def chat_message(data: ChatMessagePayload) -> dict[str, Any]:
         if sarvam_key:
             try:
                 # Clean spoken text for clear voice audio
-                spoken_text = (
-                    reply.split("Clinical Rationale:")[0].replace("\n", " ").strip()
-                )
+                spoken_text = reply.split("Clinical Rationale:")[0].replace("\n", " ").strip()
                 if len(spoken_text) > 400:
                     spoken_text = spoken_text[:400]
                 if spoken_text:
@@ -807,9 +799,7 @@ async def voice_offer(session_id: str, data: dict[str, Any]) -> dict[str, Any]:
             )
             return res.json()
     except Exception as exc:
-        raise HTTPException(
-            status_code=502, detail=f"Voice runner offer error: {exc}"
-        ) from exc
+        raise HTTPException(status_code=502, detail=f"Voice runner offer error: {exc}") from exc
 
 
 @patch("/sessions/{session_id:str}/api/offer")

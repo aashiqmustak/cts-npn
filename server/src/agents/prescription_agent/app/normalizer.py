@@ -145,9 +145,7 @@ class DoseExtractor:
             n = int(m_puffs.group(1))
             return f"{n} puff" if n == 1 else f"{n} puffs"
 
-        m_inh = re.search(
-            r"\b(\d+)\s*(?:inhalation|inhalations)\b", text, flags=re.IGNORECASE
-        )
+        m_inh = re.search(r"\b(\d+)\s*(?:inhalation|inhalations)\b", text, flags=re.IGNORECASE)
         if m_inh:
             n = int(m_inh.group(1))
             return f"{n} inhalation" if n == 1 else f"{n} inhalations"
@@ -157,15 +155,11 @@ class DoseExtractor:
             n = int(m_vial.group(1))
             return f"{n} vial" if n == 1 else f"{n} vials"
 
-        m_cap_inh = re.search(
-            r"\b(\d+)\s*capsule\s*inhaled\b", text, flags=re.IGNORECASE
-        )
+        m_cap_inh = re.search(r"\b(\d+)\s*capsule\s*inhaled\b", text, flags=re.IGNORECASE)
         if m_cap_inh:
             return f"{m_cap_inh.group(1)} capsule inhaled"
 
-        m_tab = re.search(
-            r"\b(\d+)\s*(?:tablet|tablets|tab|tabs)\b", text, flags=re.IGNORECASE
-        )
+        m_tab = re.search(r"\b(\d+)\s*(?:tablet|tablets|tab|tabs)\b", text, flags=re.IGNORECASE)
         if m_tab:
             n = int(m_tab.group(1))
             return f"{n} tablet" if n == 1 else f"{n} tablets"
@@ -259,9 +253,7 @@ class RouteNormalizer:
 
         lower = text.lower()
 
-        if re.search(
-            r"\b(inhaled|inhalation|inhaler|puffs?|puff|nebulizer|neb)\b", lower
-        ):
+        if re.search(r"\b(inhaled|inhalation|inhaler|puffs?|puff|nebulizer|neb)\b", lower):
             return "inhalation"
         if re.search(r"\b(subcutaneous|sub-q|subq|sc|sq|s\.c\.|subcut)\b", lower):
             return "subcutaneous"

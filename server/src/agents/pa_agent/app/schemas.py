@@ -30,9 +30,7 @@ class PARequest(BaseModel):
     plan_id: str | None = None
     indication: str | None = None
     previous_medications: list[str] = Field(default_factory=list)
-    clinical_information: ClinicalInformation = Field(
-        default_factory=ClinicalInformation
-    )
+    clinical_information: ClinicalInformation = Field(default_factory=ClinicalInformation)
 
     @model_validator(mode="before")
     @classmethod

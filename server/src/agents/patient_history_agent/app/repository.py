@@ -55,9 +55,7 @@ class PatientHistoryRepository:
                     }
                 )
 
-        logger.info(
-            "Loaded %d patient history records into in-memory store.", len(self.records)
-        )
+        logger.info("Loaded %d patient history records into in-memory store.", len(self.records))
 
     def get_patient_records(self, patient_id: str) -> list[dict[str, Any]]:
         clean_patient_id = (patient_id or "").strip().lower()
@@ -67,9 +65,7 @@ class PatientHistoryRepository:
             if str(record.get("patient_id") or "").strip().lower() == clean_patient_id
         ]
 
-    def add_record(
-        self, record: dict[str, Any], sync_pinecone: bool = True
-    ) -> str | None:
+    def add_record(self, record: dict[str, Any], sync_pinecone: bool = True) -> str | None:
         """Add a new patient record (from client) to local cache and upsert to Pinecone."""
         formatted_record = {
             "patient_id": str(record.get("patient_id") or "").strip(),
@@ -88,9 +84,7 @@ class PatientHistoryRepository:
         if sync_pinecone and self.pinecone.is_available:
             try:
                 vec_id = self.pinecone.upsert_single_record(formatted_record)
-                logger.info(
-                    "Synced new patient record to Pinecone (vector_id: %s)", vec_id
-                )
+                logger.info("Synced new patient record to Pinecone (vector_id: %s)", vec_id)
             except (TimeoutError, OSError, RuntimeError, ValueError) as exc:
                 logger.error("Failed to sync record to Pinecone: %s", exc)
 

@@ -107,9 +107,7 @@ class PrescriptionRequestHandler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Run the prescription agent HTTP server."
-    )
+    parser = argparse.ArgumentParser(description="Run the prescription agent HTTP server.")
     parser.add_argument("--host", default="127.0.0.1", help="Server host")
     parser.add_argument("--port", type=int, default=8000, help="Server port")
     args = parser.parse_args()

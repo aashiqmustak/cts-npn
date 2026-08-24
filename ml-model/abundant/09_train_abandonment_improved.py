@@ -222,10 +222,7 @@ for name, model in models.items():
         f"PR-AUC  : {cv_results[name]['pr_auc']['mean']:.4f} "
         f"+/- {cv_results[name]['pr_auc']['std']:.4f}"
     )
-    print(
-        f"F1      : {cv_results[name]['f1']['mean']:.4f} "
-        f"+/- {cv_results[name]['f1']['std']:.4f}"
-    )
+    print(f"F1      : {cv_results[name]['f1']['mean']:.4f} +/- {cv_results[name]['f1']['std']:.4f}")
     print(f"Time    : {elapsed}s")
 
 # ============================================================
@@ -379,9 +376,7 @@ print(
 )
 
 # Use threshold learned from validation
-champion_threshold = benchmark_results[best_model_name]["validation"][
-    "optimal_threshold"
-]
+champion_threshold = benchmark_results[best_model_name]["validation"]["optimal_threshold"]
 
 champion_test = benchmark_results[best_model_name]["test"]
 
@@ -401,9 +396,7 @@ print("=" * 90)
 if hasattr(best_model, "feature_importances_"):
     importances = best_model.feature_importances_
 
-elif hasattr(best_model, "named_steps") and hasattr(
-    best_model.named_steps["classifier"], "coef_"
-):
+elif hasattr(best_model, "named_steps") and hasattr(best_model.named_steps["classifier"], "coef_"):
     importances = np.abs(best_model.named_steps["classifier"].coef_[0])
 
 else:
@@ -425,9 +418,9 @@ if total_importance > 0:
 else:
     df_importance["relative_importance_pct"] = 0.0
 
-df_importance = df_importance.sort_values(
-    "importance_score", ascending=False
-).reset_index(drop=True)
+df_importance = df_importance.sort_values("importance_score", ascending=False).reset_index(
+    drop=True
+)
 
 importance_path = os.path.join(MODELS_DIR, "feature_importance.csv")
 
@@ -546,9 +539,7 @@ Feature Importance:
         champion_test_brier=champion_test["brier_score"],
         champion_threshold=champion_threshold,
         champion_test_f1=champion_test["validation_optimized_threshold"]["f1"],
-        champion_test_precision=champion_test["validation_optimized_threshold"][
-            "precision"
-        ],
+        champion_test_precision=champion_test["validation_optimized_threshold"]["precision"],
         champion_test_recall=champion_test["validation_optimized_threshold"]["recall"],
         model_path=model_path,
         metrics_path=metrics_path,

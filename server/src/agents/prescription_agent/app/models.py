@@ -2,12 +2,8 @@ from pydantic import BaseModel, Field
 
 
 class DrugDetails(BaseModel):
-    name: str | None = Field(
-        None, description="Canonical drug name or active ingredient"
-    )
-    rxnorm_id: str | None = Field(
-        None, description="RxNorm Concept Unique Identifier (RxCUI)"
-    )
+    name: str | None = Field(None, description="Canonical drug name or active ingredient")
+    rxnorm_id: str | None = Field(None, description="RxNorm Concept Unique Identifier (RxCUI)")
     strength: str | None = Field(
         None, description="Normalized medication strength (e.g. 20 mg, 100 units/mL)"
     )

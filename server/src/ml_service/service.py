@@ -26,9 +26,7 @@ class MLModelService:
         self.abandonment_threshold: float = 0.5
         self.load_models()
 
-    def _resolve_path(
-        self, env_var: str, default_relative_paths: list[str]
-    ) -> Path | None:
+    def _resolve_path(self, env_var: str, default_relative_paths: list[str]) -> Path | None:
         env_val = os.getenv(env_var)
         if env_val and Path(env_val).exists():
             return Path(env_val)
@@ -53,9 +51,7 @@ class MLModelService:
                 data = joblib.load(adherence_path)
                 if isinstance(data, dict):
                     self.adherence_model = data.get("model", data.get("model_object"))
-                    self.adherence_features = data.get(
-                        "features", data.get("feature_names")
-                    )
+                    self.adherence_features = data.get("features", data.get("feature_names"))
                 else:
                     self.adherence_model = data
                 logger.info("Loaded adherence model from: %s", adherence_path)
@@ -76,12 +72,8 @@ class MLModelService:
                 data = joblib.load(abandonment_path)
                 if isinstance(data, dict):
                     self.abandonment_model = data.get("model_object", data.get("model"))
-                    self.abandonment_features = data.get(
-                        "feature_names", data.get("features")
-                    )
-                    self.abandonment_threshold = float(
-                        data.get("optimal_threshold", 0.5)
-                    )
+                    self.abandonment_features = data.get("feature_names", data.get("features"))
+                    self.abandonment_threshold = float(data.get("optimal_threshold", 0.5))
                 else:
                     self.abandonment_model = data
                 logger.info("Loaded abandonment model from: %s", abandonment_path)
@@ -123,9 +115,7 @@ class MLModelService:
         df_encoded = pd.get_dummies(df, dtype=int)
 
         if self.adherence_features:
-            df_encoded = df_encoded.reindex(
-                columns=self.adherence_features, fill_value=0
-            )
+            df_encoded = df_encoded.reindex(columns=self.adherence_features, fill_value=0)
 
         prediction = self.adherence_model.predict(df_encoded)[0]
 
@@ -165,9 +155,7 @@ class MLModelService:
 
         # Align with model expected features
         if self.abandonment_features:
-            df_encoded = df_encoded.reindex(
-                columns=self.abandonment_features, fill_value=0
-            )
+            df_encoded = df_encoded.reindex(columns=self.abandonment_features, fill_value=0)
         elif hasattr(self.abandonment_model, "feature_names_in_"):
             df_encoded = df_encoded.reindex(
                 columns=self.abandonment_model.feature_names_in_, fill_value=0
@@ -181,11 +169,7 @@ class MLModelService:
         threshold = self.abandonment_threshold or 0.5
         is_likely = prob >= threshold
         prob_pct = round(prob * 100, 2)
-        category = (
-            "HIGH"
-            if prob >= threshold
-            else ("MEDIUM" if prob >= (threshold / 2) else "LOW")
-        )
+        category = "HIGH" if prob >= threshold else ("MEDIUM" if prob >= (threshold / 2) else "LOW")
 
         return AbandonmentResponse(
             abandonment_probability=prob_pct,

@@ -39,9 +39,7 @@ class PAService:
 
         # 2. Determine if PA is required
         if record is not None:
-            pa_required = bool(
-                record.get("pa_required") or record.get("prior_auth_required", True)
-            )
+            pa_required = bool(record.get("pa_required") or record.get("prior_auth_required", True))
             criteria_type = record.get("pa_criteria_type", "DIAGNOSIS_CONFIRMATION")
             req_prev_therapy = bool(
                 record.get("pa_previous_therapy_required")
@@ -176,9 +174,7 @@ class PAService:
         # 4. Determine final PA status
         if has_contraindications:
             pa_status = "DENIED"
-            missing_information.append(
-                f"Contraindication flagged: {', '.join(contraindications)}"
-            )
+            missing_information.append(f"Contraindication flagged: {', '.join(contraindications)}")
         elif all(c.satisfied for c in criteria) and len(missing_information) == 0:
             pa_status = "READY_FOR_SUBMISSION"
         else:
@@ -203,9 +199,7 @@ class PAService:
             evidence=evidence,
         )
 
-    def _derive_policy_id(
-        self, plan_id: str, drug_id: str, record: dict[str, Any] | None
-    ) -> str:
+    def _derive_policy_id(self, plan_id: str, drug_id: str, record: dict[str, Any] | None) -> str:
         if record and record.get("payer_id"):
             payer_clean = str(record["payer_id"]).replace("PAYER_", "")
             return f"PA_POLICY_{payer_clean}"
@@ -225,7 +219,5 @@ class PAService:
     def get_patient_history(self, patient_id: str) -> list[dict[str, Any]]:
         return self.repository.get_patient_records(patient_id=patient_id)
 
-    def get_pa_policy(
-        self, drug_id: str, plan_id: str | None = None
-    ) -> dict[str, Any] | None:
+    def get_pa_policy(self, drug_id: str, plan_id: str | None = None) -> dict[str, Any] | None:
         return self.repository.get_pa_policy(drug_id=drug_id, plan_id=plan_id)

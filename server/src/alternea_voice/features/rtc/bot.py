@@ -24,7 +24,7 @@ from pipecat.frames.frames import (
     TTSSpeakFrame,
 )
 from pipecat.pipeline.pipeline import Pipeline
-from pipecat.pipeline.runner import PipelineRunner  # noqa: F401
+from pipecat.pipeline.runner import PipelineRunner
 from pipecat.pipeline.task import PipelineParams, PipelineTask
 from pipecat.processors.aggregators.llm_context import LLMContext
 from pipecat.processors.aggregators.llm_response_universal import (
@@ -198,9 +198,7 @@ async def handle_evaluate_prescription(*args_list, **kwargs):
         elif isinstance(raw_args, dict):
             args = raw_args
     elif len(args_list) >= 6:
-        _function_name, _tool_call_id, raw_args, _llm, _context, result_callback = (
-            args_list[:6]
-        )
+        _function_name, _tool_call_id, raw_args, _llm, _context, result_callback = args_list[:6]
         if isinstance(raw_args, str):
             try:
                 args = json.loads(raw_args)
@@ -256,8 +254,7 @@ async def handle_evaluate_prescription(*args_list, **kwargs):
     ):
         inferred_cond = ["Type 2 Diabetes Mellitus"]
     elif any(
-        k in d_low
-        for k in ["atorvastatin", "rosuvastatin", "simvastatin", "crestor", "lipitor"]
+        k in d_low for k in ["atorvastatin", "rosuvastatin", "simvastatin", "crestor", "lipitor"]
     ):
         inferred_cond = ["Hyperlipidemia"]
     elif any(k in d_low for k in ["advair", "albuterol", "fluticasone", "symbicort"]):
@@ -274,15 +271,10 @@ async def handle_evaluate_prescription(*args_list, **kwargs):
     try:
         # Build patient context
         parsed_allergies = [
-            {"substance": a, "severity": "HIGH"} if isinstance(a, str) else a
-            for a in allergies
+            {"substance": a, "severity": "HIGH"} if isinstance(a, str) else a for a in allergies
         ]
-        parsed_conditions = [
-            {"name": c} if isinstance(c, str) else c for c in conditions
-        ]
-        parsed_meds = [
-            {"drug_name": m} if isinstance(m, str) else m for m in current_medications
-        ]
+        parsed_conditions = [{"name": c} if isinstance(c, str) else c for c in conditions]
+        parsed_meds = [{"drug_name": m} if isinstance(m, str) else m for m in current_medications]
 
         req = PrescriptionEvaluationRequest(
             patient_id=patient_id,
@@ -305,14 +297,10 @@ async def handle_evaluate_prescription(*args_list, **kwargs):
         top_score = top_drug.total_score if top_drug else 0
         decision = report.action_decision
         rationale = (
-            top_drug.clinical_rationale
-            if top_drug
-            else "Standard clinical evaluation completed."
+            top_drug.clinical_rationale if top_drug else "Standard clinical evaluation completed."
         )
 
-        rejections = [
-            f"{r.drug_name}: {r.reason}" for r in report.rejected_alternatives
-        ]
+        rejections = [f"{r.drug_name}: {r.reason}" for r in report.rejected_alternatives]
 
         result_payload = {
             "status": "success",
@@ -332,9 +320,7 @@ async def handle_evaluate_prescription(*args_list, **kwargs):
         await _safe_execute_callback(result_callback, result_payload)
     except (RuntimeError, ValueError, TypeError, KeyError, OSError) as exc:
         logger.exception("Error executing backend multi-agent pipeline")
-        await _safe_execute_callback(
-            result_callback, {"status": "error", "message": str(exc)}
-        )
+        await _safe_execute_callback(result_callback, {"status": "error", "message": str(exc)})
 
 
 # Define Tools Schema for Groq LLM using Pipecat's FunctionSchema
@@ -389,9 +375,7 @@ async def run_bot(
             "SARVAM_API_KEY is not set in .env! Voice STT/TTS requires a Sarvam API key."
         )
     if not groq_key:
-        logger.warning(
-            "GROQ_API_KEY is not set in .env! Voice LLM requires a Groq API key."
-        )
+        logger.warning("GROQ_API_KEY is not set in .env! Voice LLM requires a Groq API key.")
 
     async with aiohttp.ClientSession():
         stt = SarvamSTTService(
@@ -449,14 +433,10 @@ async def run_bot(
             logger.warning("LocalSmartTurnAnalyzerV3 unavailable: %s", exc)
 
         stop_strategies: list[BaseUserTurnStopStrategy] = (
-            [TurnAnalyzerUserTurnStopStrategy(turn_analyzer=turn_analyzer)]
-            if turn_analyzer
-            else []
+            [TurnAnalyzerUserTurnStopStrategy(turn_analyzer=turn_analyzer)] if turn_analyzer else []
         )
         user_params = (
-            LLMUserAggregatorParams(
-                user_turn_strategies=UserTurnStrategies(stop=stop_strategies)
-            )
+            LLMUserAggregatorParams(user_turn_strategies=UserTurnStrategies(stop=stop_strategies))
             if stop_strategies
             else LLMUserAggregatorParams()
         )

@@ -8,9 +8,7 @@ class AlternativeDiscoveryAgent:
     def __init__(self, service: AlternativeDiscoveryService):
         self.service = service
 
-    def process_request(
-        self, request: AlternativeDiscoveryInput
-    ) -> AlternativeDiscoveryOutput:
+    def process_request(self, request: AlternativeDiscoveryInput) -> AlternativeDiscoveryOutput:
         return self.service.discover_alternatives(request)
 
     def run(self, task: dict[str, Any] | AlternativeDiscoveryInput) -> dict[str, Any]:

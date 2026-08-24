@@ -175,18 +175,14 @@ class MultiAgentOrchestrator:
 
         # 4. Patient History Claims & Adherence Analyzer
         self.history_repo = PatientHistoryRepository()
-        self.history_agent = PatientHistoryAgent(
-            PatientHistoryService(self.history_repo)
-        )
+        self.history_agent = PatientHistoryAgent(PatientHistoryService(self.history_repo))
 
         # 5. Machine Learning Predictor (Adherence + Abandonment)
         self.ml_service = MLPredictorService()
 
         # 6. Alternative Discovery Agent
         self.alt_repo = AlternativeDiscoveryRepository()
-        self.alt_agent = AlternativeDiscoveryAgent(
-            AlternativeDiscoveryService(self.alt_repo)
-        )
+        self.alt_agent = AlternativeDiscoveryAgent(AlternativeDiscoveryService(self.alt_repo))
 
         # 7. Ranking Agent (Multi-factor scoring + Top 1 selection + Rejection explanations)
         self.ranking_agent = RankingAgent(RankingService())
@@ -423,11 +419,7 @@ class MultiAgentOrchestrator:
         # -------------------------------------------------------------
         top_drug = ranking_res.top_recommended_drug
 
-        if (
-            top_drug
-            and top_drug.drug_id == matched_drug_id
-            and not trigger_alternatives
-        ):
+        if top_drug and top_drug.drug_id == matched_drug_id and not trigger_alternatives:
             decision = "DISPENSE_PRIMARY"
             msg = f"Primary medication '{canonical_drug_name}' passed all safety checks, is covered under formulary (Tier {form_res.coverage.tier}), and shows low abandonment risk."
         elif top_drug and top_drug.drug_id != matched_drug_id:
