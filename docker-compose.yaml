@@ -17,13 +17,9 @@ services:
   frontend:
     build:
       context: ./
-      dockerfile: infra/docker/frontend.dev.Dockerfile
-    volumes:
-      - ./client:/app
-      - /app/.dart_tool
-      - /app/build
+      dockerfile: infra/docker/frontend.Dockerfile
     ports:
-      - "8080:8080"
+      - "8080:80"
     networks:
       - app-network
 
