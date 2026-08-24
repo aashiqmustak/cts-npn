@@ -7,6 +7,13 @@ import threading
 import uvicorn
 from dotenv import load_dotenv
 
+# Ensure UTF-8 output encoding across Windows terminals
+if sys.platform == "win32":
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 # Ensure root and server/src are in sys.path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SERVER_SRC_DIR = os.path.join(BASE_DIR, "server", "src")
@@ -49,6 +56,22 @@ def start_voice_agent():
     try:
         from pipecat.runner.run import main as pipecat_main
 
+        # Clean custom arguments for pipecat runner
+        clean_args = [sys.argv[0]]
+        i = 1
+        while i < len(sys.argv):
+            arg = sys.argv[i]
+            if arg in ("--mode", "--host", "--port"):
+                i += 2
+            elif any(
+                arg.startswith(prefix) for prefix in ("--mode=", "--host=", "--port=")
+            ):
+                i += 1
+            else:
+                clean_args.append(arg)
+                i += 1
+        sys.argv = clean_args
+
         print("\n[Alternea Voice] Initializing Voice Agent Runner...")
         pipecat_main()
     except Exception as exc:  # noqa: BLE001
@@ -84,14 +107,29 @@ def main():
     elif args.mode == "voice":
         start_voice_agent()
     else:
-        # Default: Run API service on main thread, with voice runner support
-        # Start API service in a background daemon thread
+        # Default: Run API service in a background daemon thread, and Voice runner on main thread
         api_thread = threading.Thread(
             target=start_agent_service,
             kwargs={"host": args.host, "port": args.port},
             daemon=True,
         )
         api_thread.start()
+
+        # Clean sys.argv for pipecat runner
+        clean_args = [sys.argv[0]]
+        i = 1
+        while i < len(sys.argv):
+            arg = sys.argv[i]
+            if arg in ("--mode", "--host", "--port"):
+                i += 2
+            elif any(
+                arg.startswith(prefix) for prefix in ("--mode=", "--host=", "--port=")
+            ):
+                i += 1
+            else:
+                clean_args.append(arg)
+                i += 1
+        sys.argv = clean_args
 
         # Check if voice runner arguments or Pipecat runner is invoked
         try:
