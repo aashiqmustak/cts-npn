@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -24,9 +23,18 @@ class _AuthScreenState extends State<AuthScreen> {
   final _signInEmailController = TextEditingController();
   final _otpController = TextEditingController();
 
+  bool _regOtpSent = false;
+  final _regOtpController = TextEditingController();
+
   final _regNameController = TextEditingController();
   final _regEmailController = TextEditingController();
   final _regPasswordController = TextEditingController();
+  final _regHospitalController = TextEditingController();
+  final _regSpecialtyController = TextEditingController();
+  final _regDoctorLicenseController = TextEditingController();
+  String? _selectedHospitalId;
+  bool _showHospitalSuggestions = false;
+
   String _selectedInsuranceCompany = 'Blue Cross Blue Shield';
   final Set<String> _selectedInsurancePlans = {
     'Blue Cross PPO Premier',
@@ -35,12 +43,16 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _obscureRegPassword = true;
   bool _agreeTerms = true;
   bool _isPatientLoginMode = false;
+  bool _isDoctorLicenseVerified = false;
   Map<String, dynamic>? _verifiedUserMap;
 
   @override
   void initState() {
     super.initState();
     _regPasswordController.addListener(_onPasswordChanged);
+    _regHospitalController.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   void _onPasswordChanged() {
@@ -51,9 +63,13 @@ class _AuthScreenState extends State<AuthScreen> {
   void dispose() {
     _signInEmailController.dispose();
     _otpController.dispose();
+    _regOtpController.dispose();
     _regNameController.dispose();
     _regEmailController.dispose();
     _regPasswordController.dispose();
+    _regHospitalController.dispose();
+    _regSpecialtyController.dispose();
+    _regDoctorLicenseController.dispose();
     super.dispose();
   }
 
@@ -62,6 +78,8 @@ class _AuthScreenState extends State<AuthScreen> {
       _selectedRole = role;
       _isPatientLoginMode = (role == UserRole.patient);
       _signInEmailController.text = role.defaultEmail;
+      _isDoctorLicenseVerified = false;
+      _regOtpSent = false;
     });
     widget.onRoleChanged?.call(role);
   }
@@ -617,32 +635,87 @@ class _AuthScreenState extends State<AuthScreen> {
     bool isMobile = false,
   }) {
     return Container(
-      constraints: const BoxConstraints(maxWidth: 820),
+      constraints: const BoxConstraints(maxWidth: 840),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+        border: Border.all(
+          color: const Color(0xFF2563EB).withValues(alpha: 0.18),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
-            blurRadius: 36,
-            offset: const Offset(0, 10),
+            color: const Color(0xFF2563EB).withValues(alpha: 0.06),
+            blurRadius: 40,
+            offset: const Offset(0, 12),
+          ),
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      padding: EdgeInsets.all(isMobile ? 18 : 32),
+      padding: EdgeInsets.all(isMobile ? 20 : 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Ambient Live Network Pill
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFEFF6FF), Color(0xFFF0FDF4)],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.25),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF10B981),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0xFF10B981),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'LIVE 2026 CMS HEALTHCARE NETWORK',
+                    style: AppFonts.googleSans(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF1D4ED8),
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
           // Centered Header
           Text(
             'Create an Account',
             textAlign: TextAlign.center,
             style: AppFonts.googleSans(
-              fontSize: isMobile ? 22 : 26,
+              fontSize: isMobile ? 22 : 27,
               fontWeight: FontWeight.w900,
               color: const Color(0xFF0F172A),
-              letterSpacing: -0.5,
+              letterSpacing: -0.6,
             ),
           ),
           const SizedBox(height: 6),
@@ -659,62 +732,88 @@ class _AuthScreenState extends State<AuthScreen> {
           const SizedBox(height: 24),
 
           // Inner Top Subheader Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2563EB),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.person_add_alt_1_rounded,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Create Account',
-                    style: AppFonts.googleSans(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF0F172A),
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFDBEAFE)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
                   children: [
-                    const Icon(
-                      Icons.stars_rounded,
-                      size: 14,
-                      color: Color(0xFF2563EB),
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.person_add_alt_1_rounded,
+                        color: Colors.white,
+                        size: 15,
+                      ),
                     ),
-                    const SizedBox(width: 5),
+                    const SizedBox(width: 10),
                     Text(
-                      _selectedRole.label,
+                      'Account Intake Form',
                       style: AppFonts.googleSans(
-                        fontSize: 11.5,
+                        fontSize: 14,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF2563EB),
+                        color: const Color(0xFF0F172A),
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF2563EB).withValues(alpha: 0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.stars_rounded,
+                        size: 14,
+                        color: Color(0xFF2563EB),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        _selectedRole.label,
+                        style: AppFonts.googleSans(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF2563EB),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 20),
@@ -728,19 +827,29 @@ class _AuthScreenState extends State<AuthScreen> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left Sub-Column (Privilege Banner + 3 Role Cards + Google Sign Up)
+                // Left Sub-Column (Privilege Banner + 4 Role Cards + Google Sign Up)
                 Expanded(
                   flex: 5,
                   child: _buildRegisterLeftSubColumn(context, appState),
                 ),
-                const SizedBox(width: 28),
-                // Vertical Divider
+                const SizedBox(width: 26),
+                // Vertical Divider with soft gradient
                 Container(
-                  width: 1,
-                  height: 420,
-                  color: const Color(0xFFF1F5F9),
+                  width: 1.2,
+                  height: 440,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0xFFE2E8F0),
+                        Color(0xFFCBD5E1),
+                        Color(0xFFE2E8F0),
+                      ],
+                    ),
+                  ),
                 ),
-                const SizedBox(width: 28),
+                const SizedBox(width: 26),
                 // Right Sub-Column (Inputs + Strength + Terms + CTA)
                 Expanded(
                   flex: 6,
@@ -750,9 +859,9 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
           ],
 
-          const SizedBox(height: 28),
+          const SizedBox(height: 24),
           const Divider(color: Color(0xFFE2E8F0)),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // Bottom 3-Column Security Footer Strip
           _buildRegisterFooterSecurityStrip(),
@@ -772,7 +881,6 @@ class _AuthScreenState extends State<AuthScreen> {
 
         // 4 Role Selection Cards in Row (Patient, Insurance, Doctor, Pharmacist)
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
               child: _buildRoleSelectCardV2(
@@ -780,6 +888,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 icon: Icons.favorite_rounded,
                 iconColor: const Color(0xFFEF4444),
                 iconBg: const Color(0xFFFEF2F2),
+                tagline: 'Meds & Health',
               ),
             ),
             const SizedBox(width: 6),
@@ -789,6 +898,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 icon: Icons.verified_user_rounded,
                 iconColor: const Color(0xFF2563EB),
                 iconBg: const Color(0xFFEFF6FF),
+                tagline: 'Formulary & PA',
               ),
             ),
             const SizedBox(width: 6),
@@ -798,6 +908,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 icon: Icons.medical_services_rounded,
                 iconColor: const Color(0xFF10B981),
                 iconBg: const Color(0xFFECFDF5),
+                tagline: 'Prescribe & EHR',
               ),
             ),
             const SizedBox(width: 6),
@@ -807,6 +918,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 icon: Icons.local_pharmacy_rounded,
                 iconColor: const Color(0xFF9333EA),
                 iconBg: const Color(0xFFFAF5FF),
+                tagline: 'Dispense Meds',
               ),
             ),
           ],
@@ -824,23 +936,23 @@ class _AuthScreenState extends State<AuthScreen> {
         ] else ...[
           const SizedBox(height: 14),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
             decoration: BoxDecoration(
               color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: Row(
               children: [
                 const Icon(
                   Icons.verified_user_outlined,
-                  size: 14,
+                  size: 15,
                   color: Color(0xFF2563EB),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Institutional verification required for ${_selectedRole.label}s.',
+                    'Institutional credential verification active for ${_selectedRole.label}s.',
                     style: AppFonts.googleSans(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w600,
@@ -861,30 +973,38 @@ class _AuthScreenState extends State<AuthScreen> {
     required IconData icon,
     required Color iconColor,
     required Color iconBg,
+    required String tagline,
   }) {
     final isSelected = _selectedRole == role;
     return InkWell(
       onTap: () => _handleRoleTap(role),
       borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isSelected ? iconBg.withValues(alpha: 0.7) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
-            width: isSelected ? 1.8 : 1.2,
+            color: isSelected ? iconColor : const Color(0xFFE2E8F0),
+            width: isSelected ? 1.8 : 1.0,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: isSelected
-                  ? const Color(0xFF2563EB).withValues(alpha: 0.12)
-                  : const Color(0xFF0F172A).withValues(alpha: 0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: iconColor.withValues(alpha: 0.18),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Stack(
           clipBehavior: Clip.none,
@@ -894,35 +1014,57 @@ class _AuthScreenState extends State<AuthScreen> {
               children: [
                 Center(
                   child: Container(
-                    width: 36,
-                    height: 36,
+                    width: 34,
+                    height: 34,
                     decoration: BoxDecoration(
-                      color: iconBg,
+                      color: isSelected ? iconColor : iconBg,
                       shape: BoxShape.circle,
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: iconColor.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
                     ),
-                    child: Icon(icon, size: 18, color: iconColor),
+                    child: Icon(
+                      icon,
+                      size: 16,
+                      color: isSelected ? Colors.white : iconColor,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  role.label,
-                  textAlign: TextAlign.center,
-                  style: AppFonts.googleSans(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF0F172A),
+                const SizedBox(height: 7),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    role.label,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: AppFonts.googleSans(
+                      fontSize: 10.5,
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                      color: isSelected ? const Color(0xFF0F172A) : const Color(0xFF334155),
+                      letterSpacing: -0.2,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  role.subtitle,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppFonts.googleSans(
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF64748B),
+                const SizedBox(height: 1),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    tagline,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: AppFonts.googleSans(
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected ? iconColor : const Color(0xFF94A3B8),
+                    ),
                   ),
                 ),
               ],
@@ -932,16 +1074,22 @@ class _AuthScreenState extends State<AuthScreen> {
                 top: -8,
                 right: -2,
                 child: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF2563EB),
+                  width: 17,
+                  height: 17,
+                  decoration: BoxDecoration(
+                    color: iconColor,
                     shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: iconColor.withValues(alpha: 0.4),
+                        blurRadius: 6,
+                      ),
+                    ],
                   ),
                   child: const Icon(
                     Icons.check_rounded,
                     color: Colors.white,
-                    size: 12,
+                    size: 11,
                   ),
                 ),
               ),
@@ -962,12 +1110,12 @@ class _AuthScreenState extends State<AuthScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Text(
-                'OR MANUAL REGISTRATION',
+                'CREDENTIALS & PROFILE SETUP',
                 style: AppFonts.googleSans(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
                   color: const Color(0xFF94A3B8),
-                  letterSpacing: 0.4,
+                  letterSpacing: 0.5,
                 ),
               ),
             ),
@@ -977,113 +1125,580 @@ class _AuthScreenState extends State<AuthScreen> {
 
         const SizedBox(height: 14),
 
-        // Full Legal Name
-        _GlowBorderFormField(
-          controller: _regNameController,
-          label: _selectedRole.nameFieldLabel,
-          hint: 'e.g. ${_selectedRole.sampleName}',
-          icon: Icons.assignment_ind_outlined,
-        ),
-
-        const SizedBox(height: 12),
-
-        // Professional Email
-        _GlowBorderFormField(
-          controller: _regEmailController,
-          label: _selectedRole.emailFieldLabel,
-          hint: _selectedRole.sampleEmail,
-          icon: Icons.alternate_email_rounded,
-          keyboardType: TextInputType.emailAddress,
-        ),
-
-        const SizedBox(height: 12),
-
-        // Password
-        _GlowBorderFormField(
-          controller: _regPasswordController,
-          label: 'PASSWORD',
-          hint: 'At least 8 characters',
-          icon: Icons.lock_outline_rounded,
-          obscureText: _obscureRegPassword,
-          suffixIcon: IconButton(
-            icon: Icon(
-              _obscureRegPassword
-                  ? Icons.visibility_outlined
-                  : Icons.visibility_off_outlined,
-              size: 18,
-              color: const Color(0xFF1D4ED8),
-            ),
-            onPressed: () {
-              setState(() {
-                _obscureRegPassword = !_obscureRegPassword;
-              });
-            },
-          ),
-        ),
-
-        const SizedBox(height: 10),
-
-        // Password Strength Meter
-        _PasswordStrengthMeter(password: _regPasswordController.text),
-
-        if (_selectedRole == UserRole.insuranceAgent) ...[
-          const SizedBox(height: 12),
-          _buildInsuranceAgentRegisterFields(),
-        ],
-
-        const SizedBox(height: 12),
-
-        // Terms and conditions
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _ModernCheckbox(
-              value: _agreeTerms,
-              onChanged: (val) => setState(() => _agreeTerms = val),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'I acknowledge Alternae Clinical Data Agreement & HIPAA Compliance Policy',
-                style: AppFonts.googleSans(
-                  fontSize: 10.5,
-                  color: const Color(0xFF64748B),
-                  height: 1.35,
+        if (_selectedRole == UserRole.doctor && !_isDoctorLicenseVerified) ...[
+          // STEP 1: DOCTOR CREDENTIAL VERIFICATION GATE
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFEFF6FF), Color(0xFFF0FDF4)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                width: 1.4,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.06),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
                 ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF10B981),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.verified_user_rounded,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'STEP 1: MEDICAL BOARD VERIFICATION',
+                            style: AppFonts.googleSans(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF0F172A),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Verify license & email against state registry',
+                            style: AppFonts.googleSans(
+                              fontSize: 10.5,
+                              color: const Color(0xFF059669),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'To create an authorized prescriber account, please verify your Medical License ID and Institutional Email registered in public.doctor_licence.',
+                  style: AppFonts.googleSans(
+                    fontSize: 11,
+                    color: const Color(0xFF475569),
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // 1. Professional Email
+                _GlowBorderFormField(
+                  controller: _regEmailController,
+                  label: 'INSTITUTIONAL DOCTOR EMAIL',
+                  hint: 'e.g. dr.sarah@alternea.com, doctor01@gmail.com',
+                  icon: Icons.alternate_email_rounded,
+                  keyboardType: TextInputType.emailAddress,
+                ),
+
+                const SizedBox(height: 12),
+
+                // 2. State Medical License Number
+                _GlowBorderFormField(
+                  controller: _regDoctorLicenseController,
+                  label: 'STATE MEDICAL LICENSE / NPI NUMBER',
+                  hint: 'e.g. LIC-2026-9041, MD-44821, DOC-882190',
+                  icon: Icons.badge_outlined,
+                ),
+
+                const SizedBox(height: 14),
+
+                _GradientBlueCtaButton(
+                  label: 'VERIFY MEDICAL LICENSE & UNLOCK FORM →',
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final email = _regEmailController.text.trim();
+                    final license = _regDoctorLicenseController.text.trim();
+
+                    if (email.isEmpty || !email.contains('@')) {
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Please enter a valid institutional email address.'),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (license.isEmpty) {
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Please enter your Medical License ID / Number.'),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final isLicenseValid = await appState.verifyDoctorLicense(
+                      email: email,
+                      licenseNumber: license,
+                    );
+
+                    if (!isLicenseValid) {
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Verification Failed: No active medical license "$license" registered to $email in public.doctor_licence. Please check your credentials.',
+                          ),
+                          backgroundColor: const Color(0xFFDC2626),
+                          duration: const Duration(seconds: 5),
+                        ),
+                      );
+                      return;
+                    }
+
+                    setState(() {
+                      _isDoctorLicenseVerified = true;
+                    });
+
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text('✓ Medical License "$license" verified successfully for $email! You may now fill in your profile details.'),
+                        backgroundColor: const Color(0xFF10B981),
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ] else ...[
+          // STEP 2: PROFILE DETAILS & INTAKE FORM (Unlocked)
+          if (_selectedRole == UserRole.doctor && _isDoctorLicenseVerified) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFECFDF5), Color(0xFFF0FDF4)],
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFF10B981)),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'VERIFIED MEDICAL LICENSE: ${_regDoctorLicenseController.text.trim().toUpperCase()}',
+                          style: AppFonts.googleSans(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF065F46),
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                        Text(
+                          'Bound to ${_regEmailController.text.trim()}',
+                          style: AppFonts.googleSans(
+                            fontSize: 10,
+                            color: const Color(0xFF047857),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isDoctorLicenseVerified = false;
+                      });
+                    },
+                    child: Text(
+                      'Re-verify',
+                      style: AppFonts.googleSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF059669),
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
+            const SizedBox(height: 14),
           ],
-        ),
 
-        const SizedBox(height: 16),
+          // Full Legal Name
+          _GlowBorderFormField(
+            controller: _regNameController,
+            label: _selectedRole.nameFieldLabel,
+            hint: 'e.g. ${_selectedRole.sampleName}',
+            icon: Icons.assignment_ind_outlined,
+          ),
 
-        // Create Account CTA Button
-        _GradientBlueCtaButton(
-          label: 'Create Account',
-          onPressed: () async {
-            final name = _regNameController.text.trim().isEmpty
-                ? 'Authorized User'
-                : _regNameController.text.trim();
-            final email = _regEmailController.text.trim();
-            final password = _regPasswordController.text.trim();
+          if (_selectedRole != UserRole.doctor) ...[
+            const SizedBox(height: 12),
+            // Professional Email
+            _GlowBorderFormField(
+              controller: _regEmailController,
+              label: _selectedRole.emailFieldLabel,
+              hint: _selectedRole.sampleEmail,
+              icon: Icons.alternate_email_rounded,
+              keyboardType: TextInputType.emailAddress,
+            ),
+          ],
 
-            List<String> finalPlans = _selectedInsurancePlans.toList();
-            if (finalPlans.isEmpty) {
-              finalPlans = ['Comprehensive Rx Plan'];
-            }
+          const SizedBox(height: 12),
 
-            await appState.registerAccount(
-              name: name,
-              email: email,
-              password: password,
-              role: _selectedRole,
-              insuranceCompany: _selectedRole == UserRole.insuranceAgent ? _selectedInsuranceCompany : null,
-              insurancePlans: _selectedRole == UserRole.insuranceAgent ? finalPlans : const [],
-              insuranceMedicines: const [],
-              insuranceHospitals: const [],
-            );
-          },
-        ),
+          // Password
+          _GlowBorderFormField(
+            controller: _regPasswordController,
+            label: 'SECURITY PASSWORD',
+            hint: 'At least 8 characters with numbers & symbols',
+            icon: Icons.lock_outline_rounded,
+            obscureText: _obscureRegPassword,
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscureRegPassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                size: 18,
+                color: const Color(0xFF1D4ED8),
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscureRegPassword = !_obscureRegPassword;
+                });
+              },
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Password Strength Meter
+          _PasswordStrengthMeter(password: _regPasswordController.text),
+
+          if (_selectedRole == UserRole.doctor) ...[
+            const SizedBox(height: 12),
+            _buildDoctorRegisterFields(appState),
+          ],
+
+          if (_selectedRole == UserRole.insuranceAgent) ...[
+            const SizedBox(height: 12),
+            _buildInsuranceAgentRegisterFields(),
+          ],
+
+          const SizedBox(height: 12),
+
+          // Terms and conditions
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _ModernCheckbox(
+                value: _agreeTerms,
+                onChanged: (val) => setState(() => _agreeTerms = val),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'I acknowledge Alternae Clinical Data Agreement & HIPAA Compliance Policy',
+                  style: AppFonts.googleSans(
+                    fontSize: 10.5,
+                    color: const Color(0xFF64748B),
+                    height: 1.35,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          if (_regOtpSent) ...[
+            // OTP Verification Sub-Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFEFF6FF), Color(0xFFF0FDF4)],
+                ),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFF2563EB).withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF10B981),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.mark_email_read_rounded, size: 16, color: Colors.white),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'VERIFY 6-DIGIT CODE',
+                          style: AppFonts.googleSans(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF0F172A),
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'A secure one-time verification code has been dispatched to ${_regEmailController.text.trim()}.',
+                    style: AppFonts.googleSans(
+                      fontSize: 11,
+                      color: const Color(0xFF475569),
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF2563EB)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF2563EB).withValues(alpha: 0.08),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _regOtpController,
+                      textAlign: TextAlign.center,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      style: AppFonts.googleSans(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 8,
+                        color: const Color(0xFF1E293B),
+                      ),
+                      decoration: InputDecoration(
+                        hintText: '• • • • • •',
+                        hintStyle: AppFonts.googleSans(fontSize: 18, color: const Color(0xFF94A3B8), letterSpacing: 6),
+                        counterText: '',
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _GradientBlueCtaButton(
+                    label: 'VERIFY OTP & COMPLETE REGISTRATION ✓',
+                    onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final email = _regEmailController.text.trim();
+                      final otp = _regOtpController.text.trim();
+                      final name = _regNameController.text.trim();
+                      final password = _regPasswordController.text.trim();
+
+                      if (otp.length < 6) {
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text('Please enter the full 6-digit OTP code.'),
+                            backgroundColor: Colors.redAccent,
+                          ),
+                        );
+                        return;
+                      }
+
+                      final isValid = await appState.verifyOtp(email: email, otp: otp);
+                      if (!isValid) {
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text('Invalid or expired OTP code. Please try again.'),
+                            backgroundColor: Colors.redAccent,
+                          ),
+                        );
+                        return;
+                      }
+
+                      List<String> finalPlans = _selectedInsurancePlans.toList();
+                      if (finalPlans.isEmpty) {
+                        finalPlans = ['Comprehensive Rx Plan'];
+                      }
+
+                      final success = await appState.registerAccount(
+                        name: name,
+                        email: email,
+                        password: password,
+                        role: _selectedRole,
+                        hospitalId: _selectedHospitalId,
+                        hospitalName: _regHospitalController.text.trim(),
+                        specialty: _regSpecialtyController.text.trim().isEmpty
+                            ? 'General Practice'
+                            : _regSpecialtyController.text.trim(),
+                        insuranceCompany: _selectedRole == UserRole.insuranceAgent ? _selectedInsuranceCompany : null,
+                        insurancePlans: _selectedRole == UserRole.insuranceAgent ? finalPlans : const [],
+                        insuranceMedicines: const [],
+                        insuranceHospitals: const [],
+                      );
+
+                      if (success) {
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text('Account created successfully for ${_selectedRole.label}! Welcome, $name.'),
+                            backgroundColor: const Color(0xFF10B981),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final email = _regEmailController.text.trim();
+                          await appState.sendOtp(email);
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text('New OTP sent to $email'),
+                              backgroundColor: const Color(0xFF10B981),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Resend OTP Code',
+                          style: AppFonts.googleSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF2563EB),
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _regOtpSent = false;
+                          });
+                        },
+                        child: Text(
+                          '← Edit Form Details',
+                          style: AppFonts.googleSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF64748B),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            // Create Account CTA Button
+            _GradientBlueCtaButton(
+              label: 'CONTINUE & VERIFY OTP →',
+              onPressed: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                final name = _regNameController.text.trim();
+                final email = _regEmailController.text.trim();
+                final password = _regPasswordController.text.trim();
+
+                if (name.isEmpty) {
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter your full legal name.'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                  return;
+                }
+
+                if (email.isEmpty || !email.contains('@')) {
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a valid email address.'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                  return;
+                }
+
+                if (password.length < 6) {
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Password must be at least 6 characters long.'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                  return;
+                }
+
+                if (!_agreeTerms) {
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Please acknowledge the HIPAA & Clinical Data Agreement.'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                  return;
+                }
+
+                await appState.sendOtp(email);
+                if (mounted) {
+                  setState(() {
+                    _regOtpSent = true;
+                    _regOtpController.clear();
+                  });
+                }
+
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text('6-Digit OTP verification code sent to $email'),
+                    backgroundColor: const Color(0xFF10B981),
+                  ),
+                );
+              },
+            ),
+          ],
+        ],
 
         const SizedBox(height: 16),
 
@@ -1102,6 +1717,7 @@ class _AuthScreenState extends State<AuthScreen> {
               onTap: () {
                 setState(() {
                   _activeTabIndex = 0;
+                  _regOtpSent = false;
                 });
               },
               child: Text(
@@ -2364,11 +2980,38 @@ class _AuthScreenState extends State<AuthScreen> {
           onPressed: () async {
             final val = _signInEmailController.text.trim();
             final otp = _otpController.text.trim();
-            await appState.verifyOtpAndLogin(
+            if (val.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please enter your email or User ID.'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+              return;
+            }
+            if (otp.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please enter your 6-digit OTP verification code.'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+              return;
+            }
+            final messenger = ScaffoldMessenger.of(context);
+            final success = await appState.verifyOtpAndLogin(
               email: val,
               otp: otp,
               isPatient: _isPatientLoginMode,
             );
+            if (!success && mounted) {
+              messenger.showSnackBar(
+                const SnackBar(
+                  content: Text('Invalid verification code. Please check and try again.'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+            }
           },
         ),
 
@@ -2422,6 +3065,195 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Widget _buildRegisterTab(BuildContext context, AppState appState) {
+    if (_regOtpSent) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.mark_email_read_rounded,
+                  color: Color(0xFF10B981),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Verify Your Email Address',
+                      style: AppFonts.googleSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF0F172A),
+                      ),
+                    ),
+                    Text(
+                      'We sent a 6-digit OTP code to ${_regEmailController.text.trim()}',
+                      style: AppFonts.googleSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF64748B),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          _GlowBorderFormField(
+            controller: _regOtpController,
+            label: '6-DIGIT OTP VERIFICATION CODE',
+            hint: 'e.g. 123456',
+            icon: Icons.lock_clock_rounded,
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 20),
+          _GradientBlueCtaButton(
+            label: 'Verify OTP & Complete Account Setup →',
+            onPressed: () async {
+              final otp = _regOtpController.text.trim();
+              final email = _regEmailController.text.trim();
+              final name = _regNameController.text.trim();
+              final password = _regPasswordController.text.trim();
+
+              if (otp.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please enter the 6-digit verification code.'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+                return;
+              }
+
+              final messenger = ScaffoldMessenger.of(context);
+              final isValid = await appState.verifyOtp(
+                email: email,
+                otp: otp,
+              );
+
+              if (!isValid) {
+                if (mounted) {
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Invalid or expired verification code. Please try again or resend.'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+                return;
+              }
+
+              String? hospitalId = _selectedHospitalId;
+              final typedHospName = _regHospitalController.text.trim();
+              String? hospitalName = typedHospName.isNotEmpty ? typedHospName : null;
+
+              if (_selectedRole == UserRole.doctor && hospitalName != null) {
+                final match = appState.hospitals.where(
+                  (h) => (hospitalId != null && h.id == hospitalId) ||
+                      h.name.toLowerCase() == hospitalName!.toLowerCase(),
+                ).firstOrNull;
+
+                if (match != null) {
+                  hospitalId = match.id;
+                  hospitalName = match.name;
+                } else {
+                  hospitalId = 'HOSP-${DateTime.now().millisecondsSinceEpoch}';
+                  final newHosp = Hospital(
+                    id: hospitalId,
+                    name: hospitalName,
+                    address: 'Primary Healthcare Facility',
+                    city: 'Medical District',
+                    state: 'State',
+                    zip: '00000',
+                    phone: '(555) 000-0000',
+                  );
+                  appState.addHospital(newHosp);
+                }
+              }
+
+              List<String> finalPlans = _selectedInsurancePlans.toList();
+              if (finalPlans.isEmpty) {
+                finalPlans = ['Comprehensive Rx Plan'];
+              }
+
+              await appState.registerAccount(
+                name: name,
+                email: email,
+                password: password,
+                role: _selectedRole,
+                hospitalId: hospitalId,
+                hospitalName: hospitalName,
+                specialty: _regSpecialtyController.text.trim().isNotEmpty
+                    ? _regSpecialtyController.text.trim()
+                    : 'General Practice',
+                insuranceCompany: _selectedRole == UserRole.insuranceAgent ? _selectedInsuranceCompany : null,
+                insurancePlans: _selectedRole == UserRole.insuranceAgent ? finalPlans : const [],
+                insuranceMedicines: const [],
+                insuranceHospitals: const [],
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _regOtpSent = false;
+                    _regOtpController.clear();
+                  });
+                },
+                icon: const Icon(Icons.arrow_back_rounded, size: 14),
+                label: Text(
+                  'Edit Details',
+                  style: AppFonts.googleSans(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1244A2),
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final email = _regEmailController.text.trim();
+                  await appState.sendOtp(email);
+                  if (mounted) {
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Verification code resent to your email.'),
+                      ),
+                    );
+                  }
+                },
+                child: Text(
+                  'Resend Code',
+                  style: AppFonts.googleSans(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1D4ED8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2573,6 +3405,11 @@ class _AuthScreenState extends State<AuthScreen> {
 
         _PasswordStrengthMeter(password: _regPasswordController.text),
 
+        if (_selectedRole == UserRole.doctor) ...[
+          const SizedBox(height: 12),
+          _buildDoctorRegisterFields(appState),
+        ],
+
         if (_selectedRole == UserRole.insuranceAgent) ...[
           const SizedBox(height: 12),
           _buildInsuranceAgentRegisterFields(),
@@ -2604,30 +3441,67 @@ class _AuthScreenState extends State<AuthScreen> {
         const SizedBox(height: 16),
 
         _GradientBlueCtaButton(
-          label: 'CREATE ACCOUNT',
+          label: 'CONTINUE & VERIFY OTP →',
           onPressed: () async {
-            final name =
-                _regNameController.text.trim().isEmpty
-                    ? 'Authorized User'
-                    : _regNameController.text.trim();
+            final name = _regNameController.text.trim();
             final email = _regEmailController.text.trim();
             final password = _regPasswordController.text.trim();
 
-            List<String> finalPlans = _selectedInsurancePlans.toList();
-            if (finalPlans.isEmpty) {
-              finalPlans = ['Comprehensive Rx Plan'];
+            if (name.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please enter your full legal name.'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+              return;
             }
 
-            await appState.registerAccount(
-              name: name,
-              email: email,
-              password: password,
-              role: _selectedRole,
-              insuranceCompany: _selectedRole == UserRole.insuranceAgent ? _selectedInsuranceCompany : null,
-              insurancePlans: _selectedRole == UserRole.insuranceAgent ? finalPlans : const [],
-              insuranceMedicines: const [],
-              insuranceHospitals: const [],
-            );
+            if (email.isEmpty || !email.contains('@')) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please enter a valid email address.'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+              return;
+            }
+
+            if (password.length < 6) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Password must be at least 6 characters long.'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+              return;
+            }
+
+            if (!_agreeTerms) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please acknowledge the HIPAA & Clinical Data Agreement.'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+              return;
+            }
+
+            final messenger = ScaffoldMessenger.of(context);
+            await appState.sendOtp(email);
+            setState(() {
+              _regOtpSent = true;
+              _regOtpController.clear();
+            });
+
+            if (mounted) {
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text('6-Digit OTP verification code sent to $email'),
+                  backgroundColor: const Color(0xFF10B981),
+                ),
+              );
+            }
           },
         ),
 
@@ -2648,6 +3522,7 @@ class _AuthScreenState extends State<AuthScreen> {
               onTap: () {
                 setState(() {
                   _activeTabIndex = 0;
+                  _regOtpSent = false;
                 });
               },
               child: Text(
@@ -2662,6 +3537,326 @@ class _AuthScreenState extends State<AuthScreen> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildDoctorRegisterFields(AppState appState) {
+    final hospitals = appState.hospitals;
+    final query = _regHospitalController.text.trim().toLowerCase();
+    final matchingHospitals = hospitals.where((h) {
+      if (query.isEmpty) return true;
+      return h.name.toLowerCase().contains(query) ||
+          h.city.toLowerCase().contains(query) ||
+          h.address.toLowerCase().contains(query);
+    }).toList();
+
+    const commonSpecialties = [
+      'General Practice',
+      'Cardiology',
+      'Internal Medicine',
+      'Pediatrics',
+      'Neurology',
+      'Oncology',
+      'Dermatology',
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFCBD5E1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1244A2).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.local_hospital_rounded, color: Color(0xFF1244A2), size: 16),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'CLINICAL CREDENTIALS & AFFILIATION',
+                style: AppFonts.googleSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF1E293B),
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // 1. Hospital Searchable Dropdown Field
+          Text(
+            'AFFILIATED HOSPITAL / MEDICAL CENTER',
+            style: AppFonts.googleSans(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF475569),
+              letterSpacing: 0.4,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _showHospitalSuggestions ? const Color(0xFF1244A2) : const Color(0xFFE2E8F0),
+                width: _showHospitalSuggestions ? 1.5 : 1.0,
+              ),
+            ),
+            child: TextField(
+              controller: _regHospitalController,
+              onTap: () {
+                setState(() => _showHospitalSuggestions = true);
+              },
+              onChanged: (_) {
+                setState(() {
+                  _showHospitalSuggestions = true;
+                  _selectedHospitalId = null;
+                });
+              },
+              style: AppFonts.googleSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF0F172A),
+              ),
+              decoration: InputDecoration(
+                hintText: 'Select hospital or type to register new...',
+                hintStyle: AppFonts.googleSans(fontSize: 12, color: const Color(0xFF94A3B8)),
+                prefixIcon: const Icon(Icons.business_rounded, color: Color(0xFF1244A2), size: 18),
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_regHospitalController.text.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.clear_rounded, size: 16, color: Color(0xFF94A3B8)),
+                        onPressed: () {
+                          setState(() {
+                            _regHospitalController.clear();
+                            _selectedHospitalId = null;
+                          });
+                        },
+                      ),
+                    IconButton(
+                      icon: Icon(
+                        _showHospitalSuggestions
+                            ? Icons.arrow_drop_up_rounded
+                            : Icons.arrow_drop_down_rounded,
+                        color: const Color(0xFF1244A2),
+                        size: 24,
+                      ),
+                      onPressed: () {
+                        setState(() => _showHospitalSuggestions = !_showHospitalSuggestions);
+                      },
+                    ),
+                  ],
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: InputBorder.none,
+              ),
+            ),
+          ),
+
+          // 2. Interactive Suggestions Dropdown Overlay Box
+          if (_showHospitalSuggestions) ...[
+            const SizedBox(height: 6),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 200),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFCBD5E1)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ListView(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                children: [
+                  if (matchingHospitals.isEmpty && _regHospitalController.text.trim().isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Text(
+                        'No hospitals registered yet. Type to create a new facility.',
+                        style: AppFonts.googleSans(fontSize: 11.5, color: const Color(0xFF94A3B8)),
+                      ),
+                    )
+                  else ...[
+                    ...matchingHospitals.map((h) {
+                      final isSelected = _selectedHospitalId == h.id ||
+                          _regHospitalController.text.trim().toLowerCase() == h.name.toLowerCase();
+                      return InkWell(
+                        onTap: () {
+                          setState(() {
+                            _selectedHospitalId = h.id;
+                            _regHospitalController.text = h.name;
+                            _showHospitalSuggestions = false;
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          color: isSelected ? const Color(0xFFEFF6FF) : Colors.transparent,
+                          child: Row(
+                            children: [
+                              const Icon(Icons.local_hospital_rounded, size: 16, color: Color(0xFF1244A2)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      h.name,
+                                      style: AppFonts.googleSans(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    if (h.address.isNotEmpty || h.city.isNotEmpty)
+                                      Text(
+                                        '${h.address}${h.city.isNotEmpty ? ', ${h.city}' : ''}',
+                                        style: AppFonts.googleSans(fontSize: 10.5, color: const Color(0xFF64748B)),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE2E8F0),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'ID: ${h.id.length > 10 ? h.id.substring(0, 10) : h.id}',
+                                  style: AppFonts.googleSans(fontSize: 9, fontWeight: FontWeight.w600, color: const Color(0xFF475569)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                    if (_regHospitalController.text.trim().isNotEmpty &&
+                        !hospitals.any((h) => h.name.toLowerCase() == _regHospitalController.text.trim().toLowerCase()))
+                      InkWell(
+                        onTap: () {
+                          setState(() {
+                            _selectedHospitalId = null;
+                            _showHospitalSuggestions = false;
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          color: const Color(0xFFF0FDF4),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.add_circle_outline_rounded, size: 16, color: Color(0xFF10B981)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '+ Register as New Medical Facility: "${_regHospitalController.text.trim()}"',
+                                  style: AppFonts.googleSans(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF10B981),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 14),
+
+          // 3. Specialty Selection Field & Quick Suggestion Chips
+          Text(
+            'PRIMARY MEDICAL SPECIALTY',
+            style: AppFonts.googleSans(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF475569),
+              letterSpacing: 0.4,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: TextField(
+              controller: _regSpecialtyController,
+              style: AppFonts.googleSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF0F172A),
+              ),
+              decoration: InputDecoration(
+                hintText: 'e.g. Cardiology, Internal Medicine...',
+                hintStyle: AppFonts.googleSans(fontSize: 12, color: const Color(0xFF94A3B8)),
+                prefixIcon: const Icon(Icons.medical_services_outlined, color: Color(0xFF1244A2), size: 18),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: InputBorder.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: commonSpecialties.map((spec) {
+              final isSel = _regSpecialtyController.text == spec;
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _regSpecialtyController.text = spec;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isSel ? const Color(0xFF1244A2) : Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSel ? const Color(0xFF1244A2) : const Color(0xFFCBD5E1),
+                    ),
+                  ),
+                  child: Text(
+                    spec,
+                    style: AppFonts.googleSans(
+                      fontSize: 10,
+                      fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
+                      color: isSel ? Colors.white : const Color(0xFF475569),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -3150,17 +4345,27 @@ class _RolePrivilegesBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = _getRoleTitle(role);
     final badges = _getRoleBadges(role);
+    final accentColor = _getRoleAccentColor(role);
+    final bgGradient = _getRoleBgGradient(role);
+    final liveTag = _getRoleLiveTag(role);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 240),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF6FF),
+        gradient: bgGradient,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFDBEAFE),
+          color: accentColor.withValues(alpha: 0.28),
           width: 1.2,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3169,21 +4374,62 @@ class _RolePrivilegesBanner extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF2563EB),
+                decoration: BoxDecoration(
+                  color: accentColor,
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: accentColor.withValues(alpha: 0.35),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Icon(_getRoleIcon(role), size: 14, color: Colors.white),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppFonts.googleSans(
-                    fontSize: 12.5,
+                    fontSize: 12,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF0F172A),
                   ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: accentColor.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: accentColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      liveTag,
+                      style: AppFonts.googleSans(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        color: accentColor,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -3197,17 +4443,17 @@ class _RolePrivilegesBanner extends StatelessWidget {
                   return Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 9,
-                      vertical: 4,
+                      vertical: 4.5,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: const Color(0xFFBFDBFE),
+                        color: accentColor.withValues(alpha: 0.25),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF2563EB).withValues(alpha: 0.05),
+                          color: accentColor.withValues(alpha: 0.05),
                           blurRadius: 4,
                           offset: const Offset(0, 1),
                         ),
@@ -3216,10 +4462,10 @@ class _RolePrivilegesBanner extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.check_circle_rounded,
                           size: 12,
-                          color: Color(0xFF2563EB),
+                          color: accentColor,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -3227,7 +4473,7 @@ class _RolePrivilegesBanner extends StatelessWidget {
                           style: AppFonts.googleSans(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFF1E40AF),
+                            color: const Color(0xFF1E293B),
                           ),
                         ),
                       ],
@@ -3238,6 +4484,61 @@ class _RolePrivilegesBanner extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Color _getRoleAccentColor(UserRole role) {
+    switch (role) {
+      case UserRole.doctor:
+        return const Color(0xFF10B981);
+      case UserRole.pharmacist:
+        return const Color(0xFF9333EA);
+      case UserRole.patient:
+        return const Color(0xFFEF4444);
+      case UserRole.insuranceAgent:
+        return const Color(0xFF2563EB);
+      case UserRole.admin:
+        return const Color(0xFFD97706);
+    }
+  }
+
+  LinearGradient _getRoleBgGradient(UserRole role) {
+    switch (role) {
+      case UserRole.doctor:
+        return const LinearGradient(
+          colors: [Color(0xFFECFDF5), Color(0xFFF0FDF4)],
+        );
+      case UserRole.pharmacist:
+        return const LinearGradient(
+          colors: [Color(0xFFFAF5FF), Color(0xFFF5F3FF)],
+        );
+      case UserRole.patient:
+        return const LinearGradient(
+          colors: [Color(0xFFFEF2F2), Color(0xFFFFF1F2)],
+        );
+      case UserRole.insuranceAgent:
+        return const LinearGradient(
+          colors: [Color(0xFFEFF6FF), Color(0xFFF0FDF4)],
+        );
+      case UserRole.admin:
+        return const LinearGradient(
+          colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
+        );
+    }
+  }
+
+  String _getRoleLiveTag(UserRole role) {
+    switch (role) {
+      case UserRole.doctor:
+        return 'EHR SYNC';
+      case UserRole.pharmacist:
+        return 'RX DISPENSE';
+      case UserRole.patient:
+        return 'CARE VAULT';
+      case UserRole.insuranceAgent:
+        return 'CMS PAYER';
+      case UserRole.admin:
+        return 'FULL ACCESS';
+    }
   }
 
   String _getRoleTitle(UserRole role) {
@@ -3264,7 +4565,7 @@ class _RolePrivilegesBanner extends StatelessWidget {
       case UserRole.doctor:
         return Icons.medical_services_rounded;
       case UserRole.pharmacist:
-        return Icons.medication_rounded;
+        return Icons.local_pharmacy_rounded;
       case UserRole.patient:
         return Icons.favorite_rounded;
     }
@@ -3306,20 +4607,28 @@ class _PasswordStrengthMeter extends StatelessWidget {
             Text(
               'PASSWORD SECURITY STRENGTH',
               style: AppFonts.googleSans(
-                fontSize: 10,
+                fontSize: 9.5,
                 fontWeight: FontWeight.w800,
-                color: AppColors.textMuted,
+                color: const Color(0xFF64748B),
                 letterSpacing: 0.5,
               ),
             ),
-            AnimatedDefaultTextStyle(
+            AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              style: AppFonts.googleSans(
-                fontSize: 10.5,
-                fontWeight: FontWeight.w800,
-                color: color,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: color.withValues(alpha: 0.3)),
               ),
-              child: Text(label),
+              child: Text(
+                label,
+                style: AppFonts.googleSans(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                ),
+              ),
             ),
           ],
         ),
@@ -3330,17 +4639,26 @@ class _PasswordStrengthMeter extends StatelessWidget {
             return Expanded(
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
-                height: 4,
+                height: 4.5,
                 margin: EdgeInsets.only(right: index < 3 ? 4.0 : 0.0),
                 decoration: BoxDecoration(
-                  color: isActive ? color : AppColors.borderLight,
+                  color: isActive ? color : const Color(0xFFE2E8F0),
                   borderRadius: BorderRadius.circular(4),
+                  boxShadow: isActive
+                      ? [
+                          BoxShadow(
+                            color: color.withValues(alpha: 0.4),
+                            blurRadius: 6,
+                            offset: const Offset(0, 1),
+                          ),
+                        ]
+                      : null,
                 ),
               ),
             );
           }),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -3386,45 +4704,55 @@ class _PasswordStrengthMeter extends StatelessWidget {
   }
 
   Color _getColor(int score) {
-    if (password.isEmpty) return AppColors.textMuted;
+    if (password.isEmpty) return const Color(0xFF94A3B8);
     switch (score) {
       case 1:
         return const Color(0xFFEF4444);
       case 2:
         return const Color(0xFFF59E0B);
       case 3:
-        return AppColors.primaryTeal;
+        return const Color(0xFF0284C7);
       case 4:
         return const Color(0xFF10B981);
       default:
-        return AppColors.textMuted;
+        return const Color(0xFF94A3B8);
     }
   }
 
   Widget _checkItem(String text, bool isMet) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          isMet
-              ? Icons.check_circle_rounded
-              : Icons.radio_button_unchecked_rounded,
-          size: 11,
-          color:
-              isMet
-                  ? AppColors.primaryTeal
-                  : AppColors.textMuted.withValues(alpha: 0.5),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2.5),
+      decoration: BoxDecoration(
+        color: isMet ? const Color(0xFFECFDF5) : Colors.transparent,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isMet ? const Color(0xFFA7F3D0) : Colors.transparent,
         ),
-        const SizedBox(width: 3),
-        Text(
-          text,
-          style: AppFonts.googleSans(
-            fontSize: 9.5,
-            fontWeight: isMet ? FontWeight.w700 : FontWeight.w500,
-            color: isMet ? AppColors.textDark : AppColors.textMuted,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isMet
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked_rounded,
+            size: 11,
+            color: isMet
+                ? const Color(0xFF10B981)
+                : const Color(0xFF94A3B8),
           ),
-        ),
-      ],
+          const SizedBox(width: 3),
+          Text(
+            text,
+            style: AppFonts.googleSans(
+              fontSize: 9.5,
+              fontWeight: isMet ? FontWeight.w800 : FontWeight.w500,
+              color: isMet ? const Color(0xFF065F46) : const Color(0xFF64748B),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

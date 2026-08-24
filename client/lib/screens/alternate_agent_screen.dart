@@ -1,28 +1,14 @@
 import 'dart:convert';
-import 'dart:js_interop';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
-import '../models/models.dart';
+import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../services/agent_api_service.dart';
 import '../services/pipecat_service.dart';
+import '../services/web_audio.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bento_card.dart';
-
-@JS('startSpeechRecognition')
-external bool _startSpeechRecognitionJS(JSFunction callback, JSFunction endCallback);
-
-@JS('stopSpeechRecognition')
-external void _stopSpeechRecognitionJS();
-
-@JS('playBase64Audio')
-external void _playBase64AudioJS(JSString audioBase64);
-
-@JS('speakTextWithBrowserTTS')
-external void _speakTextWithBrowserTTSJS(JSString text);
 
 class AlternateAgentChatMessage {
   final String id;
@@ -185,8 +171,7 @@ class _AlternateAgentScreenState extends State<AlternateAgentScreen>
 
   void _startListening() {
     try {
-      final callback = ((JSString text) {
-        final val = text.toDart;
+      final started = startWebSpeechRecognition((val) {
         if (mounted && val.isNotEmpty) {
           setState(() {
             _inputController.text = val;
@@ -195,17 +180,14 @@ class _AlternateAgentScreenState extends State<AlternateAgentScreen>
             );
           });
         }
-      }).toJS;
-
-      final endCallback = (() {
+      }, () {
         if (mounted) {
           setState(() {
             _isListening = false;
           });
         }
-      }).toJS;
+      });
 
-      final started = _startSpeechRecognitionJS(callback, endCallback);
       if (started) {
         setState(() {
           _isListening = true;
@@ -218,7 +200,7 @@ class _AlternateAgentScreenState extends State<AlternateAgentScreen>
 
   void _stopListening() {
     try {
-      _stopSpeechRecognitionJS();
+      stopWebSpeechRecognition();
       setState(() {
         _isListening = false;
       });
@@ -229,11 +211,7 @@ class _AlternateAgentScreenState extends State<AlternateAgentScreen>
 
   void _playAudio(String? base64Wav, String text) {
     try {
-      if (base64Wav != null && base64Wav.isNotEmpty) {
-        _playBase64AudioJS(base64Wav.toJS);
-      } else {
-        _speakTextWithBrowserTTSJS(text.toJS);
-      }
+      playWebAudio(base64Wav, text);
     } catch (e) {
       debugPrint("Audio playback error: $e");
     }
@@ -1343,10 +1321,16 @@ class _AlternateAgentScreenState extends State<AlternateAgentScreen>
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () {
+                      final patientId = appState.patientRecords.isNotEmpty
+                          ? appState.patientRecords.first.id
+                          : appState.currentUser.id;
+                      final hospitalId = appState.hospitals.isNotEmpty
+                          ? appState.hospitals.first.id
+                          : (appState.currentUser.hospitalName ?? 'HOSP-MAIN');
                       appState.createDoctorPrescription(
-                        patientId: 'PAT_00402',
-                        doctorId: appState.currentUser.doctorId ?? 'DOC-201',
-                        hospitalId: 'HOSP-MAYO-AZ',
+                        patientId: patientId,
+                        doctorId: appState.currentUser.doctorId ?? appState.currentUser.id,
+                        hospitalId: hospitalId,
                         diagnosis: 'Therapeutic Generic Alternative Prescribed',
                         notes: 'Prescribed via Alternate Medicine Agent CDS Recommendation',
                         items: [

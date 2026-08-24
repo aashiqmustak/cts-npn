@@ -1,16 +1,11 @@
-import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 import '../data/health_records_vault_data.dart';
-import '../models/models.dart';
-import '../providers/app_state.dart';
 import '../services/prescription_ocr_service.dart';
 import '../services/pdf_export_service.dart';
-import '../theme/app_theme.dart';
-import '../widgets/bento_card.dart';
 
 // ============================================================================
 // DATA MODELS FOR HEALTH RECORDS VAULT (THERAPEUTIC CLASSES FROM DATASET)

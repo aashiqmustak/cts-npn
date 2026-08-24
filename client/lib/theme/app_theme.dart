@@ -89,9 +89,6 @@ class AppFonts {
     'Google Sans',
     'Google Sans Text',
     'Product Sans',
-    'Open Sans',
-    'Roboto',
-    'sans-serif',
   ];
 
   static TextStyle googleSans({

@@ -157,8 +157,15 @@ class AppState extends ChangeNotifier {
       final sessionJson = prefs.getString('user_session');
       if (sessionJson != null && sessionJson.isNotEmpty) {
         final map = jsonDecode(sessionJson) as Map<String, dynamic>;
-        _currentUser = User.fromJson(map);
-        _isLoggedIn = true;
+        final loadedUser = User.fromJson(map);
+        if (loadedUser.email.isNotEmpty && loadedUser.id.isNotEmpty && loadedUser.id != 'U_INIT') {
+          _currentUser = loadedUser;
+          _isLoggedIn = true;
+        } else {
+          _isLoggedIn = false;
+        }
+      } else {
+        _isLoggedIn = false;
       }
 
       final dismissed = prefs.getStringList('dismissed_notifications') ?? [];
@@ -448,6 +455,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void deleteHospital(String id) {
+    dataService.deleteHospital(id);
+    notifyListeners();
+  }
+
   Map<String, dynamic> checkUserIdentifier(String identifier) {
     final clean = identifier.trim().toLowerCase();
     if (clean.isEmpty) return {'exists': false};
@@ -498,6 +510,23 @@ class AppState extends ChangeNotifier {
       await dataService.supabaseService.sendOtpCode(email);
     }
     return true;
+  }
+
+  Future<bool> verifyOtp({required String email, required String otp}) async {
+    return await dataService.supabaseService.verifyOtpCode(
+      email: email,
+      otp: otp,
+    );
+  }
+
+  Future<bool> verifyDoctorLicense({
+    required String email,
+    required String licenseNumber,
+  }) async {
+    return await dataService.supabaseService.verifyDoctorLicense(
+      email: email,
+      licenseNumber: licenseNumber,
+    );
   }
 
   Future<bool> verifyOtpAndLogin({
@@ -611,6 +640,9 @@ class AppState extends ChangeNotifier {
     required String email,
     required String password,
     required UserRole role,
+    String? hospitalId,
+    String? hospitalName,
+    String? specialty,
     String? insuranceCompany,
     List<String> insurancePlans = const [],
     List<String> insuranceMedicines = const [],
@@ -623,8 +655,15 @@ class AppState extends ChangeNotifier {
           password: password,
           name: name,
           role: role,
+          hospitalId: hospitalId,
+          hospitalName: hospitalName,
+          specialty: specialty,
         );
         if (authRes?.user != null) {
+          final doctorRecordId = role == UserRole.doctor
+              ? 'DOC-${authRes!.user!.id.replaceAll('-', '').substring(0, 8).toUpperCase()}'
+              : null;
+
           final profile = User(
             id: authRes!.user!.id,
             name: name,
@@ -632,12 +671,29 @@ class AppState extends ChangeNotifier {
             role: role,
             assignedPatientIds: const ['PT-301', 'PT-302'],
             avatarUrl: '',
-            title: _getRoleTitle(role),
+            title: (specialty != null && specialty.isNotEmpty) ? specialty : _getRoleTitle(role),
+            hospitalId: hospitalId,
+            hospitalName: hospitalName,
+            doctorId: doctorRecordId,
             insuranceCompany: insuranceCompany,
             insurancePlans: insurancePlans,
             insuranceMedicines: insuranceMedicines,
             insuranceHospitals: insuranceHospitals,
           );
+
+          if (role == UserRole.doctor && doctorRecordId != null) {
+            final docModel = Doctor(
+              id: doctorRecordId,
+              name: name,
+              specialty: (specialty != null && specialty.isNotEmpty) ? specialty : 'General Practice',
+              email: email,
+              phone: '',
+              hospitalId: hospitalId ?? '',
+              hospitalName: hospitalName,
+            );
+            dataService.addDoctor(docModel);
+          }
+
           login(profile);
           return true;
         }
@@ -650,6 +706,9 @@ class AppState extends ChangeNotifier {
       name: name,
       email: email,
       role: role,
+      hospitalId: hospitalId,
+      hospitalName: hospitalName,
+      specialty: specialty,
       insuranceCompany: insuranceCompany,
       insurancePlans: insurancePlans,
       insuranceMedicines: insuranceMedicines,
@@ -662,11 +721,18 @@ class AppState extends ChangeNotifier {
     required String name,
     required String email,
     required UserRole role,
+    String? hospitalId,
+    String? hospitalName,
+    String? specialty,
     String? insuranceCompany,
     List<String> insurancePlans = const [],
     List<String> insuranceMedicines = const [],
     List<String> insuranceHospitals = const [],
   }) {
+    final doctorRecordId = role == UserRole.doctor
+        ? 'DOC-${DateTime.now().millisecondsSinceEpoch}'
+        : null;
+
     final newUser = User(
       id: 'U_${DateTime.now().millisecondsSinceEpoch}',
       name: name,
@@ -674,12 +740,29 @@ class AppState extends ChangeNotifier {
       role: role,
       assignedPatientIds: const ['PT-301', 'PT-302'],
       avatarUrl: '',
-      title: _getRoleTitle(role),
+      title: (specialty != null && specialty.isNotEmpty) ? specialty : _getRoleTitle(role),
+      hospitalId: hospitalId,
+      hospitalName: hospitalName,
+      doctorId: doctorRecordId,
       insuranceCompany: insuranceCompany,
       insurancePlans: insurancePlans,
       insuranceMedicines: insuranceMedicines,
       insuranceHospitals: insuranceHospitals,
     );
+
+    if (role == UserRole.doctor && doctorRecordId != null) {
+      final docModel = Doctor(
+        id: doctorRecordId,
+        name: name,
+        specialty: (specialty != null && specialty.isNotEmpty) ? specialty : 'General Practice',
+        email: email,
+        phone: '',
+        hospitalId: hospitalId ?? '',
+        hospitalName: hospitalName,
+      );
+      dataService.addDoctor(docModel);
+    }
+
     dataService.addUser(newUser);
     _currentUser = newUser;
     _isLoggedIn = true;
@@ -687,12 +770,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateInsuranceAgentDetails({
+  Future<void> updateInsuranceAgentDetails({
     required String company,
     required List<String> plans,
     List<String> medicines = const [],
     List<String> hospitals = const [],
-  }) {
+  }) async {
     _currentUser = _currentUser.copyWith(
       insuranceCompany: company,
       insurancePlans: plans,
@@ -700,6 +783,27 @@ class AppState extends ChangeNotifier {
       insuranceHospitals: hospitals,
     );
     notifyListeners();
+
+    // 1. Save session to local storage
+    await _saveSession(_currentUser);
+
+    // 2. Persist to Supabase DB if client is connected
+    try {
+      if (dataService.supabaseService.isInitialized && _currentUser.id.isNotEmpty) {
+        await dataService.supabaseService.upsertUserProfile(
+          id: _currentUser.id,
+          email: _currentUser.email,
+          name: _currentUser.name,
+          role: _currentUser.role,
+          insuranceCompany: company,
+          insurancePlans: plans,
+          insuranceMedicines: medicines,
+          insuranceHospitals: hospitals,
+        );
+      }
+    } catch (e) {
+      debugPrint('Failed to update insurance agent details in DB: $e');
+    }
   }
 
   String _getRoleTitle(UserRole role) {
