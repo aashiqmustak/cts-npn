@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctor Clinical Dashboard - Medicine Usage & Adherence Overview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-canvas: #f4f7fb;
+      --navy-sidebar: #0a1128;
+      --navy-sidebar-hover: #131d3d;
+      --navy-text-muted: #7e8ea6;
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --border-light: #f1f5f9;
+      --text-dark: #0f172a;
+      --text-muted: #64748b;
+      --text-slate: #334155;
+      
+      --med-blue: #0062ff;
+      --med-blue-bg: #eff6ff;
+      --med-blue-border: #bfdbfe;
+      --med-blue-dark: #1d4ed8;
+      
+      --med-green: #16a34a;
+      --med-green-bg: #f0fdf4;
+      --med-green-border: #bbf7d0;
+      --med-green-dark: #15803d;
+      
+      --whisker-color: #1e293b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-dark);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+    }
+
+    /* 1. Dark Navy Sidebar */
+    .sidebar {
+      width: 230px;
+      background-color: var(--navy-sidebar);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .sidebar-brand {
+      padding: 26px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      background: #e2edfd;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 98, 255, 0.25);
+    }
+
+    .brand-icon-inner {
+      width: 26px;
+      height: 26px;
+      background: var(--med-blue);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .brand-text h2 {
+      font-size: 16px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-text span {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--navy-text-muted);
+    }
+
+    .sidebar-menu {
+      flex: 1;
+      padding: 18px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      overflow-y: auto;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      border-radius: 10px;
+      color: var(--navy-text-muted);
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .nav-item:hover {
+      background-color: var(--navy-sidebar-hover);
+      color: #ffffff;
+    }
+
+    .nav-item.active {
+      background-color: var(--med-blue);
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(0, 98, 255, 0.35);
+    }
+
+    .nav-icon {
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+    }
+
+    .sidebar-footer {
+      padding: 16px 12px 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* 2. Main Content Canvas */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    /* Top Header Bar */
+    .top-header {
+      background: #ffffff;
+      height: 76px;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-titles h1 {
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--text-dark);
+      letter-spacing: -0.4px;
+    }
+
+    .header-titles p {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .time-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #ffffff;
+      border: 1.2px solid var(--border-color);
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-slate);
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    .time-selector select {
+      border: none;
+      background: transparent;
+      outline: none;
+      font-weight: 600;
+      font-size: 12.5px;
+      color: var(--text-slate);
+      cursor: pointer;
+    }
+
+    .doctor-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #f8fafc;
+      padding: 6px 12px 6px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    .doc-info {
+      text-align: right;
+    }
+
+    .doc-info .name {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text-dark);
+    }
+
+    .doc-info .specialty {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .doc-avatar {
+      width: 36px;
+      height: 36px;
+      background: #e2edfd;
+      border: 1.5px solid #93c5fd;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--med-blue);
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    /* 3. Dashboard Body Grid */
+    .dashboard-body {
+      padding: 24px 32px;
+      display: grid;
+      grid-template-columns: 290px 1fr;
+      gap: 22px;
+      flex: 1;
+    }
+
+    /* Left Menu: Select Prescribed Medicine */
+    .medicine-selector-card {
+      background: var(--card-bg);
+      border-radius: 18px;
+      border: 1.2px solid var(--border-color);
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 124px);
+      position: sticky;
+      top: 100px;
+    }
+
+    .selector-header {
+      padding: 20px 18px 14px;
+    }
+
+    .selector-header h3 {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text-dark);
+      letter-spacing: -0.2px;
+    }
+
+    .selector-header p {
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .search-box {
+      margin-top: 14px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      height: 38px;
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 0 12px 0 34px;
+      font-size: 12.5px;
+      color: var(--text-dark);
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .search-box input:focus {
+      border-color: var(--med-blue);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(0, 98, 255, 0.12);
+    }
+
+    .search-box svg {
+      position: absolute;
+      left: 11px;
+      top: 11px;
+      width: 16px;
+      height: 16px;
+      stroke: #94a3b8;
+    }
+
+    .medicine-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 10px;
+      list-style: none;
+    }
+
+    .medicine-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      margin-bottom: 4px;
+      border-radius: 10px;
+      cursor: pointer;
+      border: 1.2px solid transparent;
+      transition: all 0.18s ease;
+    }
+
+    .medicine-item:hover {
+      background-color: #f8fafc;
+    }
+
+    .medicine-item.selected {
+      background-color: #eaf2ff;
+      border-color: var(--med-blue);
+    }
+
+    .medicine-item-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .medicine-item-left svg {
+      width: 16px;
+      height: 16px;
+      stroke: #94a3b8;
+      flex-shrink: 0;
+    }
+
+    .medicine-item.selected .medicine-item-left svg {
+      stroke: var(--med-blue);
+    }
+
+    .medicine-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-slate);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .medicine-item.selected .medicine-name {
+      font-weight: 800;
+      color: var(--med-blue);
+    }
+
+    .chevron-icon {
+      width: 15px;
+      height: 15px;
+      stroke: #cbd5e1;
+      flex-shrink: 0;
+    }
+
+    .medicine-item.selected .chevron-icon {
+      stroke: var(--med-blue);
+    }
+
+    .selector-footer {
+      padding: 12px 18px;
+      border-top: 1px solid var(--border-light);
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* Right Column Workspace */
+    .workspace-right {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    /* 0. Telemetry KPI Cards Strip */
+    .telemetry-strip {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .telemetry-card {
+      background: var(--card-bg);
+      border-radius: 14px;
+      border: 1.1px solid var(--border-color);
+      padding: 12px 14px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.02);
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s ease;
+    }
+
+    .telemetry-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.05);
+    }
+
+    .telemetry-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .telemetry-icon-box {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .telemetry-badge {
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    .telemetry-val {
+      font-size: 19px;
+      font-weight: 900;
+      color: var(--text-dark);
+      letter-spacing: -0.4px;
+    }
+
+    .telemetry-title {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Color variations for telemetry cards */
+    .telemetry-card.blue .telemetry-icon-box { background: #eff6ff; color: #0062ff; }
+    .telemetry-card.blue .telemetry-badge { background: #eff6ff; color: #0062ff; }
+
+    .telemetry-card.indigo .telemetry-icon-box { background: #eef2ff; color: #4f46e5; }
+    .telemetry-card.indigo .telemetry-badge { background: #eef2ff; color: #4f46e5; }
+
+    .telemetry-card.green .telemetry-icon-box { background: #f0fdf4; color: #16a34a; }
+    .telemetry-card.green .telemetry-badge { background: #f0fdf4; color: #16a34a; }
+
+    .telemetry-card.amber .telemetry-icon-box { background: #fffbeb; color: #d97706; }
+    .telemetry-card.amber .telemetry-badge { background: #fffbeb; color: #d97706; }
+
+    .telemetry-card.red .telemetry-icon-box { background: #fef2f2; color: #dc2626; }
+    .telemetry-card.red .telemetry-badge { background: #fef2f2; color: #dc2626; }
+
+    /* 1. Top Comparison Banner */
+    .comparison-bar-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      border: 1.2px solid var(--border-color);
+      padding: 16px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03);
+    }
+
+    .comp-box {
+      flex: 1;
+    }
+
+    .comp-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.1px;
+    }
+
+    .comp-label.blue {
+      color: var(--med-blue);
+    }
+
+    .comp-label.green {
+      color: var(--med-green);
+    }
+
+    .comp-details {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .comp-name {
+      font-size: 18.5px;
+      font-weight: 900;
+      color: var(--text-dark);
+      letter-spacing: -0.3px;
+    }
+
+    .comp-badge {
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .comp-badge.blue {
+      background: var(--med-blue-bg);
+      color: var(--med-blue);
+    }
+
+    .comp-badge.green {
+      background: var(--med-green-bg);
+      color: var(--med-green);
+    }
+
+    .swap-btn {
+      width: 36px;
+      height: 36px;
+      background: #f1f5f9;
+      border: 1px solid var(--border-color);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 16px;
+      color: #475569;
+    }
+
+    .category-box {
+      background: #f0f7ff;
+      border: 1.2px solid #d6e8fe;
+      border-radius: 12px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .category-icon-wrap {
+      width: 32px;
+      height: 32px;
+      background: #ffffff;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--med-blue);
+    }
+
+    .category-text .label {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--med-blue);
+    }
+
+    .category-text .val {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--text-dark);
+      margin-top: 1px;
+    }
+
+    /* 2. Chart Card */
+    .chart-card {
+      background: var(--card-bg);
+      border-radius: 18px;
+      border: 1.2px solid var(--border-color);
+      padding: 24px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .chart-titles h2 {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-dark);
+      letter-spacing: -0.3px;
+    }
+
+    .chart-titles p {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .chart-note {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .chart-note svg {
+      width: 14px;
+      height: 14px;
+      stroke: var(--med-blue);
+    }
+
+    /* SVG Bar Chart Area */
+    .svg-chart-container {
+      width: 100%;
+      height: 300px;
+      position: relative;
+    }
+
+    svg.chart-canvas {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .chart-bar {
+      transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1), y 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Range Badges Strip */
+    .range-strip {
+      display: flex;
+      margin-top: 12px;
+      padding-left: 54px; /* Align with Y axis */
+    }
+
+    .range-col {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .range-badge {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 700;
+    }
+
+    .range-badge.blue {
+      background: var(--med-blue-bg);
+      border: 1px solid var(--med-blue-border);
+      color: var(--med-blue-dark);
+    }
+
+    .range-badge.green {
+      background: var(--med-green-bg);
+      border: 1px solid var(--med-green-border);
+      color: var(--med-green-dark);
+    }
+
+    /* Chart Legend */
+    .chart-legend {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-slate);
+    }
+
+    .legend-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+    }
+
+    .legend-swatch.blue {
+      background-color: var(--med-blue);
+    }
+
+    .legend-swatch.green {
+      background-color: var(--med-green);
+    }
+
+    .whisker-legend-icon {
+      width: 16px;
+      height: 12px;
+      position: relative;
+    }
+
+    .whisker-legend-icon::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 5px;
+      right: 0;
+      height: 2px;
+      background: #475569;
+    }
+
+    .whisker-legend-icon::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 1px;
+      bottom: 1px;
+      width: 2px;
+      background: #475569;
+      box-shadow: 14px 0 0 #475569;
+    }
+
+    /* 3. Bottom Dynamic Insight Banner */
+    .insight-card {
+      background: #f0f7ff;
+      border: 1.2px solid #d3e7fe;
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .insight-icon-wrap {
+      width: 36px;
+      height: 36px;
+      background: #e1efff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--med-blue);
+      flex-shrink: 0;
+    }
+
+    .insight-content h4 {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--med-blue);
+    }
+
+    .insight-content p {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-slate);
+      line-height: 1.45;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. Dark Navy Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <div class="brand-icon-inner">+</div>
+      </div>
+      <div class="brand-text">
+        <h2>Alternea</h2>
+        <span>Doctor Clinical</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-menu">
+      <a class="nav-item" id="nav-dashboard">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        </span>
+        Dashboard
+      </a>
+      <a class="nav-item" id="nav-patients">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        </span>
+        Patients
+      </a>
+      <a class="nav-item" id="nav-prescriptions">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        </span>
+        Prescriptions
+      </a>
+      <a class="nav-item active" id="nav-analytics">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        </span>
+        Analytics
+      </a>
+      <a class="nav-item" id="nav-alerts">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        </span>
+        Alerts
+      </a>
+      <a class="nav-item" id="nav-reports">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+        </span>
+        Reports
+      </a>
+      <a class="nav-item" id="nav-settings">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </span>
+        Settings
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a class="nav-item" id="nav-logout">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        </span>
+        Logout
+      </a>
+    </div>
+  </aside>
+
+  <!-- 2. Main Content Wrapper -->
+  <main class="main-wrapper">
+    <!-- Top Header -->
+    <header class="top-header">
+      <div class="header-titles">
+        <h1>Doctor Clinical Dashboard</h1>
+        <p>Medicine Usage & Adherence Overview</p>
+      </div>
+
+      <div class="header-actions">
+        <div class="time-selector">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <select id="timeframe-select">
+            <option value="7D">Last 7 Days</option>
+            <option value="30D" selected>Last 30 Days</option>
+            <option value="90D">Last 90 Days</option>
+            <option value="1Y">This Year</option>
+          </select>
+        </div>
+
+        <div class="doctor-profile">
+          <div class="doc-info">
+            <div class="name">Dr. Ananya Sharma</div>
+            <div class="specialty">Cardiologist</div>
+          </div>
+          <div class="doc-avatar">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- 0. Full-width Prescription Process Lifecycle Telemetry Strip -->
+    <div style="padding: 16px 24px 0 24px;">
+      <div class="telemetry-strip">
+        <div class="telemetry-card blue">
+          <div class="telemetry-top">
+            <div class="telemetry-icon-box">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            </div>
+            <span class="telemetry-badge" id="telemetry-received-badge">+12.4% mo</span>
+          </div>
+          <div class="telemetry-val" id="telemetry-received-val">1,420</div>
+          <div class="telemetry-title">Prescriptions Received</div>
+        </div>
+
+        <div class="telemetry-card indigo">
+          <div class="telemetry-top">
+            <div class="telemetry-icon-box">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            </div>
+            <span class="telemetry-badge" id="telemetry-processed-badge">90.1% flow</span>
+          </div>
+          <div class="telemetry-val" id="telemetry-processed-val">1,280</div>
+          <div class="telemetry-title">Total Processed</div>
+        </div>
+
+        <div class="telemetry-card green">
+          <div class="telemetry-top">
+            <div class="telemetry-icon-box">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            </div>
+            <span class="telemetry-badge" id="telemetry-approved-badge">81.6% rate</span>
+          </div>
+          <div class="telemetry-val" id="telemetry-approved-val">1,045</div>
+          <div class="telemetry-title">Approved</div>
+        </div>
+
+        <div class="telemetry-card amber">
+          <div class="telemetry-top">
+            <div class="telemetry-icon-box">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </div>
+            <span class="telemetry-badge" id="telemetry-pending-badge">14.5% queue</span>
+          </div>
+          <div class="telemetry-val" id="telemetry-pending-val">185</div>
+          <div class="telemetry-title">Pending Review</div>
+        </div>
+
+        <div class="telemetry-card red">
+          <div class="telemetry-top">
+            <div class="telemetry-icon-box">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+            </div>
+            <span class="telemetry-badge" id="telemetry-rejected-badge">3.9% friction</span>
+          </div>
+          <div class="telemetry-val" id="telemetry-rejected-val">50</div>
+          <div class="telemetry-title">Rejected</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard Content Body -->
+    <div class="dashboard-body">
+      
+      <!-- Left Column: Select Prescribed Medicine -->
+      <section class="medicine-selector-card">
+        <div class="selector-header">
+          <h3>Select Prescribed Medicine</h3>
+          <p>Click on a medicine to view usage comparison</p>
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="medicine-search" placeholder="Search medicine..." />
+          </div>
+        </div>
+
+        <ul class="medicine-list" id="medicine-list-container">
+          <!-- Dynamically populated -->
+        </ul>
+
+        <div class="selector-footer" id="total-medicines-counter">
+          Total Medicines: 85
+        </div>
+      </section>
+
+      <!-- Right Column: Comparison Info + Dual-Bar Chart + Insights -->
+      <section class="workspace-right">
+        
+        <!-- 1. Top Comparison Info Bar -->
+        <div class="comparison-bar-card">
+          <!-- Prescribed Medicine -->
+          <div class="comp-box">
+            <div class="comp-label blue">Prescribed Medicine</div>
+            <div class="comp-details">
+              <span class="comp-name" id="disp-prescribed-name">Paracetamol</span>
+              <span class="comp-badge blue" id="disp-prescribed-strength">500 mg</span>
+            </div>
+          </div>
+
+          <!-- Swap Icon -->
+          <div class="swap-btn">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16"></path></svg>
+          </div>
+
+          <!-- Recommended Alternative -->
+          <div class="comp-box">
+            <div class="comp-label green">Recommended Alternative</div>
+            <div class="comp-details">
+              <span class="comp-name" id="disp-alt-name">Dolo</span>
+              <span class="comp-badge green" id="disp-alt-strength">500 mg</span>
+            </div>
+          </div>
+
+          <!-- Therapeutic Category -->
+          <div class="category-box">
+            <div class="category-icon-wrap">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            </div>
+            <div class="category-text">
+              <div class="label">Therapeutic Category</div>
+              <div class="val" id="disp-category">Analgesic / Antipyretic</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Patient Usage Comparison Chart -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-titles">
+              <h2>Patient Usage Comparison</h2>
+              <p>Percentage of patients using prescribed medicine vs alternative</p>
+            </div>
+            <div class="chart-note">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              Data represents the selected time period
+            </div>
+          </div>
+
+          <!-- SVG Chart Container -->
+          <div class="svg-chart-container" id="chart-svg-host">
+            <!-- Dynamic SVG Chart Canvas -->
+          </div>
+
+          <!-- Range Badges Under Bars -->
+          <div class="range-strip">
+            <div class="range-col">
+              <div class="range-badge blue" id="disp-prescribed-range-badge">
+                Usage Range: 65% - 78%
+              </div>
+            </div>
+            <div class="range-col">
+              <div class="range-badge green" id="disp-alt-range-badge">
+                Usage Range: 40% - 55%
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart Legend -->
+          <div class="chart-legend">
+            <div class="legend-item">
+              <div class="legend-swatch blue"></div>
+              <span>Prescribed Medicine</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch green"></div>
+              <span>Alternative Medicine</span>
+            </div>
+            <div class="legend-item">
+              <div class="whisker-legend-icon"></div>
+              <span>Usage Range</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Dynamic Insight Banner -->
+        <div class="insight-card">
+          <div class="insight-icon-wrap">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="18" x2="15" y2="18"></line><line x1="10" y1="22" x2="14" y2="22"></line><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path></svg>
+          </div>
+          <div class="insight-content">
+            <h4>Insight</h4>
+            <p id="disp-insight-text">
+              72% of patients used Paracetamol in the selected period, while 48% used the alternative Dolo.
+            </p>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    // Complete structured clinical medicines dataset
+    const MEDICINES_DATA = [
+      {
+        cleanName: "Paracetamol",
+        strength: "500 mg",
+        altName: "Dolo",
+        altStrength: "500 mg",
+        category: "Analgesic / Antipyretic",
+        prescribedPct: 72,
+        prescribedRange: [65, 78],
+        altPct: 48,
+        altRange: [40, 55]
+      },
+      {
+        cleanName: "Atorvastatin",
+        strength: "20 mg",
+        altName: "Rosuvastatin",
+        altStrength: "10 mg",
+        category: "Cardiovascular / Statin",
+        prescribedPct: 78.5,
+        prescribedRange: [71, 84],
+        altPct: 42,
+        altRange: [35, 50]
+      },
+      {
+        cleanName: "Metformin",
+        strength: "500 mg",
+        altName: "Glimepiride",
+        altStrength: "2 mg",
+        category: "Endocrine / Antidiabetic",
+        prescribedPct: 84,
+        prescribedRange: [77, 89],
+        altPct: 36.5,
+        altRange: [29, 44]
+      },
+      {
+        cleanName: "Amlodipine",
+        strength: "5 mg",
+        altName: "Cilnidipine",
+        altStrength: "10 mg",
+        category: "Cardiovascular / Calcium Channel Blocker",
+        prescribedPct: 68,
+        prescribedRange: [60, 75],
+        altPct: 52,
+        altRange: [44, 59]
+      },
+      {
+        cleanName: "Azithromycin",
+        strength: "250 mg",
+        altName: "Clarithromycin",
+        altStrength: "250 mg",
+        category: "Antibacterial / Macrolide",
+        prescribedPct: 64,
+        prescribedRange: [56, 71],
+        altPct: 45,
+        altRange: [38, 53]
+      },
+      {
+        cleanName: "Omeprazole",
+        strength: "20 mg",
+        altName: "Pantoprazole",
+        altStrength: "40 mg",
+        category: "Gastroenterology / PPI",
+        prescribedPct: 76,
+        prescribedRange: [69, 82],
+        altPct: 54,
+        altRange: [46, 61]
+      },
+      {
+        cleanName: "Losartan",
+        strength: "50 mg",
+        altName: "Telmisartan",
+        altStrength: "40 mg",
+        category: "Cardiovascular / ARB",
+        prescribedPct: 70,
+        prescribedRange: [62, 77],
+        altPct: 58,
+        altRange: [50, 65]
+      },
+      {
+        cleanName: "Levocetirizine",
+        strength: "5 mg",
+        altName: "Cetirizine",
+        altStrength: "10 mg",
+        category: "Antihistamine / Antiallergic",
+        prescribedPct: 66,
+        prescribedRange: [58, 73],
+        altPct: 59,
+        altRange: [51, 66]
+      },
+      {
+        cleanName: "Pantoprazole",
+        strength: "40 mg",
+        altName: "Rabeprazole",
+        altStrength: "20 mg",
+        category: "Gastroenterology / PPI",
+        prescribedPct: 74,
+        prescribedRange: [67, 81],
+        altPct: 49,
+        altRange: [41, 56]
+      },
+      {
+        cleanName: "Cetrizine",
+        strength: "10 mg",
+        altName: "Levocetirizine",
+        altStrength: "5 mg",
+        category: "Antihistamine / Antiallergic",
+        prescribedPct: 69,
+        prescribedRange: [62, 76],
+        altPct: 51,
+        altRange: [43, 58]
+      },
+      {
+        cleanName: "Enalapril Maleate",
+        strength: "10 mg",
+        altName: "Lisinopril",
+        altStrength: "10 mg",
+        category: "Cardiovascular / ACE Inhibitor",
+        prescribedPct: 71,
+        prescribedRange: [64, 78],
+        altPct: 44,
+        altRange: [37, 51]
+      },
+      {
+        cleanName: "Simvastatin",
+        strength: "20 mg",
+        altName: "Atorvastatin",
+        altStrength: "20 mg",
+        category: "Cardiovascular / Statin",
+        prescribedPct: 75,
+        prescribedRange: [68, 82],
+        altPct: 40,
+        altRange: [33, 47]
+      },
+      {
+        cleanName: "Montelukast",
+        strength: "10 mg",
+        altName: "Zafirlukast",
+        altStrength: "20 mg",
+        category: "Respiratory / Leukotriene Inhibitor",
+        prescribedPct: 67,
+        prescribedRange: [60, 74],
+        altPct: 46,
+        altRange: [39, 53]
+      },
+      {
+        cleanName: "Salbutamol (Albuterol)",
+        strength: "0.09 mg",
+        altName: "Levalbuterol",
+        altStrength: "0.63 mg",
+        category: "Respiratory / Bronchodilator",
+        prescribedPct: 82,
+        prescribedRange: [75, 88],
+        altPct: 35,
+        altRange: [28, 42]
+      }
+    ];
+
+    let currentSelectedMed = MEDICINES_DATA[0];
+
+    function renderMedicineList(filter = '') {
+      const container = document.getElementById('medicine-list-container');
+      container.innerHTML = '';
+
+      const cleanQuery = filter.trim().toLowerCase();
+      const filtered = MEDICINES_DATA.filter(m => 
+        m.cleanName.toLowerCase().includes(cleanQuery) ||
+        m.altName.toLowerCase().includes(cleanQuery) ||
+        m.category.toLowerCase().includes(cleanQuery)
+      );
+
+      document.getElementById('total-medicines-counter').textContent = `Total Medicines: ${filtered.length}`;
+
+      filtered.forEach(med => {
+        const li = document.createElement('li');
+        const isSelected = med.cleanName === currentSelectedMed.cleanName;
+        li.className = `medicine-item ${isSelected ? 'selected' : ''}`;
+        li.innerHTML = `
+          <div class="medicine-item-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path></svg>
+            <span class="medicine-name">${med.cleanName}</span>
+          </div>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        `;
+        li.onclick = () => selectMedicine(med);
+        container.appendChild(li);
+      });
+    }
+
+    function selectMedicine(med) {
+      currentSelectedMed = med;
+      renderMedicineList(document.getElementById('medicine-search').value);
+      updateDashboardData();
+    }
+
+    function updateTelemetry() {
+      const tf = document.getElementById('timeframe-select').value;
+      const data = {
+        '7D': {
+          received: '320', receivedBadge: '+6.2% wk',
+          processed: '290', processedBadge: '90.6% flow',
+          approved: '240', approvedBadge: '82.8% rate',
+          pending: '38', pendingBadge: '13.1% queue',
+          rejected: '12', rejectedBadge: '4.1% friction'
+        },
+        '90D': {
+          received: '4,150', receivedBadge: '+15.8% qtr',
+          processed: '3,820', processedBadge: '92.0% flow',
+          approved: '3,190', approvedBadge: '83.5% rate',
+          pending: '480', pendingBadge: '12.6% queue',
+          rejected: '150', rejectedBadge: '3.9% friction'
+        },
+        '1Y': {
+          received: '16,840', receivedBadge: '+21.4% yr',
+          processed: '15,920', processedBadge: '94.5% flow',
+          approved: '13,410', approvedBadge: '84.2% rate',
+          pending: '1,890', pendingBadge: '11.9% queue',
+          rejected: '620', rejectedBadge: '3.9% friction'
+        },
+        '30D': {
+          received: '1,420', receivedBadge: '+12.4% mo',
+          processed: '1,280', processedBadge: '90.1% flow',
+          approved: '1,045', approvedBadge: '81.6% rate',
+          pending: '185', pendingBadge: '14.5% queue',
+          rejected: '50', rejectedBadge: '3.9% friction'
+        }
+      }[tf] || {
+        received: '1,420', receivedBadge: '+12.4% mo',
+        processed: '1,280', processedBadge: '90.1% flow',
+        approved: '1,045', approvedBadge: '81.6% rate',
+        pending: '185', pendingBadge: '14.5% queue',
+        rejected: '50', rejectedBadge: '3.9% friction'
+      };
+
+      document.getElementById('telemetry-received-val').textContent = data.received;
+      document.getElementById('telemetry-received-badge').textContent = data.receivedBadge;
+      document.getElementById('telemetry-processed-val').textContent = data.processed;
+      document.getElementById('telemetry-processed-badge').textContent = data.processedBadge;
+      document.getElementById('telemetry-approved-val').textContent = data.approved;
+      document.getElementById('telemetry-approved-badge').textContent = data.approvedBadge;
+      document.getElementById('telemetry-pending-val').textContent = data.pending;
+      document.getElementById('telemetry-pending-badge').textContent = data.pendingBadge;
+      document.getElementById('telemetry-rejected-val').textContent = data.rejected;
+      document.getElementById('telemetry-rejected-badge').textContent = data.rejectedBadge;
+    }
+
+    function updateDashboardData() {
+      const med = currentSelectedMed;
+
+      // Update Telemetry
+      updateTelemetry();
+
+      // Update Header Info
+      document.getElementById('disp-prescribed-name').textContent = med.cleanName;
+      document.getElementById('disp-prescribed-strength').textContent = med.strength;
+      document.getElementById('disp-alt-name').textContent = med.altName;
+      document.getElementById('disp-alt-strength').textContent = med.altStrength;
+      document.getElementById('disp-category').textContent = med.category;
+
+      // Update Badges
+      document.getElementById('disp-prescribed-range-badge').textContent = `Usage Range: ${med.prescribedRange[0]}% - ${med.prescribedRange[1]}%`;
+      document.getElementById('disp-alt-range-badge').textContent = `Usage Range: ${med.altRange[0]}% - ${med.altRange[1]}%`;
+
+      // Update Insight
+      document.getElementById('disp-insight-text').textContent = 
+        `${Math.round(med.prescribedPct)}% of patients used ${med.cleanName} in the selected period, while ${Math.round(med.altPct)}% used the alternative ${med.altName}.`;
+
+      // Render SVG Chart
+      renderSvgChart(med);
+    }
+
+    function renderSvgChart(med) {
+      const host = document.getElementById('chart-svg-host');
+      const width = host.clientWidth || 700;
+      const height = host.clientHeight || 300;
+
+      const leftMargin = 56;
+      const bottomMargin = 50;
+      const topMargin = 28;
+      const rightMargin = 24;
+
+      const chartWidth = width - leftMargin - rightMargin;
+      const chartHeight = height - topMargin - bottomMargin;
+      const baselineY = topMargin + chartHeight;
+
+      const ticks = [0, 20, 40, 60, 80, 100];
+
+      let gridLinesSvg = '';
+      ticks.forEach(tick => {
+        const y = baselineY - (tick / 100 * chartHeight);
+        gridLinesSvg += `
+          <line x1="${leftMargin}" y1="${y}" x2="${width - rightMargin}" y2="${y}" stroke="#E2E8F0" stroke-width="1" />
+          <text x="${leftMargin - 10}" y="${y + 4}" text-anchor="end" fill="#64748B" font-size="11" font-weight="600">${tick}%</text>
+        `;
+      });
+
+      // Bar positioning
+      const secWidth = chartWidth / 2;
+      const barWidth = Math.min(140, Math.max(90, chartWidth * 0.28));
+
+      const bar1X = leftMargin + (secWidth * 0.5) - (barWidth / 2);
+      const bar1CenterX = leftMargin + (secWidth * 0.5);
+      const bar1Height = (med.prescribedPct / 100) * chartHeight;
+      const bar1Y = baselineY - bar1Height;
+
+      const bar2X = leftMargin + (secWidth * 1.5) - (barWidth / 2);
+      const bar2CenterX = leftMargin + (secWidth * 1.5);
+      const bar2Height = (med.altPct / 100) * chartHeight;
+      const bar2Y = baselineY - bar2Height;
+
+      // Whiskers
+      const pMinY = baselineY - (med.prescribedRange[0] / 100 * chartHeight);
+      const pMaxY = baselineY - (med.prescribedRange[1] / 100 * chartHeight);
+      const wWidth = 24;
+
+      const aMinY = baselineY - (med.altRange[0] / 100 * chartHeight);
+      const aMaxY = baselineY - (med.altRange[1] / 100 * chartHeight);
+
+      host.innerHTML = `
+        <svg class="chart-canvas" viewBox="0 0 ${width} ${height}">
+          <!-- Y-Axis Title -->
+          <text transform="translate(14, ${baselineY - chartHeight/2}) rotate(-90)" text-anchor="middle" fill="#475569" font-size="11" font-weight="600">
+            Percentage of Patients (%)
+          </text>
+
+          <!-- Gridlines -->
+          ${gridLinesSvg}
+
+          <!-- BAR 1: PRESCRIBED (BLUE) -->
+          <rect class="chart-bar" x="${bar1X}" y="${bar1Y}" width="${barWidth}" height="${bar1Height}" rx="6" fill="#0062FF" />
+
+          <!-- Bar 1 Whisker -->
+          <line x1="${bar1CenterX}" y1="${pMinY}" x2="${bar1CenterX}" y2="${pMaxY}" stroke="#1E293B" stroke-width="1.4" stroke-linecap="round" />
+          <line x1="${bar1CenterX - wWidth/2}" y1="${pMaxY}" x2="${bar1CenterX + wWidth/2}" y2="${pMaxY}" stroke="#1E293B" stroke-width="1.4" stroke-linecap="round" />
+          <line x1="${bar1CenterX - wWidth/2}" y1="${pMinY}" x2="${bar1CenterX + wWidth/2}" y2="${pMinY}" stroke="#1E293B" stroke-width="1.4" stroke-linecap="round" />
+
+          <!-- Bar 1 Percentage Label -->
+          <text x="${bar1CenterX}" y="${pMaxY - 10}" text-anchor="middle" fill="#0062FF" font-size="14" font-weight="900">
+            ${Math.round(med.prescribedPct)}%
+          </text>
+
+          <!-- Bar 1 Bottom Labels -->
+          <text x="${bar1CenterX}" y="${baselineY + 18}" text-anchor="middle" fill="#0F172A" font-size="13" font-weight="800">
+            ${med.cleanName} ${med.strength}
+          </text>
+          <text x="${bar1CenterX}" y="${baselineY + 34}" text-anchor="middle" fill="#0062FF" font-size="11.5" font-weight="700">
+            (Prescribed Medicine)
+          </text>
+
+          <!-- BAR 2: ALTERNATIVE (GREEN) -->
+          <rect class="chart-bar" x="${bar2X}" y="${bar2Y}" width="${barWidth}" height="${bar2Height}" rx="6" fill="#16A34A" />
+
+          <!-- Bar 2 Whisker -->
+          <line x1="${bar2CenterX}" y1="${aMinY}" x2="${bar2CenterX}" y2="${aMaxY}" stroke="#1E293B" stroke-width="1.4" stroke-linecap="round" />
+          <line x1="${bar2CenterX - wWidth/2}" y1="${aMaxY}" x2="${bar2CenterX + wWidth/2}" y2="${aMaxY}" stroke="#1E293B" stroke-width="1.4" stroke-linecap="round" />
+          <line x1="${bar2CenterX - wWidth/2}" y1="${aMinY}" x2="${bar2CenterX + wWidth/2}" y2="${aMinY}" stroke="#1E293B" stroke-width="1.4" stroke-linecap="round" />
+
+          <!-- Bar 2 Percentage Label -->
+          <text x="${bar2CenterX}" y="${aMaxY - 10}" text-anchor="middle" fill="#16A34A" font-size="14" font-weight="900">
+            ${Math.round(med.altPct)}%
+          </text>
+
+          <!-- Bar 2 Bottom Labels -->
+          <text x="${bar2CenterX}" y="${baselineY + 18}" text-anchor="middle" fill="#0F172A" font-size="13" font-weight="800">
+            ${med.altName} ${med.altStrength}
+          </text>
+          <text x="${bar2CenterX}" y="${baselineY + 34}" text-anchor="middle" fill="#16A34A" font-size="11.5" font-weight="700">
+            (Alternative Medicine)
+          </text>
+        </svg>
+      `;
+    }
+
+    // Initialize listeners
+    document.getElementById('medicine-search').addEventListener('input', (e) => {
+      renderMedicineList(e.target.value);
+    });
+
+    document.getElementById('timeframe-select').addEventListener('change', () => {
+      updateDashboardData();
+    });
+
+    window.addEventListener('resize', () => {
+      renderSvgChart(currentSelectedMed);
+    });
+
+    // Boot
+    renderMedicineList();
+    updateDashboardData();
+  </script>
+</body>
+</html>
