@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
-
-import '../screens/doctor_overview_screen.dart';
 import '../screens/doctor_clinical_dashboard_screen.dart';
 import '../screens/doctor_prescription_screen.dart';
 import '../screens/pharmacist_dispense_screen.dart';
