@@ -63,7 +63,9 @@ def start_voice_agent():
             arg = sys.argv[i]
             if arg in ("--mode", "--host", "--port"):
                 i += 2
-            elif any(arg.startswith(prefix) for prefix in ("--mode=", "--host=", "--port=")):
+            elif any(
+                arg.startswith(prefix) for prefix in ("--mode=", "--host=", "--port=")
+            ):
                 i += 1
             else:
                 clean_args.append(arg)
@@ -120,7 +122,9 @@ def main():
             arg = sys.argv[i]
             if arg in ("--mode", "--host", "--port"):
                 i += 2
-            elif any(arg.startswith(prefix) for prefix in ("--mode=", "--host=", "--port=")):
+            elif any(
+                arg.startswith(prefix) for prefix in ("--mode=", "--host=", "--port=")
+            ):
                 i += 1
             else:
                 clean_args.append(arg)

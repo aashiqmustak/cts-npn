@@ -426,9 +426,7 @@ class MultiAgentOrchestrator:
                     break
 
         matched_drug_id = matched_drug_id or (
-            "DRUG_EPIL_04"
-            if inferred_class == "Antiepileptic"
-            else "DRUG_HYP_01"
+            "DRUG_EPIL_04" if inferred_class == "Antiepileptic" else "DRUG_HYP_01"
         )
         final_class = matched_therapeutic_class or inferred_class
         final_ind = (
@@ -438,7 +436,6 @@ class MultiAgentOrchestrator:
             not in ("Hyperlipidemia", "Diagnosed Indication", "Chronic Therapy")
             else (matched_indication or inferred_ind)
         )
-
 
         # -------------------------------------------------------------
         # STEP 2: Formulary Coverage Check

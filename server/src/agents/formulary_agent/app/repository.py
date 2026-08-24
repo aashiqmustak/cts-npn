@@ -94,8 +94,7 @@ class FormularyRepository:
                         "quantity_limit": parse_bool(row.get("quantity_limit")),
                         "in_network": parse_bool(row.get("in_network")),
                         "preferred_pharmacy": parse_bool(row.get("preferred_pharmacy")),
-                        "formulary_status": row.get("formulary_status")
-                        or "UNKNOWN",
+                        "formulary_status": row.get("formulary_status") or "UNKNOWN",
                     }
                 )
         print(f"Loaded {len(self.records)} formulary records.")

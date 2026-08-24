@@ -71,7 +71,9 @@ def extract_text_from_file(file_name: str, file_content_base64: str) -> str:
 
     # 4. If text was extracted from file, return it immediately
     if extracted_text.strip():
-        logger.info("Successfully extracted text from document (%d chars)", len(extracted_text))
+        logger.info(
+            "Successfully extracted text from document (%d chars)", len(extracted_text)
+        )
         return extracted_text
 
     # 5. Smart keyword fallback for demo/mock files with non-extractable scans
