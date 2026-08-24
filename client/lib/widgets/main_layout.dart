@@ -6,6 +6,7 @@ import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
 
 import '../screens/doctor_overview_screen.dart';
+import '../screens/doctor_clinical_dashboard_screen.dart';
 import '../screens/doctor_prescription_screen.dart';
 import '../screens/pharmacist_dispense_screen.dart';
 import '../screens/prescriptions_screen.dart';
@@ -645,7 +646,7 @@ class _RoleScreenStack extends StatelessWidget {
     if (user.isDoctor) {
       switch (appState.currentNavIndex.clamp(0, 6)) {
         case 0:
-          return const DoctorOverviewDashboardScreen();
+          return const DoctorClinicalDashboardScreen(showSidebar: false);
         case 1:
           return const DoctorPrescriptionScreen();
         case 2:
@@ -653,13 +654,13 @@ class _RoleScreenStack extends StatelessWidget {
         case 3:
           return const HospitalsScreen();
         case 4:
-          return const DashboardOverviewScreen();
+          return const DoctorOverviewDashboardScreen();
         case 5:
           return const VoiceAgentScreen();
         case 6:
           return const UserProfileScreen();
         default:
-          return const DoctorOverviewDashboardScreen();
+          return const DoctorClinicalDashboardScreen(showSidebar: false);
       }
     } else if (user.isPharmacist) {
       final isViewingDetails = appState.selectedPrescriptionId != null;
@@ -2245,8 +2246,8 @@ class _InsuranceAgentSetupDialogState extends State<_InsuranceAgentSetupDialog> 
     if (widget.initialPlans.isNotEmpty) {
       _selectedPlans = Set<String>.from(widget.initialPlans);
     } else {
-      _selectedPlans = Set<String>.from(
-          _companyPlansMap[_selectedCompany]?.take(2) ?? ['Comprehensive Rx Plan']);
+      final defaultPlans = _companyPlansMap[_selectedCompany] ?? <String>['Comprehensive Rx Plan'];
+      _selectedPlans = Set<String>.from(defaultPlans.take(2));
     }
 
     _selectedMedicines = Set<String>.from(

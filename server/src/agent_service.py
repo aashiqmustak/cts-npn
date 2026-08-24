@@ -471,6 +471,48 @@ orchestrator_router = Router(
 
 
 # =====================================================================
+# CLINICAL DOCTOR DASHBOARD ROUTER
+# =====================================================================
+from clinical_medicines import (
+    get_all_clinical_medicines,
+    get_medicine_usage_by_name,
+    get_prescription_lifecycle_telemetry,
+)
+
+
+@get("/medicines")
+async def list_clinical_medicines() -> list[dict[str, Any]]:
+    return get_all_clinical_medicines()
+
+
+@get("/medicine-usage/{drug_name:str}")
+async def get_clinical_medicine_usage(drug_name: str) -> dict[str, Any]:
+    med = get_medicine_usage_by_name(drug_name)
+    if not med:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Medicine '{drug_name}' not found in clinical dataset",
+        )
+    return med
+
+
+@get("/telemetry")
+async def get_clinical_telemetry(timeframe: str = "30D") -> dict[str, Any]:
+    return get_prescription_lifecycle_telemetry(timeframe=timeframe)
+
+
+clinical_router = Router(
+    path="/api/v1/clinical",
+    route_handlers=[
+        list_clinical_medicines,
+        get_clinical_medicine_usage,
+        get_clinical_telemetry,
+    ],
+    tags=["Clinical Doctor Dashboard"],
+)
+
+
+# =====================================================================
 # SYSTEM ROOT & DEEP HEALTH CHECK
 # =====================================================================
 @get("/")
@@ -490,6 +532,7 @@ async def root() -> dict[str, Any]:
             "ml": "/api/v1/ml",
             "alternatives": "/api/v1/alternatives",
             "ranking": "/api/v1/ranking",
+            "clinical": "/api/v1/clinical",
             "orchestrate": "/api/v1/orchestrate",
         },
     }
@@ -547,6 +590,7 @@ app = Litestar(
         ml_router,
         alternative_discovery_router,
         ranking_router,
+        clinical_router,
     ],
     openapi_config=openapi_config,
     cors_config=cors_config,

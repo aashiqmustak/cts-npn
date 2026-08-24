@@ -5,6 +5,9 @@ services:
       context: ./
       dockerfile: infra/docker/backend.Dockerfile
 
+    env_file:
+      - .env
+
     ports:
       - "8000:8000"
 

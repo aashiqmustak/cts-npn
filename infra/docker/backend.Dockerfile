@@ -22,6 +22,7 @@ RUN uv sync --frozen --no-install-project
 # Copy main entrypoint and the source code
 COPY main.py ./
 COPY server ./server
+COPY dataset ./dataset
 
 # Expose WebRTC server port
 EXPOSE 8000
