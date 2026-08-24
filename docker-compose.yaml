@@ -4,6 +4,8 @@ services:
     build:
       context: ./
       dockerfile: infra/docker/backend.Dockerfile
+    env_file:
+      - .env
     volumes:
       - ./server:/app/server
       - ./main.py:/app/main.py
