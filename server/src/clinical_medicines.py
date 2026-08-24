@@ -1,6 +1,10 @@
-from typing import Any
+import logging
 import os
+from typing import Any
+
 import requests
+
+logger = logging.getLogger(__name__)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://hhlivbsbwhrjuxvpfbba.supabase.co")
 SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY", "sb_publishable_6O0GgNlaCxfPvu0Ixi8ODw_bEeIMa62")
@@ -141,8 +145,8 @@ def _fetch_supabase_table(table_name: str) -> list[dict[str, Any]]:
         res = requests.get(url, headers=headers, timeout=3.5)
         if res.status_code == 200:
             return res.json()
-    except Exception:
-        pass
+    except requests.RequestException as exc:
+        logger.debug("Supabase query error on %s: %s", table_name, exc)
     return []
 
 
