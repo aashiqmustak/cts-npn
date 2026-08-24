@@ -7,7 +7,9 @@ import requests
 logger = logging.getLogger(__name__)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://hhlivbsbwhrjuxvpfbba.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY", "sb_publishable_6O0GgNlaCxfPvu0Ixi8ODw_bEeIMa62")
+SUPABASE_KEY = os.getenv(
+    "SUPABASE_ANON_KEY", "sb_publishable_6O0GgNlaCxfPvu0Ixi8ODw_bEeIMa62"
+)
 
 # Base fallback curated clinical list
 DEFAULT_CLINICAL_MEDICINES: list[dict[str, Any]] = [
@@ -173,18 +175,21 @@ def get_all_clinical_medicines() -> list[dict[str, Any]]:
             prescribed_pct = 68.0 if status in ("approved", "dispensed") else 74.0
             alt_pct = 58.0 if status in ("approved", "dispensed") else 41.0
 
-            dynamic_list.append({
-                "clean_name": orig_name,
-                "strength": "Standard Dose",
-                "alt_name": alt_name,
-                "alt_strength": "Recommended Dose",
-                "therapeutic_category": cat,
-                "prescribed_pct": prescribed_pct,
-                "prescribed_range": [prescribed_pct - 8.0, prescribed_pct + 7.0],
-                "alt_pct": alt_pct,
-                "alt_range": [alt_pct - 8.0, alt_pct + 7.0],
-                "insight": rat or f"{int(prescribed_pct)}% of patients used {orig_name}, while {int(alt_pct)}% switched to alternative {alt_name}.",
-            })
+            dynamic_list.append(
+                {
+                    "clean_name": orig_name,
+                    "strength": "Standard Dose",
+                    "alt_name": alt_name,
+                    "alt_strength": "Recommended Dose",
+                    "therapeutic_category": cat,
+                    "prescribed_pct": prescribed_pct,
+                    "prescribed_range": [prescribed_pct - 8.0, prescribed_pct + 7.0],
+                    "alt_pct": alt_pct,
+                    "alt_range": [alt_pct - 8.0, alt_pct + 7.0],
+                    "insight": rat
+                    or f"{int(prescribed_pct)}% of patients used {orig_name}, while {int(alt_pct)}% switched to alternative {alt_name}.",
+                }
+            )
 
     # 2. Append default list without duplicates
     existing_names = {m["clean_name"].lower() for m in dynamic_list}
@@ -214,7 +219,9 @@ def get_prescription_lifecycle_telemetry(timeframe: str = "30D") -> dict[str, An
     rx_records = _fetch_supabase_table("prescriptions")
 
     total_rx = len(rx_records)
-    approved_count = len([a for a in approvals if a.get("status") in ("approved", "dispensed")])
+    approved_count = len(
+        [a for a in approvals if a.get("status") in ("approved", "dispensed")]
+    )
     pending_count = len([a for a in approvals if a.get("status") == "pending"])
     rejected_count = len([a for a in approvals if a.get("status") == "denied"])
 
