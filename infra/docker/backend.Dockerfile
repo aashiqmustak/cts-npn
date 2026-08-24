@@ -17,7 +17,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN uv sync --frozen --no-install-project
+ENV VIRTUAL_ENV=/app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
+
+RUN uv venv /app/.venv && \
+    uv pip install --no-cache torch --index-url https://download.pytorch.org/whl/cpu && \
+    uv pip install --no-cache -r pyproject.toml
 
 # Copy main entrypoint and the source code
 COPY main.py ./
@@ -28,4 +33,4 @@ COPY dataset ./dataset
 EXPOSE 8000
 
 # Start the bot with WebRTC transport
-CMD ["uv", "run", "python", "main.py", "-t", "webrtc", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "main.py", "-t", "webrtc", "--host", "0.0.0.0", "--port", "8000"]
