@@ -4,8 +4,8 @@ services:
     build:
       context: ./
       dockerfile: infra/docker/backend.Dockerfile
-    container_name: cts-pharmaassist-backend
-    restart: unless-stopped
+    container_name: cts-pharmaassist-backend-prod
+    restart: always
     env_file:
       - .env
     volumes:
@@ -26,18 +26,14 @@ services:
   frontend:
     build:
       context: ./
-      dockerfile: infra/docker/frontend.dev.Dockerfile
-    container_name: cts-pharmaassist-frontend
-    restart: unless-stopped
-    volumes:
-      - ./client:/app
-      - /app/.dart_tool
-      - /app/build
+      dockerfile: infra/docker/frontend.Dockerfile
+    container_name: cts-pharmaassist-frontend-prod
+    restart: always
     ports:
-      - "8080:8080"
+      - "80:80"
     depends_on:
       backend:
-        condition: service_started
+        condition: service_healthy
     networks:
       - app-network
 

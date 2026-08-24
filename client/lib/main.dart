@@ -8,7 +8,11 @@ import 'screens/auth_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SupabaseService().initialize();
+  try {
+    await SupabaseService().initialize().timeout(const Duration(seconds: 3));
+  } catch (e) {
+    debugPrint('Supabase init notice: $e');
+  }
   runApp(
     ChangeNotifierProvider(
       create: (_) => AppState(),

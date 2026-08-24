@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 import '../services/data_service.dart';
+import '../services/web_audio.dart';
 
 class ClinicalNotification {
   final String id;
@@ -1077,6 +1078,278 @@ class AppState extends ChangeNotifier {
         role: updatedUser.role,
       );
     }
+
+    notifyListeners();
+  }
+
+  // --- Alternative Drug Approvals Pipeline (Doctor-to-Pharmacy) ---
+  List<AlternativeApprovalRequest> get alternativeApprovalRequests =>
+      dataService.alternativeApprovalRequests;
+
+  List<AlternativeApprovalRequest> get pendingAlternativeApprovalRequests =>
+      dataService.alternativeApprovalRequests.where((r) => r.isPending).toList();
+
+  List<AlternativeApprovalRequest> get approvedAlternativeHistory =>
+      dataService.alternativeApprovalRequests
+          .where((r) => r.isApproved || r.isDispensed || r.status == 'approved' || r.status == 'dispensed')
+          .toList();
+
+  List<AlternativeApprovalRequest> get allAlternativeHistory =>
+      dataService.alternativeApprovalRequests
+          .where((r) => !r.isPending)
+          .toList();
+
+  AlternativeApprovalRequest? _latestApprovedRequest;
+  AlternativeApprovalRequest? get latestApprovedRequest => _latestApprovedRequest;
+
+  void clearLatestApprovedRequest() {
+    _latestApprovedRequest = null;
+    notifyListeners();
+  }
+
+  void sendAlternativeToDoctor({
+    required String rxId,
+    required String patientId,
+    required String patientName,
+    required int patientAge,
+    required String doctorId,
+    required String doctorName,
+    required String indication,
+    required String originalDrug,
+    required int originalTier,
+    required double originalCopay,
+    required String recommendedAlternative,
+    required int alternativeTier,
+    required double alternativeCopay,
+    required String clinicalClass,
+    required String clinicalRationale,
+  }) {
+    final req = AlternativeApprovalRequest(
+      id: 'REQ-${DateTime.now().millisecondsSinceEpoch}',
+      prescriptionId: rxId,
+      patientId: patientId,
+      patientName: patientName,
+      patientAge: patientAge,
+      doctorId: doctorId,
+      doctorName: doctorName,
+      indication: indication,
+      originalDrug: originalDrug,
+      originalTier: originalTier,
+      originalCopay: originalCopay,
+      recommendedAlternative: recommendedAlternative,
+      alternativeTier: alternativeTier,
+      alternativeCopay: alternativeCopay,
+      clinicalClass: clinicalClass,
+      clinicalRationale: clinicalRationale,
+      status: 'pending',
+      requestedAt: DateTime.now(),
+    );
+
+    dataService.addAlternativeApprovalRequest(req);
+    dataService.supabaseService.saveAlternativeApproval(req);
+
+    final docVoice =
+        'Notification: You have received an alternative drug approval request from the pharmacy for patient $patientName for medication $recommendedAlternative.';
+    playWebAudio(null, docVoice);
+
+    addNotification(
+      ClinicalNotification(
+        id: 'NOTIF-${DateTime.now().millisecondsSinceEpoch}',
+        title: '📋 Alternative Drug Approval Requested',
+        subtitle: 'Pharmacist sent AI-recommended alternative ($recommendedAlternative) for $patientName to $doctorName for review.',
+        time: 'Just now',
+        icon: Icons.auto_awesome_rounded,
+        color: const Color(0xFF8B5CF6),
+      ),
+    );
+
+    notifyListeners();
+  }
+
+  void approveAlternativeDrug({
+    required String requestId,
+    String? doctorNote,
+  }) {
+    final req = alternativeApprovalRequests.firstWhere(
+      (r) => r.id == requestId,
+      orElse: () => AlternativeApprovalRequest(
+        id: requestId,
+        prescriptionId: '',
+        patientId: '',
+        patientName: 'Patient',
+        patientAge: 45,
+        doctorId: '',
+        doctorName: 'Doctor',
+        indication: '',
+        originalDrug: '',
+        originalTier: 2,
+        originalCopay: 45.0,
+        recommendedAlternative: '',
+        alternativeTier: 1,
+        alternativeCopay: 10.0,
+        clinicalClass: '',
+        clinicalRationale: '',
+        requestedAt: DateTime.now(),
+      ),
+    );
+
+    dataService.updateAlternativeApprovalStatus(requestId, 'approved', note: doctorNote);
+    dataService.supabaseService.saveAlternativeApproval(req);
+    _latestApprovedRequest = req;
+
+    final voiceMessage =
+        'Notification: Dr. ${req.doctorName} has approved the alternative medication, ${req.recommendedAlternative}, for patient ${req.patientName}. Ready for dispense.';
+
+    // Play Voice TTS Announcement across system
+    playWebAudio(null, voiceMessage);
+
+    addNotification(
+      ClinicalNotification(
+        id: 'NOTIF-${DateTime.now().millisecondsSinceEpoch}',
+        title: '✅ Doctor Approved Alternative Regimen',
+        subtitle: 'Dr. ${req.doctorName} approved ${req.recommendedAlternative} for ${req.patientName} (\$${req.monthlySavings.toStringAsFixed(2)}/mo savings). Ready to dispense.',
+        time: 'Just now',
+        icon: Icons.check_circle_rounded,
+        color: const Color(0xFF10B981),
+      ),
+    );
+
+    notifyListeners();
+  }
+
+  void denyAlternativeDrug({
+    required String requestId,
+    String? doctorNote,
+  }) {
+    final req = alternativeApprovalRequests.firstWhere((r) => r.id == requestId);
+    dataService.updateAlternativeApprovalStatus(requestId, 'denied', note: doctorNote);
+    dataService.supabaseService.saveAlternativeApproval(req);
+
+    final voiceMessage =
+        'Notification: Dr. ${req.doctorName} has denied the alternative medication for patient ${req.patientName}. Please dispense original prescription.';
+    playWebAudio(null, voiceMessage);
+
+    addNotification(
+      ClinicalNotification(
+        id: 'NOTIF-${DateTime.now().millisecondsSinceEpoch}',
+        title: '⚠️ Alternative Regimen Denied by Physician',
+        subtitle: 'Dr. ${req.doctorName} requested original prescription ${req.originalDrug} be dispensed for ${req.patientName}.',
+        time: 'Just now',
+        icon: Icons.cancel_rounded,
+        color: const Color(0xFFEF4444),
+      ),
+    );
+
+    notifyListeners();
+  }
+
+  void dispenseApprovedAlternative({
+    required String requestId,
+  }) {
+    final req = alternativeApprovalRequests.firstWhere((r) => r.id == requestId);
+    switchPrescriptionToAlternative(
+      rxId: req.prescriptionId,
+      alternativeDrugName: req.recommendedAlternative,
+      newDosage: '1 Tablet (Oral)',
+      newCopay: req.alternativeCopay,
+    );
+
+    // Dispense in pharmacist ledger
+    dataService.updateAlternativeApprovalStatus(requestId, 'dispensed');
+    dataService.supabaseService.saveAlternativeApproval(req);
+    _latestApprovedRequest = null;
+
+    addNotification(
+      ClinicalNotification(
+        id: 'NOTIF-${DateTime.now().millisecondsSinceEpoch}',
+        title: '🎉 Approved Alternative Dispensed',
+        subtitle: 'Successfully dispensed ${req.recommendedAlternative} for ${req.patientName}. Copay: \$${req.alternativeCopay.toStringAsFixed(2)}.',
+        time: 'Just now',
+        icon: Icons.local_pharmacy_rounded,
+        color: const Color(0xFF10B981),
+      ),
+    );
+
+    notifyListeners();
+  }
+
+  Future<void> generateAndSendAlternatePrescription({
+    required AlternativeApprovalRequest req,
+    String? pharmacistNote,
+  }) async {
+    final rxId = req.prescriptionId.isNotEmpty && !req.prescriptionId.startsWith('ALT')
+        ? req.prescriptionId
+        : 'RX-ALT-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+
+    final altItem = PrescriptionItem(
+      id: 'ITEM-ALT-${DateTime.now().millisecondsSinceEpoch}',
+      prescriptionId: rxId,
+      medicineName: req.recommendedAlternative,
+      dosage: '1 Tablet (Oral)',
+      frequency: 'Once Daily',
+      durationDays: 30,
+      isDispensed: true,
+      instructions: 'Take daily as directed. Doctor-approved Tier 1 preferred bioequivalent alternate.',
+    );
+
+    final notesMeta = jsonEncode({
+      'is_alternate_prescription': true,
+      'original_drug': req.originalDrug,
+      'original_tier': req.originalTier,
+      'original_copay': req.originalCopay,
+      'alternate_drug': req.recommendedAlternative,
+      'alternate_tier': req.alternativeTier,
+      'alternate_copay': req.alternativeCopay,
+      'monthly_savings': req.monthlySavings,
+      'annual_savings': req.annualSavings,
+      'doctor_name': req.doctorName,
+      'doctor_id': req.doctorId,
+      'doctor_note': req.doctorNote ?? req.clinicalRationale,
+      'pharmacist_note': pharmacistNote ?? 'Verified and dispensed by clinical pharmacist.',
+      'approved_at': req.respondedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+    });
+
+    final altRx = Prescription(
+      id: rxId,
+      patientId: req.patientId.isNotEmpty ? req.patientId : 'PAT-001',
+      patientName: req.patientName.isNotEmpty ? req.patientName : 'Patient',
+      drugId: req.recommendedAlternative,
+      drugName: req.recommendedAlternative,
+      drugClass: req.clinicalClass.isNotEmpty ? req.clinicalClass : 'Approved Alternative',
+      diagnosis: req.indication.isNotEmpty ? req.indication : 'Physician Approved Alternative Regimen',
+      fillDates: [DateTime.now()],
+      fillRecords: [FillRecord(date: DateTime.now(), daysSupply: 30, wasOnTime: true)],
+      pdcScore: 0.98,
+      status: 'Active (Doctor Approved Alternative)',
+      lastFillDate: DateTime.now(),
+      nextDueDate: DateTime.now().add(const Duration(days: 30)),
+      prescriberName: req.doctorName.isNotEmpty ? req.doctorName : 'Dr. Tariq Martin',
+      doctorId: req.doctorId,
+      prescribedDate: DateTime.now(),
+      notes: notesMeta,
+    );
+
+    dataService.addAlternatePrescriptionRecord(rx: altRx, item: altItem);
+
+    // Update approval status to dispensed & persist
+    dataService.updateAlternativeApprovalStatus(req.id, 'dispensed');
+    dataService.supabaseService.saveAlternativeApproval(req);
+    _latestApprovedRequest = null;
+
+    final patVoice =
+        'Notification: An approved alternate prescription for ${req.recommendedAlternative} has been issued and sent to patient ${req.patientName}.';
+    playWebAudio(null, patVoice);
+
+    addNotification(
+      ClinicalNotification(
+        id: 'NOTIF-${DateTime.now().millisecondsSinceEpoch}',
+        title: '✨ Alternate Prescription Sent to Patient',
+        subtitle: '${req.recommendedAlternative} (Doctor Approved) has been issued for ${req.patientName}. Available in patient cabinet for instant PDF download.',
+        time: 'Just now',
+        icon: Icons.check_circle_rounded,
+        color: const Color(0xFF10B981),
+      ),
+    );
 
     notifyListeners();
   }

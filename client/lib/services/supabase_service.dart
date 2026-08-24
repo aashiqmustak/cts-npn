@@ -799,6 +799,74 @@ class SupabaseService {
     }
   }
 
+  // --- Alternative Drug Approvals Pipeline (Supabase DB Persistence) ---
+  Future<bool> saveAlternativeApproval(AlternativeApprovalRequest req) async {
+    if (!isInitialized) return false;
+    try {
+      final payload = {
+        'id': req.id,
+        'prescription_id': req.prescriptionId,
+        'patient_id': req.patientId,
+        'patient_name': req.patientName,
+        'patient_age': req.patientAge,
+        'doctor_id': req.doctorId,
+        'doctor_name': req.doctorName,
+        'indication': req.indication,
+        'original_drug': req.originalDrug,
+        'original_tier': req.originalTier,
+        'original_copay': req.originalCopay,
+        'recommended_alternative': req.recommendedAlternative,
+        'alternative_tier': req.alternativeTier,
+        'alternative_copay': req.alternativeCopay,
+        'clinical_class': req.clinicalClass,
+        'clinical_rationale': req.clinicalRationale,
+        'status': req.status,
+        'requested_at': req.requestedAt.toIso8601String(),
+        'responded_at': req.respondedAt?.toIso8601String(),
+        'doctor_note': req.doctorNote,
+      };
+      await client.from('alternative_approvals').upsert(payload);
+      return true;
+    } catch (e) {
+      if (kDebugMode) print('saveAlternativeApproval Supabase error: $e');
+      return false;
+    }
+  }
+
+  Future<List<AlternativeApprovalRequest>> fetchAlternativeApprovals() async {
+    if (!isInitialized) return [];
+    try {
+      final res = await client.from('alternative_approvals').select('*').order('requested_at', ascending: false);
+      return (res as List).map((j) {
+        return AlternativeApprovalRequest(
+          id: j['id']?.toString() ?? '',
+          prescriptionId: j['prescription_id']?.toString() ?? '',
+          patientId: j['patient_id']?.toString() ?? '',
+          patientName: j['patient_name']?.toString() ?? 'Patient',
+          patientAge: (j['patient_age'] as num?)?.toInt() ?? 45,
+          doctorId: j['doctor_id']?.toString() ?? '',
+          doctorName: j['doctor_name']?.toString() ?? 'Doctor',
+          indication: j['indication']?.toString() ?? '',
+          originalDrug: j['original_drug']?.toString() ?? '',
+          originalTier: (j['original_tier'] as num?)?.toInt() ?? 2,
+          originalCopay: (j['original_copay'] as num?)?.toDouble() ?? 45.0,
+          recommendedAlternative: j['recommended_alternative']?.toString() ?? '',
+          alternativeTier: (j['alternative_tier'] as num?)?.toInt() ?? 1,
+          alternativeCopay: (j['alternative_copay'] as num?)?.toDouble() ?? 10.0,
+          clinicalClass: j['clinical_class']?.toString() ?? '',
+          clinicalRationale: j['clinical_rationale']?.toString() ?? '',
+          status: j['status']?.toString() ?? 'pending',
+          requestedAt: DateTime.tryParse(j['requested_at']?.toString() ?? '') ?? DateTime.now(),
+          respondedAt: j['responded_at'] != null ? DateTime.tryParse(j['responded_at'].toString()) : null,
+          doctorNote: j['doctor_note']?.toString(),
+        );
+      }).toList();
+    } catch (e) {
+      if (kDebugMode) print('fetchAlternativeApprovals Supabase error: $e');
+      return [];
+    }
+  }
+
   // OTP Operations
   Future<bool> saveOtp({
     required String email,

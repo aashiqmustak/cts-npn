@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'api_config.dart';
 
 class ScoreBreakdown {
   final double safetyScore;
@@ -100,7 +101,7 @@ class AgentApiService {
   final String baseUrl;
 
   AgentApiService({String? url})
-      : baseUrl = url ?? 'http://localhost:8000';
+      : baseUrl = url ?? ApiConfig.instance.baseUrl;
 
   Future<Map<String, dynamic>?> sendMessage({
     required String message,

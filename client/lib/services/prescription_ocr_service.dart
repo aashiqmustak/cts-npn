@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'api_config.dart';
 
 class PrescriptionOcrResult {
   final String rawText;
@@ -57,8 +58,7 @@ class PrescriptionOcrService {
 
     // 2. Try querying backend OCR server if online (with 6s timeout)
     try {
-      final host = kIsWeb ? (Uri.base.host.isEmpty ? '127.0.0.1' : Uri.base.host) : '127.0.0.1';
-      final backendUrl = 'http://$host:8000/api/v1/prescription/upload-ocr';
+      final backendUrl = ApiConfig.instance.ocrUploadEndpoint;
       final base64String = base64Encode(bytes);
 
       final response = await http
