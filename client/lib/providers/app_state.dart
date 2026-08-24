@@ -57,6 +57,13 @@ class AppState extends ChangeNotifier {
   bool get hasInteractedWithNav => _hasInteractedWithNav;
   int _activeSubTabIndex = 0;
   String? _selectedPrescriptionId;
+  String? _evaluatingPrescriptionId;
+  String? get evaluatingPrescriptionId => _evaluatingPrescriptionId;
+
+  void setEvaluatingPrescriptionId(String? id) {
+    _evaluatingPrescriptionId = id;
+    notifyListeners();
+  }
 
   // Search & Filter States
   String _globalSearchQuery = '';
@@ -395,6 +402,51 @@ class AppState extends ChangeNotifier {
 
   Future<void> togglePatientLog(String logId, bool isTaken) async {
     await dataService.togglePatientLog(logId, isTaken);
+    notifyListeners();
+  }
+
+  void updatePrescriptionStatus(String rxId, String status) {
+    dataService.updatePrescriptionStatus(rxId, status);
+    addNotification(
+      ClinicalNotification(
+        id: 'NOTIF-${DateTime.now().millisecondsSinceEpoch}',
+        title: '📋 Prescription Status Updated',
+        subtitle: 'Prescription $rxId status updated to "$status".',
+        time: 'Just now',
+        icon: Icons.sync_alt_rounded,
+        color: const Color(0xFF10B981),
+      ),
+    );
+    notifyListeners();
+  }
+
+  void resolveFrictionEvent(String frictionId) {
+    dataService.resolveFrictionEvent(frictionId);
+    addNotification(
+      ClinicalNotification(
+        id: 'NOTIF-${DateTime.now().millisecondsSinceEpoch}',
+        title: '✅ Prior Auth Approved',
+        subtitle: 'Claim bottleneck $frictionId resolved. Prescription unblocked for dispensing.',
+        time: 'Just now',
+        icon: Icons.verified_rounded,
+        color: const Color(0xFF10B981),
+      ),
+    );
+    notifyListeners();
+  }
+
+  void requestPrescriptionRefill(String rxId) {
+    dataService.requestPrescriptionRefill(rxId);
+    addNotification(
+      ClinicalNotification(
+        id: 'NOTIF-${DateTime.now().millisecondsSinceEpoch}',
+        title: '🔄 Refill Request Dispatched',
+        subtitle: 'Patient requested refill for Rx $rxId. Sent to Pharmacist Queue.',
+        time: 'Just now',
+        icon: Icons.autorenew_rounded,
+        color: const Color(0xFF1244A2),
+      ),
+    );
     notifyListeners();
   }
 
@@ -952,6 +1004,31 @@ class AppState extends ChangeNotifier {
 
   void updateFrictionStatus(String frictionId, FrictionStatus status) {
     dataService.updateFrictionStatus(frictionId, status);
+    notifyListeners();
+  }
+
+  void switchPrescriptionToAlternative({
+    required String rxId,
+    required String alternativeDrugName,
+    required String newDosage,
+    required double newCopay,
+  }) {
+    dataService.switchPrescriptionToAlternative(
+      rxId: rxId,
+      alternativeDrugName: alternativeDrugName,
+      newDosage: newDosage,
+      newCopay: newCopay,
+    );
+    addNotification(
+      ClinicalNotification(
+        id: 'N-${DateTime.now().millisecondsSinceEpoch}',
+        title: 'Alternative Regimen Switched',
+        subtitle: 'Prescription #$rxId switched to $alternativeDrugName (Tier 1 Preferred, \$${newCopay.toStringAsFixed(2)} Copay).',
+        time: 'Just now',
+        icon: Icons.auto_awesome_rounded,
+        color: const Color(0xFF10B981),
+      ),
+    );
     notifyListeners();
   }
 

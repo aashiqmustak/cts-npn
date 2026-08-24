@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
 
 import '../screens/doctor_overview_screen.dart';
+import '../screens/doctor_clinical_dashboard_screen.dart';
 import '../screens/doctor_prescription_screen.dart';
 import '../screens/pharmacist_dispense_screen.dart';
 import '../screens/prescriptions_screen.dart';
@@ -28,6 +30,7 @@ import '../screens/profile_screen.dart';
 import '../screens/pharmacist_insurance_screen.dart';
 import '../screens/insurance_pharmacy_connections_screen.dart';
 import '../screens/alternate_agent_screen.dart';
+import '../screens/rx_agent_evaluation_screen.dart';
 
 class MainLayout extends StatefulWidget {
   final Widget? child;
@@ -39,6 +42,40 @@ class MainLayout extends StatefulWidget {
 }
 
 class _MainLayoutState extends State<MainLayout> {
+  bool _checkedInsuranceSetup = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkInsuranceSetup();
+    });
+  }
+
+  void _checkInsuranceSetup() {
+    if (!mounted) return;
+    final appState = Provider.of<AppState>(context, listen: false);
+    final user = appState.currentUser;
+    if (user.role == UserRole.insuranceAgent &&
+        (user.insuranceCompany == null || user.insuranceCompany!.isEmpty || user.insurancePlans.isEmpty) &&
+        !_checkedInsuranceSetup) {
+      _checkedInsuranceSetup = true;
+      _showInsuranceAgentSetupDialog(context, appState, user);
+    }
+  }
+
+  void _showInsuranceAgentSetupDialog(BuildContext context, AppState appState, User user) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => _InsuranceAgentSetupDialog(
+        appState: appState,
+        initialCompany: user.insuranceCompany,
+        initialPlans: user.insurancePlans,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
@@ -606,325 +643,6 @@ class _MainLayoutState extends State<MainLayout> {
       ),
     );
   }
-
-  void _showInsuranceAgentSetupDialog(
-    BuildContext context,
-    AppState appState,
-    User user,
-  ) {
-    const companyPlansMap = {
-      'Blue Cross Blue Shield': [
-        'Blue Cross PPO Premier',
-        'Blue Cross Advantage Plus',
-        'Blue Cross Rx Comprehensive',
-        'Blue Care HMO Gold',
-      ],
-      'UnitedHealthcare (UHC)': [
-        'UHC Choice Plus Comprehensive',
-        'UHC Medicare Part D Standard',
-        'UHC Dual Complete (HMO-POS)',
-        'Optum Rx Preferred',
-      ],
-      'Medicare Part D (CMS)': [
-        'SilverScript Choice (PDP)',
-        'Medicare Advantage Part D Gold',
-        'WellCare Value Script (PDP)',
-        'Humana Premier Rx (PDP)',
-      ],
-      'Aetna Health': [
-        'Aetna Medicare Part D Value',
-        'Aetna Open Access PPO',
-        'Aetna Premier Rx Tier 1-5',
-      ],
-      'Cigna Healthcare': [
-        'Cigna Secure Rx (PDP)',
-        'Cigna Total Care Plus',
-        'Cigna Essential Rx Plan',
-      ],
-      'Humana Rx': [
-        'Humana Walmart Value Rx',
-        'Humana Gold Plus (HMO)',
-        'Humana Premier Part D',
-      ],
-      'Kaiser Permanente': [
-        'Kaiser Senior Advantage',
-        'Kaiser Permanente Deductible Plan',
-        'Kaiser Specialty Rx',
-      ],
-    };
-
-    String selectedCompany = (user.insuranceCompany != null &&
-            companyPlansMap.containsKey(user.insuranceCompany))
-        ? user.insuranceCompany!
-        : 'Blue Cross Blue Shield';
-
-    Set<String> selectedPlans = user.insurancePlans.isNotEmpty
-        ? Set<String>.from(user.insurancePlans)
-        : Set<String>.from(companyPlansMap[selectedCompany]?.take(2) ?? ['Blue Cross PPO Premier']);
-
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          final currentAvailablePlans =
-              companyPlansMap[selectedCompany] ??
-                  companyPlansMap['Blue Cross Blue Shield']!;
-
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            backgroundColor: Colors.white,
-            titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-            actionsPadding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-            title: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.business_center_rounded,
-                    color: Color(0xFF1D4ED8),
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Insurance Carrier & Plans',
-                        style: AppFonts.googleSans(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textDark,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Configure your assigned carrier coverage',
-                        style: AppFonts.googleSans(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            content: SizedBox(
-              width: 480,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 8),
-                    Text(
-                      'Insurance Organization',
-                      style: AppFonts.googleSans(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      value: selectedCompany,
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(
-                          Icons.corporate_fare_rounded,
-                          color: Color(0xFF1D4ED8),
-                          size: 20,
-                        ),
-                        filled: true,
-                        fillColor: const Color(0xFFF8FAFC),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                      ),
-                      items: companyPlansMap.keys.map((comp) {
-                        return DropdownMenuItem<String>(
-                          value: comp,
-                          child: Text(
-                            comp,
-                            style: AppFonts.googleSans(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textDark,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (newComp) {
-                        if (newComp != null && newComp != selectedCompany) {
-                          setDialogState(() {
-                            selectedCompany = newComp;
-                            final defaults = companyPlansMap[newComp] ?? [];
-                            selectedPlans = defaults.take(2).toSet();
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Active Benefit Plans',
-                      style: AppFonts.googleSans(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Select the specific policy lines you manage:',
-                      style: AppFonts.googleSans(
-                        fontSize: 11.5,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Column(
-                        children: currentAvailablePlans.map((plan) {
-                          final isSelected = selectedPlans.contains(plan);
-                          return CheckboxListTile(
-                            dense: true,
-                            controlAffinity: ListTileControlAffinity.leading,
-                            activeColor: const Color(0xFF1D4ED8),
-                            title: Text(
-                              plan,
-                              style: AppFonts.googleSans(
-                                fontSize: 13,
-                                fontWeight: isSelected
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
-                                color: isSelected
-                                    ? const Color(0xFF1E40AF)
-                                    : AppColors.textDark,
-                              ),
-                            ),
-                            value: isSelected,
-                            onChanged: (checked) {
-                              setDialogState(() {
-                                if (checked == true) {
-                                  selectedPlans.add(plan);
-                                } else {
-                                  if (selectedPlans.length > 1) {
-                                    selectedPlans.remove(plan);
-                                  }
-                                }
-                              });
-                            },
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogCtx),
-                child: Text(
-                  'Cancel',
-                  style: AppFonts.googleSans(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1D4ED8),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  elevation: 0,
-                ),
-                icon: const Icon(Icons.check_rounded, size: 18),
-                label: Text(
-                  'Save & Apply',
-                  style: AppFonts.googleSans(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                onPressed: () async {
-                  await appState.updateInsuranceAgentDetails(
-                    company: selectedCompany,
-                    plans: selectedPlans.toList(),
-                    medicines: user.insuranceMedicines,
-                    hospitals: user.insuranceHospitals,
-                  );
-                  if (context.mounted) {
-                    Navigator.pop(dialogCtx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        behavior: SnackBarBehavior.floating,
-                        backgroundColor: const Color(0xFF0F172A),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        content: Row(
-                          children: [
-                            const Icon(
-                              Icons.check_circle_rounded,
-                              color: Color(0xFF10B981),
-                              size: 20,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Updated insurance profile to $selectedCompany (${selectedPlans.length} plans)',
-                                style: AppFonts.googleSans(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        duration: const Duration(seconds: 3),
-                      ),
-                    );
-                  }
-                },
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
 }
 
 /// Hot-Memory Viewport Layer using IndexedStack
@@ -942,7 +660,7 @@ class _RoleScreenStack extends StatelessWidget {
     if (user.isDoctor) {
       switch (appState.currentNavIndex.clamp(0, 7)) {
         case 0:
-          return const DoctorOverviewDashboardScreen();
+          return const DoctorClinicalDashboardScreen(showSidebar: false);
         case 1:
           return const DoctorPrescriptionScreen();
         case 2:
@@ -958,9 +676,15 @@ class _RoleScreenStack extends StatelessWidget {
         case 7:
           return const UserProfileScreen();
         default:
-          return const DoctorOverviewDashboardScreen();
+          return const DoctorClinicalDashboardScreen(showSidebar: false);
       }
     } else if (user.isPharmacist) {
+      final isEvaluatingAgent = appState.evaluatingPrescriptionId != null;
+      if (isEvaluatingAgent) {
+        return RxAgentEvaluationScreen(
+          prescriptionId: appState.evaluatingPrescriptionId!,
+        );
+      }
       final isViewingDetails = appState.selectedPrescriptionId != null;
       switch (appState.currentNavIndex.clamp(0, 8)) {
         case 0:
@@ -2439,6 +2163,541 @@ class _PatientSearchBarState extends State<_PatientSearchBar> {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// Insurance Organization & Benefit Plans Setup Dialog for Insurance Agents
+class _InsuranceAgentSetupDialog extends StatefulWidget {
+  final AppState appState;
+  final String? initialCompany;
+  final List<String> initialPlans;
+
+  const _InsuranceAgentSetupDialog({
+    required this.appState,
+    this.initialCompany,
+    this.initialPlans = const [],
+  });
+
+  @override
+  State<_InsuranceAgentSetupDialog> createState() => _InsuranceAgentSetupDialogState();
+}
+
+class _InsuranceAgentSetupDialogState extends State<_InsuranceAgentSetupDialog> {
+  late String _selectedCompany;
+  late final Set<String> _selectedPlans;
+  late final Set<String> _selectedMedicines;
+  late final Set<String> _selectedHospitals;
+
+  final Map<String, List<String>> _companyPlansMap = {
+    'Blue Cross Blue Shield': [
+      'Blue Cross PPO Premier',
+      'Blue Cross Advantage Plus',
+      'Blue Cross Rx Comprehensive',
+      'Blue Care HMO Gold',
+    ],
+    'UnitedHealthcare (UHC)': [
+      'UHC Choice Plus Comprehensive',
+      'UHC Medicare Part D Standard',
+      'UHC Dual Complete (HMO-POS)',
+      'Optum Rx Preferred',
+    ],
+    'Medicare Part D (CMS)': [
+      'SilverScript Choice (PDP)',
+      'Medicare Advantage Part D Gold',
+      'WellCare Value Script (PDP)',
+      'Humana Premier Rx (PDP)',
+    ],
+    'Aetna Health': [
+      'Aetna Medicare Part D Value',
+      'Aetna Open Access PPO',
+      'Aetna Premier Rx Tier 1-5',
+    ],
+    'Cigna Healthcare': [
+      'Cigna Secure Rx (PDP)',
+      'Cigna Total Care Plus',
+      'Cigna Essential Rx Plan',
+    ],
+    'Humana Rx': [
+      'Humana Walmart Value Rx',
+      'Humana Gold Plus (HMO)',
+      'Humana Premier Part D',
+    ],
+    'Kaiser Permanente': [
+      'Kaiser Senior Advantage',
+      'Kaiser Permanente Deductible Plan',
+      'Kaiser Specialty Rx',
+    ],
+  };
+
+  final List<String> _availableMedicinesList = [
+    'Atorvastatin (Lipitor) 20mg',
+    'Metformin HCl 500mg',
+    'Lisinopril 10mg',
+    'Ozempic (Semaglutide) 2mg/3mL',
+    'Eliquis (Apixaban) 5mg',
+    'Levothyroxine 50mcg',
+    'Amlodipine Besylate 5mg',
+    'Omeprazole 20mg',
+    'Losartan Potassium 50mg',
+    'Jardiance (Empagliflozin) 10mg',
+    'Gabapentin 300mg',
+    'Hydrochlorothiazide 25mg',
+  ];
+
+  final List<String> _availableHospitalsList = [
+    'MetroHealth Medical Center (Cleveland, OH)',
+    'St. Jude Memorial Hospital (Fullerton, CA)',
+    'Johns Hopkins Hospital (Baltimore, MD)',
+    'Cleveland Clinic Main Campus (Cleveland, OH)',
+    'Duke University Hospital (Durham, NC)',
+    'Mayo Clinic Hospital (Rochester, MN)',
+    'Massachusetts General Hospital (Boston, MA)',
+    'Northwestern Memorial Hospital (Chicago, IL)',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialCompany != null &&
+        widget.initialCompany!.isNotEmpty &&
+        _companyPlansMap.containsKey(widget.initialCompany)) {
+      _selectedCompany = widget.initialCompany!;
+    } else {
+      _selectedCompany = 'Blue Cross Blue Shield';
+    }
+
+    if (widget.initialPlans.isNotEmpty) {
+      _selectedPlans = Set<String>.from(widget.initialPlans);
+    } else {
+      final defaultPlans = _companyPlansMap[_selectedCompany] ?? <String>['Comprehensive Rx Plan'];
+      _selectedPlans = Set<String>.from(defaultPlans.take(2));
+    }
+
+    _selectedMedicines = Set<String>.from(
+      widget.appState.currentUser.insuranceMedicines.isNotEmpty
+          ? widget.appState.currentUser.insuranceMedicines
+          : ['Atorvastatin (Lipitor) 20mg', 'Metformin HCl 500mg', 'Eliquis (Apixaban) 5mg'],
+    );
+
+    _selectedHospitals = Set<String>.from(
+      widget.appState.currentUser.insuranceHospitals.isNotEmpty
+          ? widget.appState.currentUser.insuranceHospitals
+          : ['MetroHealth Medical Center (Cleveland, OH)', 'Cleveland Clinic Main Campus (Cleveland, OH)'],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currentPlans = _companyPlansMap[_selectedCompany] ?? _companyPlansMap['Blue Cross Blue Shield']!;
+
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Container(
+        width: 620,
+        padding: const EdgeInsets.all(26),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1D4ED8).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(Icons.verified_user_rounded, color: Color(0xFF1D4ED8), size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Insurance Agency Portfolio Setup',
+                          style: AppFonts.googleSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Select your payer company, covered benefit plans, formulary medicines, and in-network hospitals.',
+                          style: AppFonts.googleSans(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 26),
+
+              // 1. Company Dropdown
+              Text(
+                '1. SELECT INSURANCE PAYER COMPANY',
+                style: AppFonts.googleSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedCompany,
+                    isExpanded: true,
+                    icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF1D4ED8)),
+                    style: AppFonts.googleSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textDark,
+                    ),
+                    items: _companyPlansMap.keys.map((c) {
+                      return DropdownMenuItem<String>(
+                        value: c,
+                        child: Text(c),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          _selectedCompany = val;
+                          _selectedPlans.clear();
+                          final defaults = _companyPlansMap[val];
+                          if (defaults != null && defaults.isNotEmpty) {
+                            _selectedPlans.addAll(defaults.take(2));
+                          }
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // 2. Plans Dropdown & Chips
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '2. BENEFIT PLANS MANAGED (${_selectedPlans.length} Selected)',
+                    style: AppFonts.googleSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF1E293B),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    hint: Text('Select plan to toggle on/off...', style: AppFonts.googleSans(fontSize: 12, color: const Color(0xFF94A3B8))),
+                    icon: const Icon(Icons.playlist_add_check_rounded, color: Color(0xFF1D4ED8), size: 18),
+                    items: currentPlans.map((p) {
+                      final isSelected = _selectedPlans.contains(p);
+                      return DropdownMenuItem<String>(
+                        value: p,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(p, style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w600)),
+                            Icon(
+                              isSelected ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
+                              size: 16,
+                              color: isSelected ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          if (_selectedPlans.contains(val)) {
+                            _selectedPlans.remove(val);
+                          } else {
+                            _selectedPlans.add(val);
+                          }
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ),
+              if (_selectedPlans.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: _selectedPlans.map((plan) {
+                    return Chip(
+                      label: Text(plan),
+                      backgroundColor: const Color(0xFFDBEAFE),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: const BorderSide(color: Color(0xFF3B82F6)),
+                      ),
+                      labelStyle: AppFonts.googleSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1E40AF),
+                      ),
+                      deleteIcon: const Icon(Icons.close_rounded, size: 14, color: Color(0xFF1E40AF)),
+                      onDeleted: () => setState(() => _selectedPlans.remove(plan)),
+                    );
+                  }).toList(),
+                ),
+              ],
+
+              const SizedBox(height: 16),
+
+              // 3. Medicines Dropdown & Chips
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '3. COVERED MEDICINES (${_selectedMedicines.length} Selected)',
+                    style: AppFonts.googleSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF1E293B),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    hint: Text('Select medicine to add/remove...', style: AppFonts.googleSans(fontSize: 12, color: const Color(0xFF94A3B8))),
+                    icon: const Icon(Icons.medication_rounded, color: Color(0xFF1D4ED8), size: 18),
+                    items: _availableMedicinesList.map((med) {
+                      final isSelected = _selectedMedicines.contains(med);
+                      return DropdownMenuItem<String>(
+                        value: med,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(med, style: AppFonts.googleSans(fontSize: 12, fontWeight: FontWeight.w600)),
+                            Icon(
+                              isSelected ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
+                              size: 16,
+                              color: isSelected ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          if (_selectedMedicines.contains(val)) {
+                            _selectedMedicines.remove(val);
+                          } else {
+                            _selectedMedicines.add(val);
+                          }
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ),
+              if (_selectedMedicines.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: _selectedMedicines.map((med) {
+                    return Chip(
+                      label: Text(med),
+                      backgroundColor: const Color(0xFFE0F2FE),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: const BorderSide(color: Color(0xFF38BDF8)),
+                      ),
+                      labelStyle: AppFonts.googleSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF0369A1),
+                      ),
+                      deleteIcon: const Icon(Icons.close_rounded, size: 14, color: Color(0xFF0369A1)),
+                      onDeleted: () => setState(() => _selectedMedicines.remove(med)),
+                    );
+                  }).toList(),
+                ),
+              ],
+
+              const SizedBox(height: 16),
+
+              // 4. Hospitals Dropdown & Chips
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '4. IN-NETWORK HOSPITALS (${_selectedHospitals.length} Selected)',
+                    style: AppFonts.googleSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF1E293B),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    hint: Text('Select hospital to add/remove...', style: AppFonts.googleSans(fontSize: 12, color: const Color(0xFF94A3B8))),
+                    icon: const Icon(Icons.local_hospital_rounded, color: Color(0xFF1D4ED8), size: 18),
+                    items: _availableHospitalsList.map((hosp) {
+                      final isSelected = _selectedHospitals.contains(hosp);
+                      return DropdownMenuItem<String>(
+                        value: hosp,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(child: Text(hosp, style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
+                            Icon(
+                              isSelected ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
+                              size: 16,
+                              color: isSelected ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          if (_selectedHospitals.contains(val)) {
+                            _selectedHospitals.remove(val);
+                          } else {
+                            _selectedHospitals.add(val);
+                          }
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ),
+              if (_selectedHospitals.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: _selectedHospitals.map((hosp) {
+                    return Chip(
+                      label: Text(hosp),
+                      backgroundColor: const Color(0xFFECFDF5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: const BorderSide(color: Color(0xFF34D399)),
+                      ),
+                      labelStyle: AppFonts.googleSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF047857),
+                      ),
+                      deleteIcon: const Icon(Icons.close_rounded, size: 14, color: Color(0xFF047857)),
+                      onDeleted: () => setState(() => _selectedHospitals.remove(hosp)),
+                    );
+                  }).toList(),
+                ),
+              ],
+
+              const SizedBox(height: 24),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      'Cancel',
+                      style: AppFonts.googleSans(fontWeight: FontWeight.w700, color: AppColors.textMuted),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: () {
+                      String finalCompany = _selectedCompany;
+                      List<String> finalPlans = _selectedPlans.toList();
+                      if (finalPlans.isEmpty) {
+                        finalPlans = ['Comprehensive Rx Plan'];
+                      }
+
+                      widget.appState.updateInsuranceAgentDetails(
+                        company: finalCompany,
+                        plans: finalPlans,
+                        medicines: _selectedMedicines.toList(),
+                        hospitals: _selectedHospitals.toList(),
+                      );
+
+                      Navigator.pop(context);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Insurance Portfolio Configured: $finalCompany (${finalPlans.length} Plans, ${_selectedMedicines.length} Drugs, ${_selectedHospitals.length} Hospitals)'),
+                          backgroundColor: const Color(0xFF1D4ED8),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1D4ED8),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text(
+                      'Save Agency Portfolio →',
+                      style: AppFonts.googleSans(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

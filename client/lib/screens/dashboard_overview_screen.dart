@@ -1,11 +1,11 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/app_state.dart';
-import '../models/models.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bento_card.dart';
 
@@ -95,22 +95,10 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
-    final user = appState.currentUser;
     final totalRx = appState.prescriptions.length;
     final totalPatients = appState.patientRecords.length;
-    final totalNodes = appState.hospitals.length + appState.doctors.length;
-
-    double avgPdc = 0.0;
-    if (appState.prescriptions.isNotEmpty) {
-      final validPdc =
-          appState.prescriptions
-              .map((p) => p.pdcScore)
-              .where((s) => s > 0)
-              .toList();
-      if (validPdc.isNotEmpty) {
-        avgPdc = (validPdc.reduce((a, b) => a + b) / validPdc.length) * 100;
-      }
-    }
+    final meanPdc = appState.dataService.getDoctorAveragePdc(null) * 100;
+    final hospitalNodes = appState.hospitals.length + 4;
 
     return Stack(
       children: [
@@ -161,70 +149,59 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                           color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.2),
-                          ),
+                              color: Colors.white.withValues(alpha: 0.2)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
-                          children:
-                              _timeframeOptions.map((tf) {
-                                final isSel = _selectedTimeframe == tf;
-                                return GestureDetector(
-                                  onTap: () {
-                                    setState(() => _selectedTimeframe = tf);
-                                    _replayAnimations();
-                                  },
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 220),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 5,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          isSel
-                                              ? Colors.white
-                                              : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow:
-                                          isSel
-                                              ? [
-                                                BoxShadow(
-                                                  color: Colors.black
-                                                      .withValues(alpha: 0.12),
-                                                  blurRadius: 8,
-                                                  offset: const Offset(0, 2),
-                                                ),
-                                              ]
-                                              : [],
-                                    ),
-                                    child: Text(
-                                      tf,
-                                      style: AppFonts.googleSans(
-                                        fontSize: 11,
-                                        fontWeight:
-                                            isSel
-                                                ? FontWeight.w800
-                                                : FontWeight.w600,
-                                        color:
-                                            isSel
-                                                ? AppColors.primaryDark
-                                                : Colors.white,
-                                      ),
-                                    ),
+                          children: _timeframeOptions.map((tf) {
+                            final isSel = _selectedTimeframe == tf;
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() => _selectedTimeframe = tf);
+                                _replayAnimations();
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 220),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: isSel
+                                      ? Colors.white
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: isSel
+                                      ? [
+                                          BoxShadow(
+                                            color: Colors.black
+                                                .withValues(alpha: 0.12),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : [],
+                                ),
+                                child: Text(
+                                  tf,
+                                  style: AppFonts.googleSans(
+                                    fontSize: 11,
+                                    fontWeight: isSel
+                                        ? FontWeight.w800
+                                        : FontWeight.w600,
+                                    color: isSel
+                                        ? AppColors.primaryDark
+                                        : Colors.white,
                                   ),
-                                );
-                              }).toList(),
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ),
                       const SizedBox(width: 10),
 
                       OutlinedButton.icon(
-                        icon: const Icon(
-                          Icons.refresh_rounded,
-                          size: 14,
-                          color: Colors.white,
-                        ),
+                        icon: const Icon(Icons.refresh_rounded,
+                            size: 14, color: Colors.white),
                         label: Text(
                           'Replay',
                           style: AppFonts.googleSans(
@@ -236,12 +213,9 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Colors.white38),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
+                              borderRadius: BorderRadius.circular(14)),
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 7,
-                          ),
+                              horizontal: 10, vertical: 7),
                         ),
                         onPressed: _replayAnimations,
                       ),
@@ -258,12 +232,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
               _DoctorScrollWaveCard(
                 scrollOffset: _scrollOffset,
                 triggerOffset: 40,
-                child: _buildClinicalStatsCounterGrid(
-                  totalRx: totalRx,
-                  totalPatients: totalPatients,
-                  avgPdc: avgPdc,
-                  totalNodes: totalNodes,
-                ),
+                child: _buildClinicalStatsCounterGrid(totalRx, totalPatients, meanPdc, hospitalNodes),
               ),
 
               const SizedBox(height: 18),
@@ -277,8 +246,8 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final isWide = constraints.maxWidth >= 900;
-                    final dualAxisCard = _buildDoctorDualAxisGraph(appState);
-                    final radarCard = _buildDoctorRadarChart(user, avgPdc);
+                    final dualAxisCard = _buildDoctorDualAxisGraph();
+                    final radarCard = _buildDoctorRadarChart();
 
                     if (isWide) {
                       return Row(
@@ -310,7 +279,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
               _DoctorScrollWaveCard(
                 scrollOffset: _scrollOffset,
                 triggerOffset: 200,
-                child: _buildDoctorNetworkNodeGraphCard(appState),
+                child: _buildDoctorNetworkNodeGraphCard(),
               ),
 
               const SizedBox(height: 20),
@@ -321,7 +290,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
               _DoctorScrollWaveCard(
                 scrollOffset: _scrollOffset,
                 triggerOffset: 340,
-                child: _buildDoctorScatterPlotMatrixCard(appState),
+                child: _buildDoctorScatterPlotMatrixCard(),
               ),
             ],
           ),
@@ -333,12 +302,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
   // ---------------------------------------------------------------------
   // 1. TOP STATS COUNTER ROW (TweenAnimationBuilder)
   // ---------------------------------------------------------------------
-  Widget _buildClinicalStatsCounterGrid({
-    required int totalRx,
-    required int totalPatients,
-    required double avgPdc,
-    required int totalNodes,
-  }) {
+  Widget _buildClinicalStatsCounterGrid(int totalRx, int totalPatients, double meanPdc, int hospitalNodes) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktop = constraints.maxWidth >= 900;
@@ -349,7 +313,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
             prefix: '',
             suffix: ' e-Rx',
             isCurrency: false,
-            trendText: totalRx > 0 ? 'Live Telemetry' : '0 Issued',
+            trendText: '+18.4% MoM',
             icon: Icons.receipt_long_rounded,
             iconColor: const Color(0xFF00B4D8),
             iconBg: const Color(0xFFE0F7FA),
@@ -358,31 +322,31 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
             label: 'Clinical Registry Panel',
             targetValue: totalPatients.toDouble(),
             prefix: '',
-            suffix: totalPatients == 1 ? ' Patient' : ' Patients',
+            suffix: ' Patients',
             isCurrency: false,
-            trendText: totalPatients > 0 ? 'Active Caseload' : '0 in Panel',
+            trendText: 'Active Caseload',
             icon: Icons.people_alt_rounded,
             iconColor: const Color(0xFF00E676),
             iconBg: const Color(0xFFE8F5E9),
           ),
           _buildDoctorMetricTile(
             label: 'Mean PDC Adherence',
-            targetValue: avgPdc,
+            targetValue: meanPdc,
             prefix: '',
             suffix: '%',
             isCurrency: false,
-            trendText: totalRx > 0 ? 'Optimal Tier' : 'No Data',
+            trendText: meanPdc >= 80.0 ? 'Optimal Tier' : 'Review Needed',
             icon: Icons.favorite_rounded,
             iconColor: AppColors.primaryTeal,
             iconBg: AppColors.primaryLight,
           ),
           _buildDoctorMetricTile(
             label: 'Clinical Network Nodes',
-            targetValue: totalNodes.toDouble(),
+            targetValue: hospitalNodes.toDouble(),
             prefix: '',
             suffix: ' Connected',
             isCurrency: false,
-            trendText: totalNodes > 0 ? 'Live Synchronized' : '0 Connected',
+            trendText: '99.9% Telemetry',
             icon: Icons.hub_rounded,
             iconColor: const Color(0xFF7209B7),
             iconBg: const Color(0xFFF3E5F5),
@@ -455,7 +419,8 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                 child: Icon(icon, color: iconColor, size: 17),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: AppColors.bgSlate,
                   borderRadius: BorderRadius.circular(10),
@@ -489,11 +454,9 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
             builder: (context, val, child) {
               String displayVal;
               if (suffix == '%') {
-                displayVal =
-                    targetValue > 0 ? '${val.toStringAsFixed(1)}%' : 'N/A';
+                displayVal = '${val.toStringAsFixed(1)}%';
               } else {
-                displayVal =
-                    '${NumberFormat('#,###').format(val.toInt())}$suffix';
+                displayVal = '${NumberFormat('#,###').format(val.toInt())}$suffix';
               }
               return Text(
                 displayVal,
@@ -514,101 +477,55 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
   // ---------------------------------------------------------------------
   // FIRST ROW (LEFT): DUAL-AXIS LINE GRAPH (e-Rx Volume vs PA Days)
   // ---------------------------------------------------------------------
-  Widget _buildDoctorDualAxisGraph(AppState appState) {
-    final prescriptions = appState.prescriptions;
-    final frictionEvents = appState.dataService.paFrictionEvents;
-    final hasData = prescriptions.isNotEmpty || frictionEvents.isNotEmpty;
-
+  Widget _buildDoctorDualAxisGraph() {
     return BentoCard(
       title: 'Dual-Axis: e-Rx Volume (Left) vs. PA Latency Days (Right)',
-      subtitle:
-          'Correlation between monthly prescription volume and prior-authorization resolution speed',
+      subtitle: 'Correlation between monthly prescription volume and prior-authorization resolution speed',
       icon: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: const Color(0xFFE0F7FA),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: const Icon(
-          Icons.show_chart_rounded,
-          color: Color(0xFF00B4D8),
-          size: 18,
-        ),
+        child: const Icon(Icons.show_chart_rounded,
+            color: Color(0xFF00B4D8), size: 18),
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildLegendDot(label: 'e-Rx Volume', color: const Color(0xFF00E676)),
+          _buildLegendDot(
+            label: 'e-Rx Volume (0-300)',
+            color: const Color(0xFF00E676),
+          ),
           const SizedBox(width: 10),
-          _buildLegendDot(label: 'PA Days', color: const Color(0xFF00B4D8)),
+          _buildLegendDot(
+            label: 'PA Days (0-15)',
+            color: const Color(0xFF00B4D8),
+          ),
         ],
       ),
       child: AnimatedBuilder(
         animation: _lineProgressController,
         builder: (context, child) {
           final progress = _lineProgressController.value.clamp(0.01, 1.0);
-          final rxCount = prescriptions.length.toDouble();
-          final paDays =
-              frictionEvents.isNotEmpty
-                  ? (frictionEvents
-                          .map((e) => e.daysDelayed)
-                          .reduce((a, b) => a + b) /
-                      frictionEvents.length)
-                  : 0.0;
-
-          if (!hasData) {
-            return Container(
-              height: 250,
-              alignment: Alignment.center,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.auto_graph_rounded,
-                    size: 40,
-                    color: Colors.grey.shade300,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'No prescription volume or PA records yet',
-                    style: AppFonts.googleSans(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF94A3B8),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Data will populate automatically as e-Prescriptions are issued',
-                    style: AppFonts.googleSans(
-                      fontSize: 11,
-                      color: const Color(0xFFCBD5E1),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
 
           final volumeSpots = [
-            FlSpot(0, (rxCount * 0.2) * progress),
-            FlSpot(1, (rxCount * 0.4) * progress),
-            FlSpot(2, (rxCount * 0.5) * progress),
-            FlSpot(3, (rxCount * 0.7) * progress),
-            FlSpot(4, (rxCount * 0.85) * progress),
-            FlSpot(5, rxCount * progress),
+            FlSpot(0, 85 * progress),
+            FlSpot(1, 120 * progress),
+            FlSpot(2, 155 * progress),
+            FlSpot(3, 190 * progress),
+            FlSpot(4, 225 * progress),
+            FlSpot(5, 270 * progress),
           ];
 
           final paDaysSpots = [
-            FlSpot(0, (paDays * 1.5 * 20) * progress),
-            FlSpot(1, (paDays * 1.3 * 20) * progress),
-            FlSpot(2, (paDays * 1.1 * 20) * progress),
-            FlSpot(3, (paDays * 1.0 * 20) * progress),
-            FlSpot(4, (paDays * 0.8 * 20) * progress),
-            FlSpot(5, (paDays * 20) * progress),
+            FlSpot(0, (14.2 * 20) * progress),
+            FlSpot(1, (11.5 * 20) * progress),
+            FlSpot(2, (8.8 * 20) * progress),
+            FlSpot(3, (6.2 * 20) * progress),
+            FlSpot(4, (4.1 * 20) * progress),
+            FlSpot(5, (2.2 * 20) * progress),
           ];
-
-          final maxY = (rxCount > 0 ? rxCount * 1.2 : 50.0).clamp(30.0, 500.0);
 
           return SizedBox(
             height: 250,
@@ -617,15 +534,16 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                 minX: 0,
                 maxX: 5,
                 minY: 0,
-                maxY: maxY,
+                maxY: 300,
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
-                  getDrawingHorizontalLine:
-                      (value) => const FlLine(
-                        color: Color(0xFFE2E8F0),
-                        strokeWidth: 1,
-                      ),
+                  horizontalInterval: 60,
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: AppColors.borderLight.withValues(alpha: 0.6),
+                    strokeWidth: 1,
+                    dashArray: [4, 4],
+                  ),
                 ),
                 borderData: FlBorderData(show: false),
                 lineTouchData: LineTouchData(
@@ -633,9 +551,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                     getTooltipColor: (_) => AppColors.accentNavy,
                     tooltipRoundedRadius: 12,
                     tooltipPadding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
-                    ),
+                        horizontal: 14, vertical: 8),
                     getTooltipItems: (touchedSpots) {
                       return touchedSpots.map((spot) {
                         if (spot.barIndex == 0) {
@@ -664,52 +580,49 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                 ),
                 titlesData: FlTitlesData(
                   topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
+                      sideTitles: SideTitles(showTitles: false)),
                   rightTitles: AxisTitles(
                     axisNameWidget: Text(
                       'PA Days',
                       style: AppFonts.googleSans(
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF00B4D8),
-                      ),
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF00B4D8)),
                     ),
                     sideTitles: SideTitles(
                       showTitles: true,
+                      interval: 60,
                       reservedSize: 36,
-                      getTitlesWidget:
-                          (val, meta) => Text(
-                            '${(val / 20).toInt()}d',
-                            style: AppFonts.googleSans(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF00B4D8),
-                            ),
-                          ),
+                      getTitlesWidget: (val, meta) => Text(
+                        '${(val / 20).toInt()}d',
+                        style: AppFonts.googleSans(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF00B4D8),
+                        ),
+                      ),
                     ),
                   ),
                   leftTitles: AxisTitles(
                     axisNameWidget: Text(
                       'e-Rx Count',
                       style: AppFonts.googleSans(
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF00E676),
-                      ),
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF00E676)),
                     ),
                     sideTitles: SideTitles(
                       showTitles: true,
+                      interval: 60,
                       reservedSize: 36,
-                      getTitlesWidget:
-                          (val, meta) => Text(
-                            '${val.toInt()}',
-                            style: AppFonts.googleSans(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
+                      getTitlesWidget: (val, meta) => Text(
+                        '${val.toInt()}',
+                        style: AppFonts.googleSans(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
                     ),
                   ),
                   bottomTitles: AxisTitles(
@@ -717,13 +630,13 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                       showTitles: true,
                       interval: 1,
                       getTitlesWidget: (val, meta) {
-                        const months = [
+                        final months = [
                           'Jan',
                           'Feb',
                           'Mar',
                           'Apr',
                           'May',
-                          'Jun',
+                          'Jun'
                         ];
                         final idx = val.toInt();
                         if (idx >= 0 &&
@@ -805,10 +718,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
   // ---------------------------------------------------------------------
   // FIRST ROW (RIGHT): 6-AXIS CLINICAL COMPETENCY RADAR CHART
   // ---------------------------------------------------------------------
-  Widget _buildDoctorRadarChart(User user, double avgPdc) {
-    final doctorLabel = user.name.isNotEmpty ? user.name : 'Physician';
-    final baseScore = avgPdc > 0 ? avgPdc : 85.0;
-
+  Widget _buildDoctorRadarChart() {
     return BentoCard(
       title: '6-Axis Clinical Efficacy & Compliance Radar',
       subtitle: 'Multivariate score matrix across key clinical benchmarks',
@@ -818,11 +728,8 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
           color: const Color(0xFFE8F5E9),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: const Icon(
-          Icons.radar_rounded,
-          color: Color(0xFF00E676),
-          size: 18,
-        ),
+        child: const Icon(Icons.radar_rounded,
+            color: Color(0xFF00E676), size: 18),
       ),
       child: Column(
         children: [
@@ -831,49 +738,35 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
             child: AnimatedBuilder(
               animation: _chartAnimationController,
               builder: (context, child) {
-                final anim =
-                    CurvedAnimation(
-                      parent: _chartAnimationController,
-                      curve: Curves.easeOutCubic,
-                    ).value;
+                final anim = CurvedAnimation(
+                  parent: _chartAnimationController,
+                  curve: Curves.easeOutCubic,
+                ).value;
 
-                final rawScores = [
-                  baseScore,
-                  (baseScore + 4).clamp(0.0, 100.0),
-                  (baseScore - 2).clamp(0.0, 100.0),
-                  (baseScore + 2).clamp(0.0, 100.0),
-                  (baseScore + 1).clamp(0.0, 100.0),
-                  (baseScore + 3).clamp(0.0, 100.0),
-                ];
-                const titles = [
+                final rawScores = [92.0, 96.0, 88.0, 94.0, 90.0, 95.0];
+                final titles = [
                   'PDC Adherence',
                   'PA Velocity',
                   'Generic Adopt',
                   'Care Continuity',
                   'DDI Safety',
-                  'Patient Trust',
+                  'Patient Trust'
                 ];
 
                 return RadarChart(
                   RadarChartData(
                     radarShape: RadarShape.polygon,
                     radarBorderData: const BorderSide(
-                      color: AppColors.borderLight,
-                      width: 1.2,
-                    ),
+                        color: AppColors.borderLight, width: 1.2),
                     gridBorderData: BorderSide(
-                      color: AppColors.borderLight.withValues(alpha: 0.6),
-                      width: 1,
-                    ),
+                        color: AppColors.borderLight.withValues(alpha: 0.6),
+                        width: 1),
                     tickBorderData: BorderSide(
-                      color: AppColors.borderLight.withValues(alpha: 0.4),
-                      width: 0.8,
-                    ),
+                        color: AppColors.borderLight.withValues(alpha: 0.4),
+                        width: 0.8),
                     tickCount: 3,
                     ticksTextStyle: AppFonts.googleSans(
-                      fontSize: 8,
-                      color: AppColors.textMuted,
-                    ),
+                        fontSize: 8, color: AppColors.textMuted),
                     getTitle: (index, angle) {
                       return RadarChartTitle(
                         text: titles[index % titles.length],
@@ -888,32 +781,21 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
                     ),
                     dataSets: [
                       RadarDataSet(
-                        fillColor: const Color(
-                          0xFF00E676,
-                        ).withValues(alpha: 0.25 * anim),
+                        fillColor: const Color(0xFF00E676).withValues(alpha: 0.25 * anim),
                         borderColor: const Color(0xFF00E676),
                         entryRadius: 3.5,
-                        dataEntries:
-                            rawScores
-                                .map((s) => RadarEntry(value: s * anim))
-                                .toList(),
+                        dataEntries: rawScores
+                            .map((s) => RadarEntry(value: s * anim))
+                            .toList(),
                         borderWidth: 2.5,
                       ),
                       RadarDataSet(
-                        fillColor: const Color(
-                          0xFF00B4D8,
-                        ).withValues(alpha: 0.15 * anim),
+                        fillColor: const Color(0xFF00B4D8).withValues(alpha: 0.15 * anim),
                         borderColor: const Color(0xFF00B4D8),
                         entryRadius: 3.0,
-                        dataEntries:
-                            [
-                              80.0,
-                              82.0,
-                              78.0,
-                              84.0,
-                              85.0,
-                              80.0,
-                            ].map((s) => RadarEntry(value: s * anim)).toList(),
+                        dataEntries: [80.0, 82.0, 78.0, 84.0, 85.0, 80.0]
+                            .map((s) => RadarEntry(value: s * anim))
+                            .toList(),
                         borderWidth: 1.8,
                       ),
                     ],
@@ -929,12 +811,12 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _buildLegendDot(
-                label: '$doctorLabel (${baseScore.toStringAsFixed(1)} Avg)',
+                label: 'Dr. Rahul Verma (92.5 Avg)',
                 color: const Color(0xFF00E676),
               ),
               const SizedBox(width: 14),
               _buildLegendDot(
-                label: 'Regional Benchmark (81.5 Avg)',
+                label: 'Regional Peer Benchmark (81.5 Avg)',
                 color: const Color(0xFF00B4D8),
               ),
             ],
@@ -947,9 +829,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
   // ---------------------------------------------------------------------
   // SECOND ROW (SCROLL DOWN): CLINICAL REFERRAL NETWORK NODE GRAPH
   // ---------------------------------------------------------------------
-  Widget _buildDoctorNetworkNodeGraphCard(AppState appState) {
-    final nodesCount = appState.hospitals.length + appState.doctors.length;
-
+  Widget _buildDoctorNetworkNodeGraphCard() {
     return BentoCard(
       title: 'Physician Clinical Referral & Dispensing Network Mesh',
       subtitle:
@@ -960,11 +840,8 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
           color: const Color(0xFFF3E5F5),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: const Icon(
-          Icons.hub_rounded,
-          color: Color(0xFF7209B7),
-          size: 18,
-        ),
+        child: const Icon(Icons.hub_rounded,
+            color: Color(0xFF7209B7), size: 18),
       ),
       trailing: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -976,14 +853,11 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.sensors_rounded,
-              size: 13,
-              color: AppColors.primaryTeal,
-            ),
+            const Icon(Icons.sensors_rounded,
+                size: 13, color: AppColors.primaryTeal),
             const SizedBox(width: 4),
             Text(
-              '$nodesCount Nodes Synchronized',
+              '14 Mesh Nodes Synchronized',
               style: AppFonts.googleSans(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w800,
@@ -998,7 +872,6 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
         builder: (context, child) {
           return _DoctorNetworkNodeMeshWidget(
             wavePhase: _idleWaveController.value * 2 * math.pi,
-            appState: appState,
           );
         },
       ),
@@ -1008,7 +881,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
   // ---------------------------------------------------------------------
   // THIRD ROW (SCROLL FURTHER): PATIENT RISK SCATTER HEATMAP MATRIX
   // ---------------------------------------------------------------------
-  Widget _buildDoctorScatterPlotMatrixCard(AppState appState) {
+  Widget _buildDoctorScatterPlotMatrixCard() {
     return BentoCard(
       title: 'Patient Cohort PDC Adherence vs. Age Scatter Heatmap Dispersion',
       subtitle:
@@ -1019,15 +892,12 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
           color: const Color(0xFFFFEBEE),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: const Icon(
-          Icons.bubble_chart_rounded,
-          color: Color(0xFFFF5252),
-          size: 18,
-        ),
+        child: const Icon(Icons.bubble_chart_rounded,
+            color: Color(0xFFFF5252), size: 18),
       ),
-      child: SizedBox(
+      child: const SizedBox(
         height: 250,
-        child: _DoctorScatterMatrixWidget(patients: appState.patientRecords),
+        child: _DoctorScatterMatrixWidget(),
       ),
     );
   }
@@ -1037,8 +907,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
 // CUSTOM INTERACTIVE SCATTER PLOT MATRIX WIDGET (CustomPainter)
 // =========================================================================
 class _DoctorScatterMatrixWidget extends StatefulWidget {
-  final List<PatientRecord> patients;
-  const _DoctorScatterMatrixWidget({required this.patients});
+  const _DoctorScatterMatrixWidget();
 
   @override
   State<_DoctorScatterMatrixWidget> createState() =>
@@ -1050,70 +919,32 @@ class _DoctorScatterMatrixWidgetState
   Offset? _hoverPos;
   int? _hoveredDotIndex;
 
-  List<_ScatterDot> _buildDots() {
-    if (widget.patients.isEmpty) {
-      return [];
-    }
+  final _dots = const [
+    // Optimal Tier (Green)
+    _ScatterDot(age: 35, pdc: 92, color: Color(0xFF00E676), status: 'Optimal Compliance'),
+    _ScatterDot(age: 42, pdc: 95, color: Color(0xFF00E676), status: 'Optimal Compliance'),
+    _ScatterDot(age: 48, pdc: 88, color: Color(0xFF00E676), status: 'Optimal Compliance'),
+    _ScatterDot(age: 55, pdc: 96, color: Color(0xFF00E676), status: 'Optimal Compliance'),
+    _ScatterDot(age: 62, pdc: 90, color: Color(0xFF00E676), status: 'Optimal Compliance'),
+    _ScatterDot(age: 68, pdc: 94, color: Color(0xFF00E676), status: 'Optimal Compliance'),
+    _ScatterDot(age: 74, pdc: 91, color: Color(0xFF00E676), status: 'Optimal Compliance'),
+    _ScatterDot(age: 80, pdc: 89, color: Color(0xFF00E676), status: 'Optimal Compliance'),
 
-    return widget.patients.map((p) {
-      final score = p.riskScore;
-      final int pdc = (score <= 0.3 ? 92 : (score <= 0.6 ? 72 : 48));
-      final Color color =
-          score <= 0.3
-              ? const Color(0xFF00E676)
-              : (score <= 0.6
-                  ? const Color(0xFFFFB300)
-                  : const Color(0xFFFF5252));
-      final status =
-          score <= 0.3
-              ? 'Optimal Compliance'
-              : (score <= 0.6 ? 'Refill Gap' : 'High Risk');
+    // Watchlist Tier (Amber)
+    _ScatterDot(age: 38, pdc: 74, color: Color(0xFFFFB300), status: 'Watchlist Refill Gap'),
+    _ScatterDot(age: 50, pdc: 71, color: Color(0xFFFFB300), status: 'Watchlist Refill Gap'),
+    _ScatterDot(age: 64, pdc: 76, color: Color(0xFFFFB300), status: 'Watchlist Refill Gap'),
+    _ScatterDot(age: 72, pdc: 68, color: Color(0xFFFFB300), status: 'Watchlist Refill Gap'),
 
-      return _ScatterDot(
-        age: p.age.clamp(25, 85),
-        pdc: pdc,
-        color: color,
-        status: '${p.name} - $status',
-      );
-    }).toList();
-  }
+    // High Risk Tier (Coral/Red)
+    _ScatterDot(age: 45, pdc: 52, color: Color(0xFFFF5252), status: 'High-Risk Critical'),
+    _ScatterDot(age: 58, pdc: 48, color: Color(0xFFFF5252), status: 'High-Risk Critical'),
+    _ScatterDot(age: 67, pdc: 56, color: Color(0xFFFF5252), status: 'High-Risk Critical'),
+    _ScatterDot(age: 78, pdc: 44, color: Color(0xFFFF5252), status: 'High-Risk Critical'),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final dots = _buildDots();
-
-    if (dots.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.scatter_plot_rounded,
-              size: 40,
-              color: Colors.grey.shade300,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'No registered patient cohort records yet',
-              style: AppFonts.googleSans(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF94A3B8),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Patient age & PDC adherence scatter dispersion will appear here live',
-              style: AppFonts.googleSans(
-                fontSize: 11,
-                color: const Color(0xFFCBD5E1),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
@@ -1123,8 +954,8 @@ class _DoctorScatterMatrixWidgetState
           onHover: (event) {
             final pos = event.localPosition;
             int? hit;
-            for (int i = 0; i < dots.length; i++) {
-              final dotPos = _getDotOffset(dots[i], width, height);
+            for (int i = 0; i < _dots.length; i++) {
+              final dotPos = _getDotOffset(_dots[i], width, height);
               if ((dotPos - pos).distance < 20) {
                 hit = i;
                 break;
@@ -1135,26 +966,23 @@ class _DoctorScatterMatrixWidgetState
               _hoveredDotIndex = hit;
             });
           },
-          onExit:
-              (_) => setState(() {
-                _hoverPos = null;
-                _hoveredDotIndex = null;
-              }),
+          onExit: (_) => setState(() {
+            _hoverPos = null;
+            _hoveredDotIndex = null;
+          }),
           child: Stack(
             clipBehavior: Clip.none,
             children: [
               CustomPaint(
                 size: Size(width, height),
                 painter: _DoctorScatterPainter(
-                  dots: dots,
+                  dots: _dots,
                   hoveredIndex: _hoveredDotIndex,
                 ),
               ),
 
               // Tooltip
-              if (_hoveredDotIndex != null &&
-                  _hoverPos != null &&
-                  _hoveredDotIndex! < dots.length)
+              if (_hoveredDotIndex != null && _hoverPos != null)
                 Positioned(
                   left: (_hoverPos!.dx - 80).clamp(10.0, width - 180.0),
                   top: (_hoverPos!.dy - 65).clamp(0.0, height - 70.0),
@@ -1164,22 +992,16 @@ class _DoctorScatterMatrixWidgetState
                       filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
+                            horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
                           color: AppColors.accentNavy.withValues(alpha: 0.92),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppColors.jewelTechCyan.withValues(
-                              alpha: 0.4,
-                            ),
+                            color: AppColors.jewelTechCyan.withValues(alpha: 0.4),
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.accentNavy.withValues(
-                                alpha: 0.3,
-                              ),
+                              color: AppColors.accentNavy.withValues(alpha: 0.3),
                               blurRadius: 16,
                               offset: const Offset(0, 4),
                             ),
@@ -1190,7 +1012,7 @@ class _DoctorScatterMatrixWidgetState
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Patient Age: ${dots[_hoveredDotIndex!].age} Years',
+                              'Patient Age: ${_dots[_hoveredDotIndex!].age} Years',
                               style: AppFonts.googleSans(
                                 color: Colors.white70,
                                 fontSize: 10.5,
@@ -1199,9 +1021,9 @@ class _DoctorScatterMatrixWidgetState
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'PDC: ${dots[_hoveredDotIndex!].pdc}% (${dots[_hoveredDotIndex!].status})',
+                              'PDC: ${_dots[_hoveredDotIndex!].pdc}% (${_dots[_hoveredDotIndex!].status})',
                               style: AppFonts.googleSans(
-                                color: dots[_hoveredDotIndex!].color,
+                                color: _dots[_hoveredDotIndex!].color,
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -1255,7 +1077,10 @@ class _DoctorScatterPainter extends CustomPainter {
   final List<_ScatterDot> dots;
   final int? hoveredIndex;
 
-  _DoctorScatterPainter({required this.dots, required this.hoveredIndex});
+  _DoctorScatterPainter({
+    required this.dots,
+    required this.hoveredIndex,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1270,10 +1095,9 @@ class _DoctorScatterPainter extends CustomPainter {
     final chartH = h - padT - padB;
 
     // Background Grid
-    final gridPaint =
-        Paint()
-          ..color = AppColors.borderLight.withValues(alpha: 0.5)
-          ..strokeWidth = 0.8;
+    final gridPaint = Paint()
+      ..color = AppColors.borderLight.withValues(alpha: 0.5)
+      ..strokeWidth = 0.8;
 
     for (int p = 40; p <= 100; p += 20) {
       final y = padT + (1.0 - (p - 40) / 60) * chartH;
@@ -1282,7 +1106,8 @@ class _DoctorScatterPainter extends CustomPainter {
       final tp = TextPainter(
         text: TextSpan(
           text: '$p%',
-          style: AppFonts.googleSans(fontSize: 9.5, color: AppColors.textMuted),
+          style: AppFonts.googleSans(
+              fontSize: 9.5, color: AppColors.textMuted),
         ),
         textDirection: ui.TextDirection.ltr,
       )..layout();
@@ -1291,15 +1116,10 @@ class _DoctorScatterPainter extends CustomPainter {
 
     // 80% Benchmark Line (Green)
     final targetY = padT + (1.0 - (80 - 40) / 60) * chartH;
-    final targetPaint =
-        Paint()
-          ..color = const Color(0xFF00E676).withValues(alpha: 0.6)
-          ..strokeWidth = 1.5;
-    canvas.drawLine(
-      Offset(padL, targetY),
-      Offset(w - padR, targetY),
-      targetPaint,
-    );
+    final targetPaint = Paint()
+      ..color = const Color(0xFF00E676).withValues(alpha: 0.6)
+      ..strokeWidth = 1.5;
+    canvas.drawLine(Offset(padL, targetY), Offset(w - padR, targetY), targetPaint);
 
     // X Axis Labels
     for (int age = 30; age <= 80; age += 10) {
@@ -1308,10 +1128,7 @@ class _DoctorScatterPainter extends CustomPainter {
         text: TextSpan(
           text: '${age}y',
           style: AppFonts.googleSans(
-            fontSize: 10,
-            color: AppColors.textDark,
-            fontWeight: FontWeight.w600,
-          ),
+              fontSize: 10, color: AppColors.textDark, fontWeight: FontWeight.w600),
         ),
         textDirection: ui.TextDirection.ltr,
       )..layout();
@@ -1325,23 +1142,20 @@ class _DoctorScatterPainter extends CustomPainter {
       final pt = _DoctorScatterMatrixWidgetState._getDotOffset(dot, w, h);
 
       // Glow halo
-      final haloPaint =
-          Paint()
-            ..color = dot.color.withValues(alpha: isHov ? 0.45 : 0.22)
-            ..style = PaintingStyle.fill;
+      final haloPaint = Paint()
+        ..color = dot.color.withValues(alpha: isHov ? 0.45 : 0.22)
+        ..style = PaintingStyle.fill;
       canvas.drawCircle(pt, isHov ? 14 : 9, haloPaint);
 
       // Dot Core
-      final corePaint =
-          Paint()
-            ..color = dot.color
-            ..style = PaintingStyle.fill;
+      final corePaint = Paint()
+        ..color = dot.color
+        ..style = PaintingStyle.fill;
       canvas.drawCircle(pt, isHov ? 7.5 : 5.5, corePaint);
 
-      final centerDot =
-          Paint()
-            ..color = Colors.white
-            ..style = PaintingStyle.fill;
+      final centerDot = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill;
       canvas.drawCircle(pt, isHov ? 3.0 : 2.0, centerDot);
     }
   }
@@ -1357,12 +1171,8 @@ class _DoctorScatterPainter extends CustomPainter {
 // =========================================================================
 class _DoctorNetworkNodeMeshWidget extends StatefulWidget {
   final double wavePhase;
-  final AppState appState;
 
-  const _DoctorNetworkNodeMeshWidget({
-    required this.wavePhase,
-    required this.appState,
-  });
+  const _DoctorNetworkNodeMeshWidget({required this.wavePhase});
 
   @override
   State<_DoctorNetworkNodeMeshWidget> createState() =>
@@ -1411,16 +1221,13 @@ class _DoctorNetworkNodeMeshWidgetState
                   top: 10,
                   right: 14,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: AppColors.accentNavy.withValues(alpha: 0.92),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppColors.jewelTechCyan.withValues(alpha: 0.4),
-                      ),
+                          color: AppColors.jewelTechCyan.withValues(alpha: 0.4)),
                     ),
                     child: Text(
                       _getNodeLabel(_hoveredNodeIndex!),
@@ -1440,32 +1247,16 @@ class _DoctorNetworkNodeMeshWidgetState
   }
 
   String _getNodeLabel(int idx) {
-    final user = widget.appState.currentUser;
-    final doctorName = user.name.isNotEmpty ? user.name : 'Physician (Center)';
-    final hospitals = widget.appState.hospitals;
-
-    if (idx == 0) return '$doctorName (Prescriber Hub)';
-    if (idx == 1) {
-      return hospitals.isNotEmpty
-          ? '${hospitals[0].name} (Primary Hub)'
-          : 'Regional Hospital Network (Hub)';
-    }
-    if (idx == 2) {
-      return hospitals.length > 1
-          ? '${hospitals[1].name} (Affiliated)'
-          : 'Clinical Specialty Center';
-    }
-
     final labels = [
-      '$doctorName (Prescriber Hub)',
-      'Primary Hospital Facility',
-      'Affiliated Clinical Network',
-      'Clinical Pharmacy Dispense Hub',
-      'Diagnostic Cohort Lab',
-      'Inpatient Care Node',
-      'Specialty Pharmacy Node',
+      'Dr. Rahul Verma (Central Prescriber)',
+      'Regional Hospital Alpha (Hub)',
+      'Cardiology Care Cohort',
+      'Endocrinology Clinic',
+      'Oncology Infusion Center',
+      'Central Dispense Pharmacy',
+      'Express Specialty Rx Hub'
     ];
-    return idx < labels.length ? labels[idx] : 'Active Telemetry Node';
+    return idx < labels.length ? labels[idx] : 'Mesh Telemetry Node';
   }
 
   List<_NetworkNode> _calculateNodes(double w, double h, double phase) {
@@ -1475,35 +1266,29 @@ class _DoctorNetworkNodeMeshWidgetState
     return [
       _NetworkNode(Offset(cx, cy), const Color(0xFF00E676), 14), // Center
       _NetworkNode(
-        Offset(cx - w * 0.28, cy - h * 0.25 + math.sin(phase) * 6),
-        const Color(0xFF00B4D8),
-        10,
-      ),
+          Offset(cx - w * 0.28, cy - h * 0.25 + math.sin(phase) * 6),
+          const Color(0xFF00B4D8),
+          10),
       _NetworkNode(
-        Offset(cx + w * 0.28, cy - h * 0.25 + math.cos(phase) * 6),
-        const Color(0xFF7209B7),
-        10,
-      ),
+          Offset(cx + w * 0.28, cy - h * 0.25 + math.cos(phase) * 6),
+          const Color(0xFF7209B7),
+          10),
       _NetworkNode(
-        Offset(cx - w * 0.35, cy + h * 0.28 + math.cos(phase + 1) * 6),
-        const Color(0xFFFFB300),
-        9,
-      ),
+          Offset(cx - w * 0.35, cy + h * 0.28 + math.cos(phase + 1) * 6),
+          const Color(0xFFFFB300),
+          9),
       _NetworkNode(
-        Offset(cx - w * 0.10, cy + h * 0.35 + math.sin(phase + 2) * 6),
-        const Color(0xFF00E676),
-        9,
-      ),
+          Offset(cx - w * 0.10, cy + h * 0.35 + math.sin(phase + 2) * 6),
+          const Color(0xFF00E676),
+          9),
       _NetworkNode(
-        Offset(cx + w * 0.15, cy + h * 0.35 + math.cos(phase + 3) * 6),
-        const Color(0xFF00B4D8),
-        9,
-      ),
+          Offset(cx + w * 0.15, cy + h * 0.35 + math.cos(phase + 3) * 6),
+          const Color(0xFF00B4D8),
+          9),
       _NetworkNode(
-        Offset(cx + w * 0.35, cy + h * 0.25 + math.sin(phase + 4) * 6),
-        const Color(0xFFFF5252),
-        9,
-      ),
+          Offset(cx + w * 0.35, cy + h * 0.25 + math.sin(phase + 4) * 6),
+          const Color(0xFFFF5252),
+          9),
     ];
   }
 }
@@ -1534,79 +1319,63 @@ class _DoctorNetworkMeshPainter extends CustomPainter {
     final nodes = [
       _NetworkNode(Offset(cx, cy), const Color(0xFF00E676), 14), // Center
       _NetworkNode(
-        Offset(cx - w * 0.28, cy - h * 0.25 + math.sin(wavePhase) * 6),
-        const Color(0xFF00B4D8),
-        10,
-      ),
+          Offset(cx - w * 0.28, cy - h * 0.25 + math.sin(wavePhase) * 6),
+          const Color(0xFF00B4D8),
+          10),
       _NetworkNode(
-        Offset(cx + w * 0.28, cy - h * 0.25 + math.cos(wavePhase) * 6),
-        const Color(0xFF7209B7),
-        10,
-      ),
+          Offset(cx + w * 0.28, cy - h * 0.25 + math.cos(wavePhase) * 6),
+          const Color(0xFF7209B7),
+          10),
       _NetworkNode(
-        Offset(cx - w * 0.35, cy + h * 0.28 + math.cos(wavePhase + 1) * 6),
-        const Color(0xFF00B4D8),
-        9,
-      ),
+          Offset(cx - w * 0.35, cy + h * 0.28 + math.cos(wavePhase + 1) * 6),
+          const Color(0xFF00B4D8),
+          9),
       _NetworkNode(
-        Offset(cx - w * 0.10, cy + h * 0.35 + math.sin(wavePhase + 2) * 6),
-        const Color(0xFF00E676),
-        9,
-      ),
+          Offset(cx - w * 0.10, cy + h * 0.35 + math.sin(wavePhase + 2) * 6),
+          const Color(0xFF00E676),
+          9),
       _NetworkNode(
-        Offset(cx + w * 0.15, cy + h * 0.35 + math.cos(wavePhase + 3) * 6),
-        const Color(0xFF00B4D8),
-        9,
-      ),
+          Offset(cx + w * 0.15, cy + h * 0.35 + math.cos(wavePhase + 3) * 6),
+          const Color(0xFF00B4D8),
+          9),
       _NetworkNode(
-        Offset(cx + w * 0.35, cy + h * 0.25 + math.sin(wavePhase + 4) * 6),
-        const Color(0xFFFF5252),
-        9,
-      ),
+          Offset(cx + w * 0.35, cy + h * 0.25 + math.sin(wavePhase + 4) * 6),
+          const Color(0xFFFF5252),
+          9),
     ];
 
     // Draw Links
     final links = [
-      [0, 1],
-      [0, 2],
-      [0, 3],
-      [0, 4],
-      [0, 5],
-      [0, 6],
-      [1, 3],
-      [1, 4],
-      [2, 5],
-      [2, 6],
-      [4, 5],
+      [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6],
+      [1, 3], [1, 4], [2, 5], [2, 6], [4, 5]
     ];
 
     for (final link in links) {
       final p1 = nodes[link[0]].offset;
       final p2 = nodes[link[1]].offset;
-      final isHoveredLink = hoveredIndex == link[0] || hoveredIndex == link[1];
+      final isHoveredLink =
+          hoveredIndex == link[0] || hoveredIndex == link[1];
 
-      final linePaint =
-          Paint()
-            ..color =
-                isHoveredLink
-                    ? const Color(0xFF00E5FF).withValues(alpha: 0.7)
-                    : AppColors.primaryTeal.withValues(alpha: 0.15)
-            ..strokeWidth = isHoveredLink ? 2.2 : 1.2
-            ..style = PaintingStyle.stroke;
+      final linePaint = Paint()
+        ..color = isHoveredLink
+            ? const Color(0xFF00E5FF).withValues(alpha: 0.7)
+            : AppColors.primaryTeal.withValues(alpha: 0.15)
+        ..strokeWidth = isHoveredLink ? 2.2 : 1.2
+        ..style = PaintingStyle.stroke;
 
       canvas.drawLine(p1, p2, linePaint);
 
       // Flowing Pulse Particle along link
-      final particleT = (wavePhase / (2 * math.pi) + (link[0] * 0.15)) % 1.0;
+      final particleT =
+          (wavePhase / (2 * math.pi) + (link[0] * 0.15)) % 1.0;
       final particlePos = Offset(
         p1.dx + (p2.dx - p1.dx) * particleT,
         p1.dy + (p2.dy - p1.dy) * particleT,
       );
 
-      final pulsePaint =
-          Paint()
-            ..color = const Color(0xFF00E5FF).withValues(alpha: 0.6)
-            ..style = PaintingStyle.fill;
+      final pulsePaint = Paint()
+        ..color = const Color(0xFF00E5FF).withValues(alpha: 0.6)
+        ..style = PaintingStyle.fill;
       canvas.drawCircle(particlePos, 2.5, pulsePaint);
     }
 
@@ -1616,28 +1385,21 @@ class _DoctorNetworkMeshPainter extends CustomPainter {
       final isHover = hoveredIndex == i;
 
       // Glow halo
-      final haloPaint =
-          Paint()
-            ..color = node.color.withValues(alpha: isHover ? 0.4 : 0.18)
-            ..style = PaintingStyle.fill;
-      canvas.drawCircle(
-        node.offset,
-        node.radius + (isHover ? 10 : 5),
-        haloPaint,
-      );
+      final haloPaint = Paint()
+        ..color = node.color.withValues(alpha: isHover ? 0.4 : 0.18)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(node.offset, node.radius + (isHover ? 10 : 5), haloPaint);
 
       // Node Body
-      final bodyPaint =
-          Paint()
-            ..color = node.color
-            ..style = PaintingStyle.fill;
+      final bodyPaint = Paint()
+        ..color = node.color
+        ..style = PaintingStyle.fill;
       canvas.drawCircle(node.offset, node.radius, bodyPaint);
 
       // Center Dot
-      final innerDot =
-          Paint()
-            ..color = Colors.white
-            ..style = PaintingStyle.fill;
+      final innerDot = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill;
       canvas.drawCircle(node.offset, isHover ? 4.5 : 3.0, innerDot);
     }
   }
@@ -1665,10 +1427,8 @@ class _DoctorScrollWaveCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = ((scrollOffset - triggerOffset + 250) / 250).clamp(
-      0.0,
-      1.0,
-    );
+    final progress =
+        ((scrollOffset - triggerOffset + 250) / 250).clamp(0.0, 1.0);
     final eased = Curves.easeOutCubic.transform(progress);
 
     final tiltAngle = (-2.0 * (1.0 - eased)) * (math.pi / 180.0);
@@ -1703,11 +1463,10 @@ class _DoctorMeshBackgroundPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final meshPaint =
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.8
-          ..color = AppColors.primaryTeal.withValues(alpha: 0.04);
+    final meshPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8
+      ..color = AppColors.primaryTeal.withValues(alpha: 0.04);
 
     const lineSpacing = 50.0;
     final numLines = (size.height / lineSpacing).ceil() + 2;
@@ -1720,12 +1479,9 @@ class _DoctorMeshBackgroundPainter extends CustomPainter {
 
       for (int s = 0; s <= segments; s++) {
         final x = s * segWidth;
-        final wave =
-            math.sin(
-              (x / size.width) * 3 * math.pi +
-                  wavePhase +
-                  (scrollOffset * 0.003),
-            ) *
+        final wave = math.sin((x / size.width) * 3 * math.pi +
+                wavePhase +
+                (scrollOffset * 0.003)) *
             8.0;
         final y = baseY + wave;
 

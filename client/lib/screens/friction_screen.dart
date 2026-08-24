@@ -371,16 +371,17 @@ class _FrictionScreenState extends State<FrictionScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             ),
             onPressed: () {
-              appState.updateFrictionStatus(event.id, FrictionStatus.resolved);
+              appState.resolveFrictionEvent(event.id);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Claim Friction Point Marked as Resolved!'),
+                  behavior: SnackBarBehavior.floating,
+                  content: Text('✅ Prior Auth Approved & Prescription Unblocked for Dispensing!'),
                   backgroundColor: AppColors.primaryTeal,
                 ),
               );
             },
-            child: Text('Mark Resolved', style: AppFonts.googleSans(fontWeight: FontWeight.w700)),
+            child: Text('Approve & Unblock Rx', style: AppFonts.googleSans(fontWeight: FontWeight.w700)),
           ),
         ],
       ),

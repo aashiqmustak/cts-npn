@@ -222,14 +222,23 @@ class _DoctorPrescriptionScreenState extends State<DoctorPrescriptionScreen> {
   }
 
   void _pickAndUploadPrescription(BuildContext context) async {
-    try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['png', 'jpg', 'jpeg', 'pdf', 'txt', 'hl7', 'json', 'fhir'],
-        withData: true,
-      );
+  try {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: [
+        'png',
+        'jpg',
+        'jpeg',
+        'pdf',
+        'txt',
+        'hl7',
+        'json',
+        'fhir',
+      ],
+      withData: true,
+    );
 
-      if (result == null || result.files.isEmpty) return;
+    if (result == null || result.files.isEmpty) return;
 
       final file = result.files.first;
       final bytes = file.bytes;
