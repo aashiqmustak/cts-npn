@@ -4,30 +4,30 @@ services:
     build:
       context: ./
       dockerfile: infra/docker/backend.Dockerfile
-
     env_file:
       - .env
-
+    volumes:
+      - ./server:/app/server
+      - ./main.py:/app/main.py
     ports:
       - "8000:8000"
-
     networks:
       - app-network
 
   frontend:
     build:
       context: ./
-      dockerfile: infra/docker/frontend.Dockerfile
-
+      dockerfile: infra/docker/frontend.dev.Dockerfile
+    volumes:
+      - ./client:/app
+      - /app/.dart_tool
+      - /app/build
     ports:
-      - "8080:80"
-
+      - "8080:8080"
     networks:
       - app-network
-
-    depends_on:
-      - backend
 
 networks:
   app-network:
     driver: bridge
+

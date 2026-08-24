@@ -41,6 +41,7 @@ class DrugMapper:
         self.alias_map: dict[str, dict] = {}
         self.ingredient_map: dict[str, dict] = {}
         self.canonical_list: list[tuple[str, dict]] = []
+        self.id_map: dict[str, dict] = {}
         self._load_reference()
 
     def _load_reference(self):
@@ -51,35 +52,49 @@ class DrugMapper:
 
         self.df_reference = pd.read_csv(self.reference_path, low_memory=False)
 
+        # Build drug records
         for _, row in self.df_reference.iterrows():
+            drug_id = str(row.get("drug_id", "")).strip()
+            if not drug_id or drug_id in self.id_map:
+                continue
+
+            raw_name = str(row.get("drug_name", "")).strip()
+            clean_ing = str(row.get("clean_ingredient_name", "")).strip()
+            if not clean_ing or clean_ing.lower() == "nan":
+                clean_ing = raw_name.split()[0] if raw_name else ""
+
             record = {
-                "drug_id": str(row["drug_id"]),
-                "canonical_drug_name": str(row["drug_name"]),
-                "clean_ingredient_name": str(row["clean_ingredient_name"]),
-                "rxnorm_id": str(row["rxnorm_id"]),
+                "drug_id": drug_id,
+                "canonical_drug_name": raw_name,
+                "clean_ingredient_name": clean_ing,
+                "rxnorm_id": str(row.get("rxnorm_id", "")).strip(),
                 "strength": str(row["strength"])
-                if pd.notnull(row["strength"])
+                if pd.notnull(row.get("strength"))
                 else None,
-                "dose": str(row["dose"]) if pd.notnull(row["dose"]) else None,
+                "dose": str(row["dose"]) if pd.notnull(row.get("dose")) else None,
                 "frequency": str(row["frequency"])
-                if pd.notnull(row["frequency"])
+                if pd.notnull(row.get("frequency"))
                 else None,
-                "route": str(row["route"]) if pd.notnull(row["route"]) else None,
+                "route": str(row["route"]) if pd.notnull(row.get("route")) else None,
                 "duration_days": int(row["duration_days"])
-                if pd.notnull(row["duration_days"])
+                if pd.notnull(row.get("duration_days"))
                 else None,
                 "indication": str(row["indication"])
-                if pd.notnull(row["indication"])
+                if pd.notnull(row.get("indication"))
                 else None,
             }
 
+            self.id_map[drug_id] = record
+
             norm_canonical = normalize_text(record["canonical_drug_name"])
-            self.exact_map[norm_canonical] = record
+            if norm_canonical:
+                self.exact_map[norm_canonical] = record
+                self.canonical_list.append((norm_canonical, record))
 
             norm_ing = normalize_text(record["clean_ingredient_name"])
-            self.ingredient_map[norm_ing] = record
-            self.canonical_list.append((norm_ing, record))
-            self.canonical_list.append((norm_canonical, record))
+            if norm_ing:
+                self.ingredient_map[norm_ing] = record
+                self.canonical_list.append((norm_ing, record))
 
             aliases_str = str(row.get("aliases", ""))
             if aliases_str and aliases_str != "nan":
@@ -88,6 +103,95 @@ class DrugMapper:
                     if norm_alias:
                         self.alias_map[norm_alias] = record
                         self.canonical_list.append((norm_alias, record))
+
+        # Comprehensive clinical brand name & generic mappings
+        brand_aliases: dict[str, str] = {
+            "lipitor": "DRUG_LIP_01",
+            "crestor": "DRUG_LIP_02",
+            "zocor": "DRUG_LIP_03",
+            "pravachol": "DRUG_LIP_04",
+            "tricor": "DRUG_LIP_05",
+            "repatha": "DRUG_LIP_06",
+            "entresto": "DRUG_HYP_07",
+            "norvasc": "DRUG_HYP_01",
+            "cozaar": "DRUG_HYP_02",
+            "micardis": "DRUG_HYP_03",
+            "prinivil": "DRUG_HYP_04",
+            "zestril": "DRUG_HYP_04",
+            "vasotec": "DRUG_HYP_05",
+            "diovan": "DRUG_HYP_06",
+            "januvia": "DRUG_DIAB_07",
+            "glucophage": "DRUG_DIAB_01",
+            "glipizide": "DRUG_DIAB_02",
+            "amaryl": "DRUG_DIAB_03",
+            "diamicron": "DRUG_DIAB_04",
+            "jardiance": "DRUG_DIAB_05",
+            "ozempic": "DRUG_DIAB_06",
+            "wegovy": "DRUG_DIAB_06",
+            "lantus": "DRUG_DIAB_08",
+            "humira": "DRUG_ONCO_07",
+            "plavix": "DRUG_CARD_02",
+            "eliquis": "DRUG_CARD_05",
+            "xarelto": "DRUG_CARD_06",
+            "aspirin": "DRUG_CARD_01",
+            "zebeta": "DRUG_CARD_03",
+            "cordarone": "DRUG_CARD_04",
+            "neurontin": "DRUG_EPIL_06",
+            "keppra": "DRUG_EPIL_04",
+            "tegretol": "DRUG_EPIL_01",
+            "dilantin": "DRUG_EPIL_02",
+            "depakote": "DRUG_EPIL_03",
+            "lamictal": "DRUG_EPIL_05",
+            "tylenol": "DRUG_ANAL_01",
+            "advil": "DRUG_ANAL_02",
+            "motrin": "DRUG_ANAL_02",
+            "voltaren": "DRUG_ANAL_03",
+            "aleve": "DRUG_ANAL_04",
+            "augmentin": "DRUG_ANTI_01",
+            "zithromax": "DRUG_ANTI_02",
+            "cipro": "DRUG_ANTI_03",
+            "vibramycin": "DRUG_ANTI_04",
+            "ventolin": "DRUG_RESP_01",
+            "proair": "DRUG_RESP_01",
+            "symbicort": "DRUG_RESP_02",
+            "advair": "DRUG_RESP_03",
+            "atrovent": "DRUG_RESP_04",
+            "spiriva": "DRUG_RESP_05",
+            "singulair": "DRUG_RESP_06",
+            "zyrtec": "DRUG_ALLG_01",
+            "allegra": "DRUG_ALLG_03",
+            "zoloft": "DRUG_CNS_01",
+            "prozac": "DRUG_CNS_03",
+            "elavil": "DRUG_CNS_04",
+            "cymbalta": "DRUG_CNS_05",
+            "wellbutrin": "DRUG_CNS_06",
+            "diflucan": "DRUG_FUNG_01",
+            "lamisil": "DRUG_FUNG_02",
+            "ambisome": "DRUG_FUNG_03",
+            "zovirax": "DRUG_VIR_01",
+            "valtrex": "DRUG_VIR_02",
+            "tamiflu": "DRUG_VIR_03",
+            "prilosec": "DRUG_GAST_01",
+            "protonix": "DRUG_GAST_02",
+            "pepcid": "DRUG_GAST_03",
+            "nexium": "DRUG_GAST_04",
+            "fosamax": "DRUG_BONE_01",
+            "prolia": "DRUG_BONE_02",
+            "caltrate": "DRUG_BONE_03",
+            "gleevec": "DRUG_ONCO_01",
+            "nolvadex": "DRUG_ONCO_02",
+            "xeloda": "DRUG_ONCO_03",
+            "purinethol": "DRUG_ONCO_05",
+            "trexall": "DRUG_ONCO_06",
+            "prograf": "DRUG_ONCO_08",
+        }
+
+        for brand, drug_id in brand_aliases.items():
+            if drug_id in self.id_map:
+                target_rec = self.id_map[drug_id]
+                norm_brand = normalize_text(brand)
+                self.alias_map[norm_brand] = target_rec
+                self.canonical_list.append((norm_brand, target_rec))
 
     def count(self) -> int:
         if self.df_reference is not None and not self.df_reference.empty:

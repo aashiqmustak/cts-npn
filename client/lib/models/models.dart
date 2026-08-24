@@ -56,12 +56,72 @@ extension UserRoleAuthMeta on UserRole {
     }
   }
 
-  String get defaultEmail => '';
+  String get sampleName {
+    switch (this) {
+      case UserRole.doctor:
+        return 'Dr. Ananya Sharma, MD';
+      case UserRole.pharmacist:
+        return 'Marcus Vance, PharmD, RPh';
+      case UserRole.patient:
+        return 'Jessica Thompson';
+      case UserRole.insuranceAgent:
+        return 'Robert Sterling (Payer ID: BCBS-8902)';
+      case UserRole.admin:
+        return 'Sarah Jenkins (Enterprise Admin)';
+    }
+  }
+
+  String get sampleEmail {
+    switch (this) {
+      case UserRole.doctor:
+        return 'dr.ananya.sharma@hospital.org';
+      case UserRole.pharmacist:
+        return 'marcus.vance@centralrx.com';
+      case UserRole.patient:
+        return 'jessicathompson@mail.com';
+      case UserRole.insuranceAgent:
+        return 'robert.sterling@bcbs.com';
+      case UserRole.admin:
+        return 'admin.sarah@alternea.health';
+    }
+  }
+
+  String get nameFieldLabel {
+    switch (this) {
+      case UserRole.doctor:
+        return 'FULL NAME & CLINICAL CREDENTIALS';
+      case UserRole.pharmacist:
+        return 'FULL NAME & PHARMACIST LICENSE';
+      case UserRole.patient:
+        return 'FULL LEGAL NAME';
+      case UserRole.insuranceAgent:
+        return 'AGENT / CLAIMS OFFICER NAME';
+      case UserRole.admin:
+        return 'ADMINISTRATOR FULL NAME';
+    }
+  }
+
+  String get emailFieldLabel {
+    switch (this) {
+      case UserRole.doctor:
+        return 'CLINICAL / NPI EMAIL';
+      case UserRole.pharmacist:
+        return 'PHARMACY DISPENSARY EMAIL';
+      case UserRole.patient:
+        return 'PATIENT EMAIL / USER ID';
+      case UserRole.insuranceAgent:
+        return 'PAYER & FORMULARY WORK EMAIL';
+      case UserRole.admin:
+        return 'ENTERPRISE ADMIN EMAIL';
+    }
+  }
+
+  String get defaultEmail => sampleEmail;
 }
 
 enum RiskLevel { high, medium, low }
 
-enum OutreachStatus { pending, contacted, resolved, declined }
+enum OutreachStatus { pending, contacted, syncScheduled, resolved, declined }
 
 enum FrictionStatus { blocked, inReview, appealed, resolved }
 
