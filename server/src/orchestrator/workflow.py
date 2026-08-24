@@ -45,6 +45,160 @@ def infer_clinical_class_and_indication(drug_text: str) -> tuple[str, str]:
     if any(
         k in d
         for k in [
+            "levetiracetam",
+            "keppra",
+            "lamotrigine",
+            "lamictal",
+            "topiramate",
+            "topamax",
+            "gabapentin",
+            "neurontin",
+            "carbamazepine",
+            "tegretol",
+            "valproic",
+            "depakote",
+            "divalproex",
+            "epilepsy",
+            "seizure",
+            "convulsion",
+            "antiepileptic",
+        ]
+    ):
+        return "Antiepileptic", "Epilepsy / Seizure Disorder"
+    elif any(
+        k in d
+        for k in [
+            "escitalopram",
+            "lexapro",
+            "sertraline",
+            "zoloft",
+            "fluoxetine",
+            "prozac",
+            "citalopram",
+            "celexa",
+            "paroxetine",
+            "paxil",
+            "duloxetine",
+            "cymbalta",
+            "venlafaxine",
+            "effexor",
+            "bupropion",
+            "wellbutrin",
+            "trazodone",
+            "depression",
+            "anxiety",
+            "mental",
+        ]
+    ):
+        return "CNS_Mental_Health", "Major Depressive Disorder"
+    elif any(
+        k in d
+        for k in [
+            "alendronate",
+            "fosamax",
+            "denosumab",
+            "prolia",
+            "zoledronic",
+            "reclast",
+            "ibandronate",
+            "boniva",
+            "osteoporosis",
+            "bone density",
+        ]
+    ):
+        return "Musculoskeletal", "Osteoporosis"
+    elif any(
+        k in d
+        for k in [
+            "cetirizine",
+            "zyrtec",
+            "loratadine",
+            "claritin",
+            "fexofenadine",
+            "allegra",
+            "levocetirizine",
+            "xyzall",
+            "diphenhydramine",
+            "benadryl",
+            "allergy",
+            "rhinitis",
+            "antihistamine",
+        ]
+    ):
+        return "Antiallergic", "Allergic Rhinitis"
+    elif any(
+        k in d
+        for k in [
+            "ibuprofen",
+            "advil",
+            "motrin",
+            "naproxen",
+            "aleve",
+            "meloxicam",
+            "mobic",
+            "celecoxib",
+            "celebrex",
+            "diclofenac",
+            "voltaren",
+            "acetaminophen",
+            "tylenol",
+            "paracetamol",
+            "arthritis",
+            "chronic pain",
+            "analgesic",
+        ]
+    ):
+        return "Analgesic_Antipyretic", "Chronic Pain / Inflammation"
+    elif any(
+        k in d
+        for k in [
+            "fluconazole",
+            "diflucan",
+            "terbinafine",
+            "lamisil",
+            "itraconazole",
+            "ketoconazole",
+            "nystatin",
+            "antifungal",
+            "fungal",
+        ]
+    ):
+        return "Antifungal", "Fungal Infection"
+    elif any(
+        k in d
+        for k in [
+            "acyclovir",
+            "zovirax",
+            "valacyclovir",
+            "valtrex",
+            "oseltamivir",
+            "tamiflu",
+            "antiviral",
+            "herpes",
+            "influenza",
+        ]
+    ):
+        return "Antiviral", "Viral Infection"
+    elif any(
+        k in d
+        for k in [
+            "methotrexate",
+            "mercaptopurine",
+            "purinethol",
+            "tamoxifen",
+            "anastrozole",
+            "arimidex",
+            "imatinib",
+            "gleevec",
+            "oncology",
+            "chemo",
+            "cancer",
+        ]
+    ):
+        return "Oncology", "Oncology Maintenance"
+    elif any(
+        k in d
+        for k in [
             "entresto",
             "sacubitril",
             "valsartan",
@@ -92,9 +246,12 @@ def infer_clinical_class_and_indication(drug_text: str) -> tuple[str, str]:
             "lipitor",
             "pravastatin",
             "ezetimibe",
+            "evolocumab",
+            "repatha",
             "statin",
             "cholesterol",
             "lipid",
+            "hyperlipidemia",
         ]
     ):
         return "Lipid_lowering", "Hyperlipidemia"
@@ -108,6 +265,8 @@ def infer_clinical_class_and_indication(drug_text: str) -> tuple[str, str]:
             "symbicort",
             "budesonide",
             "montelukast",
+            "tiotropium",
+            "spiriva",
             "ipratropium",
             "inhaler",
             "asthma",
@@ -123,10 +282,14 @@ def infer_clinical_class_and_indication(drug_text: str) -> tuple[str, str]:
             "brilinta",
             "ticagrelor",
             "warfarin",
+            "coumadin",
             "eliquis",
             "apixaban",
             "xarelto",
+            "rivaroxaban",
             "thrombo",
+            "anticoagulant",
+            "atrial fibrillation",
         ]
     ):
         return "Cardiovascular", "Atrial Fibrillation / DVT Prevention"
@@ -140,6 +303,8 @@ def infer_clinical_class_and_indication(drug_text: str) -> tuple[str, str]:
             "esomeprazole",
             "gerd",
             "acid",
+            "reflux",
+            "ulcer",
         ]
     ):
         return "Gastrointestinal", "GERD / Peptic Ulcer Disease"
@@ -151,7 +316,9 @@ def infer_clinical_class_and_indication(drug_text: str) -> tuple[str, str]:
             "ciprofloxacin",
             "doxycycline",
             "cephalexin",
+            "augmentin",
             "antibiotic",
+            "infection",
         ]
     ):
         return "Antibiotic", "Bacterial Infection"
@@ -207,15 +374,40 @@ class MultiAgentOrchestrator:
             canonical_drug_name + " " + request.prescription_text
         )
 
-        # Attempt to map to a dataset drug_id
-        matched_drug_id = None
-        matched_therapeutic_class = None
-        matched_indication = None
+        STOPWORDS = {
+            "oral",
+            "tablet",
+            "capsule",
+            "solution",
+            "injection",
+            "syrup",
+            "inhaler",
+            "extended",
+            "release",
+            "delayed",
+            "mg/ml",
+            "hcl",
+            "sodium",
+            "potassium",
+            "maleate",
+            "tartrate",
+            "besylate",
+            "hydrochloride",
+            "disintegrating",
+        }
+        c_clean = canonical_drug_name.lower().strip()
+        active_tokens = [
+            w
+            for w in c_clean.split()
+            if len(w) > 2 and not w.isdigit() and w not in STOPWORDS
+        ]
 
         for rec in self.formulary_repo.records:
             d_name = (rec.get("drug_name") or "").lower()
-            c_name = canonical_drug_name.lower()
-            if d_name and (c_name in d_name or d_name in c_name):
+            if d_name and (
+                c_clean in d_name
+                or (active_tokens and any(t in d_name for t in active_tokens))
+            ):
                 matched_drug_id = rec.get("drug_id")
                 matched_therapeutic_class = rec.get("therapeutic_class")
                 matched_indication = rec.get("indication")
@@ -229,18 +421,16 @@ class MultiAgentOrchestrator:
                     matched_indication = rec.get("indication")
                     break
 
-        matched_drug_id = matched_drug_id or "DRUG_HYP_01"
+        matched_drug_id = matched_drug_id or (
+            "DRUG_EPIL_04" if inferred_class == "Antiepileptic" else "DRUG_HYP_01"
+        )
         final_class = matched_therapeutic_class or inferred_class
         final_ind = (
             request.patient_context.indication.name
             if request.patient_context.indication
-            else (
-                request.patient_context.conditions[0].name
-                if request.patient_context.conditions
-                and request.patient_context.conditions[0].name
-                not in ("Hyperlipidemia", "Diagnosed Indication")
-                else (matched_indication or inferred_ind)
-            )
+            and request.patient_context.indication.name
+            not in ("Hyperlipidemia", "Diagnosed Indication", "Chronic Therapy")
+            else (matched_indication or inferred_ind)
         )
 
         # -------------------------------------------------------------

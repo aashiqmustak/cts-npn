@@ -105,7 +105,9 @@ class _PharmacistAnalyticsScreenState
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final flags = appState.filteredAdherenceFlags;
-    final totalDispensed = appState.prescriptions.length * 320 + 1280;
+    final totalDispensed = appState.dataService.getPharmacistDispensedCount(_selectedTimeframe);
+    final meanPdc = appState.dataService.getDoctorAveragePdc(null) * 100;
+    final refillIndex = appState.dataService.getPharmacistRefillRate(_selectedTimeframe);
 
     return Stack(
       children: [
@@ -240,7 +242,7 @@ class _PharmacistAnalyticsScreenState
                 scrollOffset: _scrollOffset,
                 triggerOffset: 40,
                 child: _buildPharmacyStatsCounterGrid(
-                    totalDispensed, flags.length),
+                    totalDispensed, flags.length, meanPdc, refillIndex),
               ),
 
               const SizedBox(height: 18),
@@ -310,7 +312,7 @@ class _PharmacistAnalyticsScreenState
   // ---------------------------------------------------------------------
   // 1. TOP PHARMACY STATS COUNTER ROW (TweenAnimationBuilder)
   // ---------------------------------------------------------------------
-  Widget _buildPharmacyStatsCounterGrid(int totalDispensed, int flaggedCount) {
+  Widget _buildPharmacyStatsCounterGrid(int totalDispensed, int flaggedCount, double meanPdc, double refillIndex) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktop = constraints.maxWidth >= 900;
@@ -328,11 +330,11 @@ class _PharmacistAnalyticsScreenState
           ),
           _buildPharmacyMetricTile(
             label: 'Mean Panel PDC Compliance',
-            targetValue: 87.4,
+            targetValue: meanPdc,
             prefix: '',
             suffix: '%',
             isCurrency: false,
-            trendText: 'CMS 5-Star Target',
+            trendText: meanPdc >= 80.0 ? '★ CMS 5-Star Target' : 'Near Target',
             icon: Icons.verified_rounded,
             iconColor: AppColors.primaryTeal,
             iconBg: AppColors.primaryLight,
@@ -350,7 +352,7 @@ class _PharmacistAnalyticsScreenState
           ),
           _buildPharmacyMetricTile(
             label: 'Refill Timeliness Index',
-            targetValue: 94.6,
+            targetValue: refillIndex,
             prefix: '',
             suffix: '%',
             isCurrency: false,

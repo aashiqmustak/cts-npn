@@ -69,6 +69,8 @@ class FormularyRepository:
                         "patient_id": row.get("patient_id"),
                         "drug_id": row.get("drug_id"),
                         "drug_name": row.get("drug_name"),
+                        "therapeutic_class": row.get("therapeutic_class"),
+                        "indication": row.get("indication"),
                         "insurance_plan_id": row.get("insurance_plan_id"),
                         "payer_id": row.get("payer_id"),
                         "pharmacy_id": row.get("pharmacy_id"),
@@ -86,7 +88,7 @@ class FormularyRepository:
                         "quantity_limit": parse_bool(row.get("quantity_limit")),
                         "in_network": parse_bool(row.get("in_network")),
                         "preferred_pharmacy": parse_bool(row.get("preferred_pharmacy")),
-                        "formulary_status": row.get("formulary_status"),
+                        "formulary_status": row.get("formulary_status") or "UNKNOWN",
                     }
                 )
         print(f"Loaded {len(self.records)} formulary records.")

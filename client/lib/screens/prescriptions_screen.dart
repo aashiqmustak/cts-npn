@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
@@ -78,12 +77,23 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+    final user = appState.currentUser;
+    final isDoctor = user.role == UserRole.doctor;
+
+    final basePrescriptions = isDoctor
+        ? appState.prescriptions.where((rx) {
+            if (user.doctorId != null && user.doctorId!.isNotEmpty && rx.doctorId == user.doctorId) return true;
+            if (rx.doctorId == user.id) return true;
+            if (user.name.isNotEmpty && rx.prescriberName.toLowerCase().contains(user.name.toLowerCase())) return true;
+            return false;
+          }).toList()
+        : appState.prescriptions;
 
     // Calculate dynamic tab counts
-    final activeCount = appState.prescriptions.where((rx) => rx.status.toLowerCase() == 'active' || rx.status.toLowerCase() == 'prescribed').length;
-    final completedCount = appState.prescriptions.where((rx) => rx.status.toLowerCase() == 'completed').length;
-    final expiredCount = appState.prescriptions.where((rx) => rx.status.toLowerCase() == 'expired').length;
-    final draftsCount = appState.prescriptions.where((rx) => rx.status.toLowerCase() == 'draft').length;
+    final activeCount = basePrescriptions.where((rx) => rx.status.toLowerCase() == 'active' || rx.status.toLowerCase() == 'prescribed').length;
+    final completedCount = basePrescriptions.where((rx) => rx.status.toLowerCase() == 'completed').length;
+    final expiredCount = basePrescriptions.where((rx) => rx.status.toLowerCase() == 'expired').length;
+    final draftsCount = basePrescriptions.where((rx) => rx.status.toLowerCase() == 'draft').length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
@@ -215,7 +225,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
               final isDesktop = constraints.maxWidth >= 900;
 
               final query = _searchQuery.trim().toLowerCase();
-              final filteredRxList = appState.prescriptions.reversed.where((rx) {
+              final filteredRxList = basePrescriptions.reversed.where((rx) {
                 // Tab filter first
                 bool matchesTab = true;
                 if (_activeFilterTab == 1) {
@@ -424,141 +434,274 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
     required Color textStatus,
     required VoidCallback onView,
   }) {
+    // Clean doctor name (prevent duplicate "Dr. Dr." prefixes)
+    String cleanDoctor = doctor.trim();
+    while (cleanDoctor.toLowerCase().startsWith('dr. dr.')) {
+      cleanDoctor = 'Dr. ${cleanDoctor.substring(7).trim()}';
+    }
+    if (!cleanDoctor.toLowerCase().startsWith('dr.') &&
+        !cleanDoctor.toLowerCase().startsWith('dr ')) {
+      cleanDoctor = 'Dr. $cleanDoctor';
+    }
+
+    final medicineSummary = items.isNotEmpty
+        ? items.map((e) => '${e.medicineName} (${e.dosage})').join(', ')
+        : rx.drugName;
+
     return BentoCard(
       enableHover: true,
-      padding: const EdgeInsets.all(20),
-      child: Row(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.receipt_rounded,
-              color: AppColors.primaryTeal,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          // Row 1: Header (Icon + Prescription ID + Status Badge + Date)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.receipt_long_rounded,
+                  color: AppColors.primaryTeal,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
                   children: [
                     Text(
                       'Prescription #${rx.id}',
                       style: AppFonts.googleSans(
-                        fontSize: 14.5,
+                        fontSize: 14,
                         fontWeight: FontWeight.w800,
                         color: AppColors.textDark,
                       ),
                     ),
-                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: bgStatus,
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: textStatus.withValues(alpha: 0.2)),
                       ),
-                      child: Text(
-                        status,
-                        style: AppFonts.googleSans(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: textStatus,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: textStatus,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            status,
+                            style: AppFonts.googleSans(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: textStatus,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    if (rx.hasPdf) ...[
-                      const SizedBox(width: 8),
+                    if (rx.hasPdf)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryLight,
+                          color: const Color(0xFF1244A2).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: const [
-                            Icon(Icons.picture_as_pdf_rounded, size: 10, color: AppColors.primaryTeal),
+                            Icon(Icons.picture_as_pdf_rounded, size: 11, color: Color(0xFF1244A2)),
                             SizedBox(width: 4),
                             Text(
                               'ORIGINAL PDF',
                               style: TextStyle(
-                                fontSize: 9,
+                                fontSize: 9.5,
                                 fontWeight: FontWeight.w900,
-                                color: AppColors.primaryTeal,
+                                color: Color(0xFF1244A2),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
                   ],
                 ),
-                const SizedBox(height: 3),
+              ),
+              Text(
+                dateDetails,
+                style: AppFonts.googleSans(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Row 2: Doctor & Clinical Details Pill
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.bgSlate,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.metallicBorder.withValues(alpha: 0.6)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.person_pin_rounded, size: 16, color: AppColors.primaryTeal),
+                const SizedBox(width: 8),
                 Text(
-                  doctor,
+                  cleanDoctor,
                   style: AppFonts.googleSans(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primaryTeal,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textDark,
                   ),
                 ),
-                Text(
-                  dateDetails,
-                  style: AppFonts.googleSans(
-                    fontSize: 11.5,
-                    color: AppColors.textMuted,
+                const SizedBox(width: 12),
+                Container(width: 1, height: 14, color: AppColors.metallicBorder),
+                const SizedBox(width: 12),
+                const Icon(Icons.medication_rounded, size: 15, color: Color(0xFF10B981)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    medicineSummary,
+                    style: AppFonts.googleSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0F172A),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
+
+          const SizedBox(height: 12),
+          Divider(color: AppColors.metallicBorder.withValues(alpha: 0.7), height: 1),
+          const SizedBox(height: 12),
+
+          // Row 3: Action Buttons
           Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              OutlinedButton.icon(
-                onPressed: () => _showDownloadPdfModal(context, rx, items),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF1244A2),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  side: BorderSide(color: const Color(0xFF1244A2).withValues(alpha: 0.4)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                icon: Icon(
-                  rx.hasPdf ? Icons.download_rounded : Icons.picture_as_pdf_rounded,
-                  size: 15,
-                  color: const Color(0xFF1244A2),
-                ),
-                label: Text(
-                  rx.hasPdf ? 'Download PDF' : 'Download PDF',
-                  style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w800),
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.verified_user_rounded, size: 13, color: Color(0xFF10B981)),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Verified e-Prescription',
+                    style: AppFonts.googleSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 6),
-              ElevatedButton(
-                onPressed: onView,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.bgSlate,
-                  foregroundColor: AppColors.primaryTeal,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: AppColors.metallicBorder),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => _showDownloadPdfModal(context, rx, items),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF1244A2),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      side: BorderSide(color: const Color(0xFF1244A2).withValues(alpha: 0.3)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    icon: Icon(
+                      rx.hasPdf ? Icons.download_rounded : Icons.picture_as_pdf_rounded,
+                      size: 14,
+                      color: const Color(0xFF1244A2),
+                    ),
+                    label: Text(
+                      'Download PDF',
+                      style: AppFonts.googleSans(fontSize: 11.5, fontWeight: FontWeight.w800),
+                    ),
                   ),
-                ),
-                child: Text(
-                  'Inspect Rx',
-                  style: AppFonts.googleSans(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w800,
+                  ElevatedButton.icon(
+                    onPressed: onView,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.textDark,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: BorderSide(color: AppColors.metallicBorder),
+                      ),
+                    ),
+                    icon: const Icon(Icons.search_rounded, size: 14, color: AppColors.textMuted),
+                    label: Text(
+                      'Inspect Rx',
+                      style: AppFonts.googleSans(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
-                ),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF8B5CF6), Color(0xFF6366F1)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF8B5CF6).withValues(alpha: 0.25),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        final appState = Provider.of<AppState>(context, listen: false);
+                        appState.setEvaluatingPrescriptionId(rx.id);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.auto_awesome_rounded, size: 14, color: Colors.white),
+                      label: Text(
+                        'Forward to Agent',
+                        style: AppFonts.googleSans(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -95,8 +94,10 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
-    final totalRx = appState.prescriptions.length * 120 + 480;
-    final totalPatients = appState.patientRecords.length * 45 + 180;
+    final totalRx = appState.prescriptions.length;
+    final totalPatients = appState.patientRecords.length;
+    final meanPdc = appState.dataService.getDoctorAveragePdc(null) * 100;
+    final hospitalNodes = appState.hospitals.length + 4;
 
     return Stack(
       children: [
@@ -230,7 +231,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
               _DoctorScrollWaveCard(
                 scrollOffset: _scrollOffset,
                 triggerOffset: 40,
-                child: _buildClinicalStatsCounterGrid(totalRx, totalPatients),
+                child: _buildClinicalStatsCounterGrid(totalRx, totalPatients, meanPdc, hospitalNodes),
               ),
 
               const SizedBox(height: 18),
@@ -300,7 +301,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
   // ---------------------------------------------------------------------
   // 1. TOP STATS COUNTER ROW (TweenAnimationBuilder)
   // ---------------------------------------------------------------------
-  Widget _buildClinicalStatsCounterGrid(int totalRx, int totalPatients) {
+  Widget _buildClinicalStatsCounterGrid(int totalRx, int totalPatients, double meanPdc, int hospitalNodes) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktop = constraints.maxWidth >= 900;
@@ -329,18 +330,18 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen>
           ),
           _buildDoctorMetricTile(
             label: 'Mean PDC Adherence',
-            targetValue: 89.2,
+            targetValue: meanPdc,
             prefix: '',
             suffix: '%',
             isCurrency: false,
-            trendText: 'Optimal Tier',
+            trendText: meanPdc >= 80.0 ? 'Optimal Tier' : 'Review Needed',
             icon: Icons.favorite_rounded,
             iconColor: AppColors.primaryTeal,
             iconBg: AppColors.primaryLight,
           ),
           _buildDoctorMetricTile(
             label: 'Clinical Network Nodes',
-            targetValue: 14.0,
+            targetValue: hospitalNodes.toDouble(),
             prefix: '',
             suffix: ' Connected',
             isCurrency: false,

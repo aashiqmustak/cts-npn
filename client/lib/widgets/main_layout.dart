@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
-
-import '../screens/doctor_overview_screen.dart';
+import '../screens/doctor_clinical_dashboard_screen.dart';
 import '../screens/doctor_prescription_screen.dart';
 import '../screens/pharmacist_dispense_screen.dart';
 import '../screens/prescriptions_screen.dart';
@@ -29,6 +27,7 @@ import '../screens/profile_screen.dart';
 import '../screens/pharmacist_insurance_screen.dart';
 import '../screens/insurance_pharmacy_connections_screen.dart';
 import '../screens/alternate_agent_screen.dart';
+import '../screens/rx_agent_evaluation_screen.dart';
 
 class MainLayout extends StatefulWidget {
   final Widget? child;
@@ -658,7 +657,7 @@ class _RoleScreenStack extends StatelessWidget {
     if (user.isDoctor) {
       switch (appState.currentNavIndex.clamp(0, 7)) {
         case 0:
-          return const DoctorOverviewDashboardScreen();
+          return const DoctorClinicalDashboardScreen(showSidebar: false);
         case 1:
           return const DoctorPrescriptionScreen();
         case 2:
@@ -674,9 +673,15 @@ class _RoleScreenStack extends StatelessWidget {
         case 7:
           return const UserProfileScreen();
         default:
-          return const DoctorOverviewDashboardScreen();
+          return const DoctorClinicalDashboardScreen(showSidebar: false);
       }
     } else if (user.isPharmacist) {
+      final isEvaluatingAgent = appState.evaluatingPrescriptionId != null;
+      if (isEvaluatingAgent) {
+        return RxAgentEvaluationScreen(
+          prescriptionId: appState.evaluatingPrescriptionId!,
+        );
+      }
       final isViewingDetails = appState.selectedPrescriptionId != null;
       switch (appState.currentNavIndex.clamp(0, 8)) {
         case 0:
@@ -2262,8 +2267,8 @@ class _InsuranceAgentSetupDialogState extends State<_InsuranceAgentSetupDialog> 
     if (widget.initialPlans.isNotEmpty) {
       _selectedPlans = Set<String>.from(widget.initialPlans);
     } else {
-      _selectedPlans = Set<String>.from(
-          _companyPlansMap[_selectedCompany]?.take(2) ?? ['Comprehensive Rx Plan']);
+      final defaultPlans = _companyPlansMap[_selectedCompany] ?? <String>['Comprehensive Rx Plan'];
+      _selectedPlans = Set<String>.from(defaultPlans.take(2));
     }
 
     _selectedMedicines = Set<String>.from(

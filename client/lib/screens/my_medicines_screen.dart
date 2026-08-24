@@ -502,16 +502,44 @@ class _MyMedicinesScreenState extends State<MyMedicinesScreen> {
                   ),
                 ],
               ),
-              ElevatedButton.icon(
-                onPressed: () => _showDownloadPdfModal(context, rx: rx, items: items),
-                icon: const Icon(Icons.download_rounded, size: 14),
-                label: Text('Download e-Rx PDF', style: AppFonts.googleSans(fontSize: 11, fontWeight: FontWeight.w800)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1244A2),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
+              Row(
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Provider.of<AppState>(context, listen: false).requestPrescriptionRefill(rx.id);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: const Color(0xFF10B981),
+                          content: Text(
+                            '🔄 Refill requested for Rx #${rx.id}! Sent to Pharmacist queue.',
+                            style: AppFonts.googleSans(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.autorenew_rounded, size: 14),
+                    label: Text('Request Refill', style: AppFonts.googleSans(fontSize: 11, fontWeight: FontWeight.w800)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF1244A2),
+                      side: const BorderSide(color: Color(0xFF1244A2)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: () => _showDownloadPdfModal(context, rx: rx, items: items),
+                    icon: const Icon(Icons.download_rounded, size: 14),
+                    label: Text('Download e-Rx PDF', style: AppFonts.googleSans(fontSize: 11, fontWeight: FontWeight.w800)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1244A2),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
