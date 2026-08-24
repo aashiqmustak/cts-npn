@@ -10,6 +10,7 @@ from typing import Any
 import aiohttp
 from dotenv import load_dotenv
 from pipecat.adapters.schemas.function_schema import FunctionSchema
+from pipecat.adapters.schemas.tools_schema import ToolsSchema
 from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import (
     LocalSmartTurnAnalyzerV3,
 )
@@ -23,7 +24,7 @@ from pipecat.frames.frames import (
     TTSSpeakFrame,
 )
 from pipecat.pipeline.pipeline import Pipeline
-from pipecat.pipeline.runner import PipelineRunner
+from pipecat.pipeline.runner import PipelineRunner  # noqa: F401
 from pipecat.pipeline.task import PipelineParams, PipelineTask
 from pipecat.processors.aggregators.llm_context import LLMContext
 from pipecat.processors.aggregators.llm_response_universal import (
@@ -43,7 +44,10 @@ from pipecat.transports.base_transport import (
     BaseTransport,
     TransportParams,
 )
-from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
+from pipecat.turns.user_stop import (
+    BaseUserTurnStopStrategy,
+    TurnAnalyzerUserTurnStopStrategy,
+)
 from pipecat.turns.user_turn_strategies import UserTurnStrategies
 
 # Import backend Multi-Agent Orchestrator
@@ -420,7 +424,7 @@ async def run_bot(
             handle_evaluate_prescription,
         )
 
-        messages = [
+        messages: list[Any] = [
             {
                 "role": "system",
                 "content": (
@@ -435,8 +439,7 @@ async def run_bot(
             }
         ]
 
-        context = LLMContext(messages, tools=agent_tools)
-        # ignore[pyref]
+        context = LLMContext(messages, tools=ToolsSchema(agent_tools))
 
         # Smart turn detection with graceful fallback
         turn_analyzer = None
@@ -445,7 +448,7 @@ async def run_bot(
         except (ImportError, RuntimeError, OSError, ValueError) as exc:
             logger.warning("LocalSmartTurnAnalyzerV3 unavailable: %s", exc)
 
-        stop_strategies = (
+        stop_strategies: list[BaseUserTurnStopStrategy] = (
             [TurnAnalyzerUserTurnStopStrategy(turn_analyzer=turn_analyzer)]
             if turn_analyzer
             else []

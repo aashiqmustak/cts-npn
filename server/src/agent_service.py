@@ -580,16 +580,37 @@ async def chat_message(data: ChatMessagePayload) -> dict[str, Any]:
                     "the exact Tier 1 copay ($10.00), zero PA requirements, and 100% safety match. Avoid cluttered markdown asterisks."
                 )
 
+                formulary_tier = 1
+                formulary_covered = True
+                if report.formulary_coverage and report.formulary_coverage.coverage:
+                    if report.formulary_coverage.coverage.tier is not None:
+                        formulary_tier = report.formulary_coverage.coverage.tier
+                    formulary_covered = report.formulary_coverage.coverage.covered
+
+                pa_req_str = "No"
+                if report.prior_authorization and report.prior_authorization.pa_required:
+                    pa_req_str = "Yes"
+
+                risk_level_str = "LOW"
+                if report.ml_risk_assessment:
+                    risk_level_str = str(report.ml_risk_assessment.overall_risk_status)
+
+                top_drug_name = top_drug.drug_name if top_drug else "None"
+                match_score = top_drug.total_score if top_drug else 0.0
+                safety_score = (
+                    top_drug.score_breakdown.safety_score
+                    if top_drug and top_drug.score_breakdown
+                    else 40.0
+                )
+
                 orchestrator_summary = (
                     f"User Query: '{msg}'\n"
                     f"Evaluated Drug: {primary_drug_name}\n"
                     f"Decision: {decision}\n"
-                    f"Formulary Status: Tier {report.formulary_verification.tier if report.formulary_verification else 1} "
-                    f"({'Covered' if report.formulary_verification and report.formulary_verification.covered else 'Non-Covered'})\n"
-                    f"Prior Auth Required: {'Yes' if report.prior_authorization and report.prior_authorization.pa_required else 'No'}\n"
-                    f"AWS ML Adherence Risk: {report.ml_risk_assessment.adherence_risk_level if report.ml_risk_assessment else 'LOW'}\n"
-                    f"Top Recommended Alternative: {top_drug.drug_name if top_drug else 'None'} "
-                    f"(Composite Match Score: {top_drug.total_score if top_drug else 0:.0f}%, Safety: {top_drug.score_breakdown.safety_score if top_drug and top_drug.score_breakdown else 40:.0f}/40)\n"
+                    f"Formulary Status: Tier {formulary_tier} ({'Covered' if formulary_covered else 'Non-Covered'})\n"
+                    f"Prior Auth Required: {pa_req_str}\n"
+                    f"AWS ML Adherence Risk: {risk_level_str}\n"
+                    f"Top Recommended Alternative: {top_drug_name} (Composite Match Score: {match_score:.0f}%, Safety: {safety_score:.0f}/40)\n"
                     f"Clinical Rationale: {rationale}"
                 )
 
@@ -605,7 +626,12 @@ async def chat_message(data: ChatMessagePayload) -> dict[str, Any]:
                     max_tokens=400,
                     temperature=0.2,
                 )
-                llm_reply = completion.choices[0].message.content.strip()
+                if (
+                    completion.choices
+                    and completion.choices[0].message
+                    and completion.choices[0].message.content
+                ):
+                    llm_reply = completion.choices[0].message.content.strip()
             except Exception:  # noqa: BLE001
                 llm_reply = None
 
@@ -881,6 +907,7 @@ app = Litestar(
         voice_start,
         voice_offer,
         voice_ice_patch,
+        voice_tts,
         prescription_router,
         formulary_router,
         pa_router,

@@ -37,3 +37,6 @@ share/python-wheels/
 .idea/
 .DS_Store
 Thumbs.db
+
+# CodeLens Graph local index
+.codelens/
