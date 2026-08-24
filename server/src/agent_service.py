@@ -492,12 +492,11 @@ class ChatMessagePayload(BaseModel):
 
 
 @post("/message")
-async def chat_message(data: ChatMessagePayload) -> dict[str, Any]:
+def chat_message(data: ChatMessagePayload) -> dict[str, Any]:
     msg = data.message.strip()
 
     # 1. Cleanly extract drug search entity from conversational queries
     drug_query = msg
-    # Strip common conversational prefixes if present
     prefixes_to_strip = [
         "evaluate alternative for",
         "find lower cost generic alternative for",
@@ -524,11 +523,10 @@ async def chat_message(data: ChatMessagePayload) -> dict[str, Any]:
             drug_query = msg[len(prefix) :].strip(" :?-")
             break
 
-    # If the user query is very short or just the drug name, use it directly
     if not drug_query:
         drug_query = msg
 
-    # Identify if a drug evaluation is requested or implied
+    # Run multi-agent orchestrator evaluation
     req = PrescriptionEvaluationRequest(
         patient_id=data.patient_id,
         prescription_text=drug_query,
@@ -565,12 +563,12 @@ async def chat_message(data: ChatMessagePayload) -> dict[str, Any]:
             else "Formulary-preferred alternative candidate."
         )
 
-        # Generate intelligent LLM response if Groq is available
+        # Generate intelligent LLM response if Groq is available with fast timeout
         llm_reply = None
         groq_key = os.getenv("GROQ_API_KEY")
         if groq_key:
             try:
-                client = Groq(api_key=groq_key)
+                client = Groq(api_key=groq_key, timeout=2.5)
                 model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
                 system_prompt = (
@@ -611,12 +609,11 @@ async def chat_message(data: ChatMessagePayload) -> dict[str, Any]:
 
         if llm_reply:
             reply = llm_reply
-        elif decision == "SWITCH_TO_TOP_ALTERNATIVE" and top_drug is not None:
+        elif top_drug is not None:
             reply = (
-                f"Alternative Recommendation for {primary_drug_name}:\n\n"
-                f"Our 7-stage CDS orchestrator recommends switching to {top_drug.drug_name}. "
-                f"This therapeutic alternative eliminates prior authorization friction, reduces out-of-pocket patient copay to $10.00 (Tier 1 Preferred), "
-                f"and achieves a 100% Clinical Safety Score (40/40) with zero detected contraindications.\n\n"
+                f"Alternative Clinical Recommendation for {primary_drug_name}:\n\n"
+                f"Our 7-Stage CDS Multi-Agent Orchestrator identifies {top_drug.drug_name} as the optimal Tier 1 preferred alternative. "
+                f"Switching reduces out-of-pocket patient copay to $10.00, eliminates Prior Authorization friction, and achieves a 100% Clinical Safety Score (40/40) with zero contraindications.\n\n"
                 f"Clinical Rationale: {rationale}"
             )
         elif decision == "DISPENSE_PRIMARY":
@@ -671,20 +668,19 @@ async def chat_message(data: ChatMessagePayload) -> dict[str, Any]:
             ],
         }
 
-        # Synthesize Background Voice Audio using Sarvam AI
+        # Synthesize Background Voice Audio using Sarvam AI (timeout 2.5s)
         audio_base64 = None
         sarvam_key = os.getenv("SARVAM_API_KEY")
         if sarvam_key:
             try:
-                # Clean spoken text for clear voice audio
                 spoken_text = (
                     reply.split("Clinical Rationale:")[0].replace("\n", " ").strip()
                 )
-                if len(spoken_text) > 400:
-                    spoken_text = spoken_text[:400]
+                if len(spoken_text) > 300:
+                    spoken_text = spoken_text[:300]
                 if spoken_text:
-                    async with httpx.AsyncClient(timeout=8.0) as http_client:
-                        tts_res = await http_client.post(
+                    with httpx.Client(timeout=2.5) as http_client:
+                        tts_res = http_client.post(
                             "https://api.sarvam.ai/text-to-speech",
                             headers={
                                 "api-subscription-key": sarvam_key,

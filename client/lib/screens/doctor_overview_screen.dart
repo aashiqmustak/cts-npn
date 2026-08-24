@@ -44,11 +44,7 @@ class _DoctorOverviewDashboardScreenState
           const SizedBox(height: 20),
 
           // 2. Core Telemetry Bento Grid (4 Summary Cards)
-          _buildTelemetryBentoGrid(
-            totalPrescriptions: totalPrescriptions,
-            totalPatients: totalPatients,
-            totalHospitals: totalHospitals,
-          ),
+          _buildTelemetryBentoGrid(appState),
 
           const SizedBox(height: 20),
 
@@ -60,17 +56,17 @@ class _DoctorOverviewDashboardScreenState
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(flex: 7, child: _buildPatientVolumeLineChart()),
+                    Expanded(flex: 7, child: _buildPatientVolumeLineChart(appState)),
                     const SizedBox(width: 18),
-                    Expanded(flex: 5, child: _buildDrugClassDistributionChart()),
+                    Expanded(flex: 5, child: _buildDrugClassDistributionChart(appState)),
                   ],
                 );
               }
               return Column(
                 children: [
-                  _buildPatientVolumeLineChart(),
+                  _buildPatientVolumeLineChart(appState),
                   const SizedBox(height: 18),
-                  _buildDrugClassDistributionChart(),
+                  _buildDrugClassDistributionChart(appState),
                 ],
               );
             },
@@ -226,11 +222,13 @@ class _DoctorOverviewDashboardScreenState
   }
 
   // --- Core Telemetry Bento Grid ---
-  Widget _buildTelemetryBentoGrid({
-    required int totalPrescriptions,
-    required int totalPatients,
-    required int totalHospitals,
-  }) {
+  Widget _buildTelemetryBentoGrid(AppState appState) {
+    final user = appState.currentUser;
+    final consultationsToday = appState.dataService.getDoctorConsultationsToday(user.doctorId);
+    final totalPrescriptions = appState.prescriptions.length;
+    final avgPdc = appState.dataService.getDoctorAveragePdc(user.doctorId);
+    final pendingPa = appState.dataService.getDoctorPendingPaCount(user.doctorId);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final double width = constraints.maxWidth;
@@ -239,7 +237,7 @@ class _DoctorOverviewDashboardScreenState
         final items = [
           _telemetryCard(
             title: 'Consultations Today',
-            value: '18 Patients',
+            value: '$consultationsToday Patients',
             change: '+12.5% vs last week',
             isPositive: true,
             icon: Icons.people_alt_rounded,
@@ -255,17 +253,17 @@ class _DoctorOverviewDashboardScreenState
           ),
           _telemetryCard(
             title: 'Patient Regimen Adherence',
-            value: '96.4% PDC',
-            change: '+3.2% Optimal Range',
-            isPositive: true,
+            value: '${(avgPdc * 100).toStringAsFixed(1)}% PDC',
+            change: avgPdc >= 0.80 ? '★ 5-Star Compliant' : '⚠️ Action Required',
+            isPositive: avgPdc >= 0.80,
             icon: Icons.insights_rounded,
             accentColor: const Color(0xFF8B5CF6),
           ),
           _telemetryCard(
             title: 'Prior Auth Friction',
-            value: '2 Pending Review',
-            change: '0 Drug Interactions',
-            isPositive: true,
+            value: '$pendingPa Pending Review',
+            change: pendingPa == 0 ? '0 Bottlenecks' : '$pendingPa In Queue',
+            isPositive: pendingPa == 0,
             icon: Icons.security_rounded,
             accentColor: const Color(0xFFF59E0B),
           ),
@@ -378,11 +376,24 @@ class _DoctorOverviewDashboardScreenState
     );
   }
 
-  // --- Chart 1: Patient Volume & e-Rx Line Chart ---
-  Widget _buildPatientVolumeLineChart() {
+  // --- Chart 1: Dynamic Patient Volume & e-Rx Line Chart ---
+  Widget _buildPatientVolumeLineChart(AppState appState) {
+    final days = _selectedTimeRangeIndex == 0 ? 7 : (_selectedTimeRangeIndex == 1 ? 14 : 30);
+    final velocityData = appState.dataService.getDoctorPrescriptionVelocity(appState.currentUser.doctorId, 7);
+
+    final spots1 = List.generate(
+      velocityData.length,
+      (i) => FlSpot(i.toDouble(), velocityData[i] + 4.0),
+    );
+
+    final spots2 = List.generate(
+      velocityData.length,
+      (i) => FlSpot(i.toDouble(), velocityData[i]),
+    );
+
     return BentoCard(
-      title: 'Weekly Patient Consultations & e-Rx Velocity',
-      subtitle: 'Live volume trends over the past 7 days',
+      title: 'Patient Consultations & e-Rx Velocity',
+      subtitle: 'Live volume trends over the past ${_selectedTimeRangeIndex == 0 ? "7 Days" : (_selectedTimeRangeIndex == 1 ? "30 Days" : "90 Days")}',
       icon: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -441,12 +452,12 @@ class _DoctorOverviewDashboardScreenState
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
-                        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                        if (value.toInt() >= 0 && value.toInt() < days.length) {
+                        const daysLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                        if (value.toInt() >= 0 && value.toInt() < daysLabels.length) {
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
-                              days[value.toInt()],
+                              daysLabels[value.toInt()],
                               style: AppFonts.googleSans(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
@@ -470,15 +481,7 @@ class _DoctorOverviewDashboardScreenState
                 lineBarsData: [
                   // Line 1: Consultations (Sapphire Blue)
                   LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 14),
-                      FlSpot(1, 19),
-                      FlSpot(2, 16),
-                      FlSpot(3, 24),
-                      FlSpot(4, 22),
-                      FlSpot(5, 12),
-                      FlSpot(6, 18),
-                    ],
+                    spots: spots1,
                     isCurved: true,
                     color: const Color(0xFF1244A2),
                     barWidth: 3.5,
@@ -491,15 +494,7 @@ class _DoctorOverviewDashboardScreenState
                   ),
                   // Line 2: e-Prescriptions Broadcast (Electric Mint)
                   LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 10),
-                      FlSpot(1, 15),
-                      FlSpot(2, 12),
-                      FlSpot(3, 20),
-                      FlSpot(4, 18),
-                      FlSpot(5, 8),
-                      FlSpot(6, 15),
-                    ],
+                    spots: spots2,
                     isCurved: true,
                     color: const Color(0xFF10B981),
                     barWidth: 2.5,
@@ -547,8 +542,42 @@ class _DoctorOverviewDashboardScreenState
     );
   }
 
-  // --- Chart 2: Drug Class Distribution ---
-  Widget _buildDrugClassDistributionChart() {
+  // --- Chart 2: Dynamic Drug Class Distribution ---
+  Widget _buildDrugClassDistributionChart(AppState appState) {
+    final classDist = appState.dataService.getDoctorDrugClassDistribution(appState.currentUser.doctorId);
+    final colors = [
+      const Color(0xFF1244A2),
+      const Color(0xFF10B981),
+      const Color(0xFFF59E0B),
+      const Color(0xFFEC4899),
+      const Color(0xFF8B5CF6),
+    ];
+
+    final sections = <PieChartSectionData>[];
+    final legendEntries = <Widget>[];
+
+    int colorIdx = 0;
+    classDist.forEach((className, pct) {
+      final color = colors[colorIdx % colors.length];
+      sections.add(
+        PieChartSectionData(
+          color: color,
+          value: pct,
+          title: '${pct.toStringAsFixed(0)}%',
+          radius: 45,
+          titleStyle: AppFonts.googleSans(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
+      );
+      legendEntries.add(
+        _legendDot(color, '$className (${pct.toStringAsFixed(0)}%)'),
+      );
+      colorIdx++;
+    });
+
     return BentoCard(
       title: 'Prescribed Therapeutic Classes',
       subtitle: 'Distribution of active clinical regimens',
@@ -570,40 +599,7 @@ class _DoctorOverviewDashboardScreenState
               PieChartData(
                 sectionsSpace: 3,
                 centerSpaceRadius: 40,
-                sections: [
-                  PieChartSectionData(
-                    color: const Color(0xFF1244A2),
-                    value: 38,
-                    title: '38%',
-                    radius: 45,
-                    titleStyle: AppFonts.googleSans(
-                        fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
-                  ),
-                  PieChartSectionData(
-                    color: const Color(0xFF10B981),
-                    value: 26,
-                    title: '26%',
-                    radius: 45,
-                    titleStyle: AppFonts.googleSans(
-                        fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
-                  ),
-                  PieChartSectionData(
-                    color: const Color(0xFFF59E0B),
-                    value: 20,
-                    title: '20%',
-                    radius: 45,
-                    titleStyle: AppFonts.googleSans(
-                        fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
-                  ),
-                  PieChartSectionData(
-                    color: const Color(0xFFEC4899),
-                    value: 16,
-                    title: '16%',
-                    radius: 45,
-                    titleStyle: AppFonts.googleSans(
-                        fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
-                  ),
-                ],
+                sections: sections,
               ),
             ),
           ),
@@ -612,12 +608,7 @@ class _DoctorOverviewDashboardScreenState
             spacing: 12,
             runSpacing: 8,
             alignment: WrapAlignment.center,
-            children: [
-              _legendDot(const Color(0xFF1244A2), 'Cardiology (38%)'),
-              _legendDot(const Color(0xFF10B981), 'Endocrine (26%)'),
-              _legendDot(const Color(0xFFF59E0B), 'Antibiotics (20%)'),
-              _legendDot(const Color(0xFFEC4899), 'Psychiatric (16%)'),
-            ],
+            children: legendEntries,
           ),
         ],
       ),

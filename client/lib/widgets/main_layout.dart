@@ -29,6 +29,7 @@ import '../screens/profile_screen.dart';
 import '../screens/pharmacist_insurance_screen.dart';
 import '../screens/insurance_pharmacy_connections_screen.dart';
 import '../screens/alternate_agent_screen.dart';
+import '../screens/rx_agent_evaluation_screen.dart';
 
 class MainLayout extends StatefulWidget {
   final Widget? child;
@@ -677,6 +678,12 @@ class _RoleScreenStack extends StatelessWidget {
           return const DoctorOverviewDashboardScreen();
       }
     } else if (user.isPharmacist) {
+      final isEvaluatingAgent = appState.evaluatingPrescriptionId != null;
+      if (isEvaluatingAgent) {
+        return RxAgentEvaluationScreen(
+          prescriptionId: appState.evaluatingPrescriptionId!,
+        );
+      }
       final isViewingDetails = appState.selectedPrescriptionId != null;
       switch (appState.currentNavIndex.clamp(0, 8)) {
         case 0:
