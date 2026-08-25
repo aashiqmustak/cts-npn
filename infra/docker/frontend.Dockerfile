@@ -1,5 +1,5 @@
 # Stage 1: Build Flutter web application using pre-configured official Flutter image
-FROM ghcr.io/cirruslabs/flutter:3.27.4 AS build
+FROM ghcr.io/cirruslabs/flutter:3.27.0 AS build
 
 WORKDIR /app
 
