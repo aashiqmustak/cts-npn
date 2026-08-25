@@ -4,15 +4,15 @@ class ApiConfig {
   static final ApiConfig instance = ApiConfig._();
   ApiConfig._();
 
-  /// Resolves the active backend base URL dynamically based on browser location
+  /// Resolves the active backend base URL dynamically based on browser location or remote host
   String get baseUrl {
     if (kIsWeb) {
-      final host = Uri.base.host.isNotEmpty ? Uri.base.host : '127.0.0.1';
+      final host = Uri.base.host.isNotEmpty ? Uri.base.host : '100.56.240.156';
       // In web, if browsing on localhost or custom domain, route to backend port 8000
       final protocol = Uri.base.scheme.isNotEmpty ? Uri.base.scheme : 'http';
       return '$protocol://$host:8000';
     }
-    return 'http://127.0.0.1:8000';
+    return 'http://100.56.240.156:8000';
   }
 
   /// AI Agent endpoints
