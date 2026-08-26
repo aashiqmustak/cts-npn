@@ -36,7 +36,6 @@ class PrescriptionAgent:
         doctor_id: str,
         prescription_id: str | None = None,
     ) -> PrescriptionOutput:
-
         logger.info(
             "Processing prescription for patient_id: %s, doctor_id: %s",
             patient_id,

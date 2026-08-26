@@ -20,9 +20,7 @@ class PatientHistoryAgent:
     def process_request(self, request: PatientHistoryRequest) -> PatientHistoryResponse:
         return self.service.get_patient_history(request)
 
-    def ingest_patient_record(
-        self, record: PatientRecordInput
-    ) -> PatientRecordIngestResponse:
+    def ingest_patient_record(self, record: PatientRecordInput) -> PatientRecordIngestResponse:
         return self.service.ingest_patient_record(record)
 
     def ingest_batch(self, batch: BatchIngestRequest) -> BatchIngestResponse:

@@ -68,10 +68,7 @@ class PrescriptionValidator:
             duration_days=duration_days,
         )
 
-        if (
-            drug_match is None
-            or scores["drug_identification"] < MIN_CONFIDENCE_THRESHOLD
-        ):
+        if drug_match is None or scores["drug_identification"] < MIN_CONFIDENCE_THRESHOLD:
             status = "UNRECOGNIZED_DRUG"
         elif not strength or not frequency or not route:
             status = "INCOMPLETE"

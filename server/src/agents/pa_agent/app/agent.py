@@ -22,9 +22,7 @@ class PAAgent:
     def get_patient_history(self, patient_id: str) -> list[dict[str, Any]]:
         return self.service.get_patient_history(patient_id=patient_id)
 
-    def get_pa_policy(
-        self, drug_id: str, plan_id: str | None = None
-    ) -> dict[str, Any] | None:
+    def get_pa_policy(self, drug_id: str, plan_id: str | None = None) -> dict[str, Any] | None:
         return self.service.get_pa_policy(drug_id=drug_id, plan_id=plan_id)
 
     def run(self, task: dict[str, Any] | PARequest) -> dict[str, Any]:

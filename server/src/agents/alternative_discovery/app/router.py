@@ -5,9 +5,7 @@ from .repository import AlternativeDiscoveryRepository
 from .schemas import AlternativeDiscoveryInput, AlternativeDiscoveryOutput
 from .service import AlternativeDiscoveryService
 
-router = APIRouter(
-    prefix="/alternative-discovery", tags=["Alternative Discovery Agent"]
-)
+router = APIRouter(prefix="/alternative-discovery", tags=["Alternative Discovery Agent"])
 
 repository = AlternativeDiscoveryRepository()
 service = AlternativeDiscoveryService(repository)

@@ -46,9 +46,7 @@ class DrugMapper:
 
     def _load_reference(self):
         if not os.path.exists(self.reference_path):
-            raise FileNotFoundError(
-                f"Reference dataset not found at: {self.reference_path}"
-            )
+            raise FileNotFoundError(f"Reference dataset not found at: {self.reference_path}")
 
         self.df_reference = pd.read_csv(self.reference_path, low_memory=False)
 
@@ -68,20 +66,14 @@ class DrugMapper:
                 "canonical_drug_name": raw_name,
                 "clean_ingredient_name": clean_ing,
                 "rxnorm_id": str(row.get("rxnorm_id", "")).strip(),
-                "strength": str(row["strength"])
-                if pd.notnull(row.get("strength"))
-                else None,
+                "strength": str(row["strength"]) if pd.notnull(row.get("strength")) else None,
                 "dose": str(row["dose"]) if pd.notnull(row.get("dose")) else None,
-                "frequency": str(row["frequency"])
-                if pd.notnull(row.get("frequency"))
-                else None,
+                "frequency": str(row["frequency"]) if pd.notnull(row.get("frequency")) else None,
                 "route": str(row["route"]) if pd.notnull(row.get("route")) else None,
                 "duration_days": int(row["duration_days"])
                 if pd.notnull(row.get("duration_days"))
                 else None,
-                "indication": str(row["indication"])
-                if pd.notnull(row.get("indication"))
-                else None,
+                "indication": str(row["indication"]) if pd.notnull(row.get("indication")) else None,
             }
 
             self.id_map[drug_id] = record
@@ -301,15 +293,11 @@ class DrugMapper:
                     best_fuzzy_text = w
 
         if best_fuzzy_rec and best_fuzzy_score >= FUZZY_MATCH_THRESHOLD:
-            return self._create_result(
-                best_fuzzy_rec, round(best_fuzzy_score, 2), best_fuzzy_text
-            )
+            return self._create_result(best_fuzzy_rec, round(best_fuzzy_score, 2), best_fuzzy_text)
 
         return None
 
-    def _create_result(
-        self, rec: dict, confidence: float, matched_text: str
-    ) -> DrugMatchResult:
+    def _create_result(self, rec: dict, confidence: float, matched_text: str) -> DrugMatchResult:
         return DrugMatchResult(
             drug_id=rec["drug_id"],
             canonical_drug_name=rec["canonical_drug_name"],

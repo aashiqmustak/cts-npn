@@ -35,13 +35,9 @@ class PatientHistoryService:
 
                 self._groq_client = Groq(api_key=groq_key)
             except (ImportError, RuntimeError, ValueError) as exc:
-                logger.warning(
-                    "Could not initialize Groq client for RAG synthesis: %s", exc
-                )
+                logger.warning("Could not initialize Groq client for RAG synthesis: %s", exc)
 
-    def get_patient_history(
-        self, request: PatientHistoryRequest
-    ) -> PatientHistoryResponse:
+    def get_patient_history(self, request: PatientHistoryRequest) -> PatientHistoryResponse:
         records = self.repository.get_patient_records(patient_id=request.patient_id)
 
         if not records:
@@ -75,16 +71,10 @@ class PatientHistoryService:
             fill_val = record.get("fill_date")
             fill_date = None
             if isinstance(fill_val, datetime):
-                fill_date = (
-                    fill_val.replace(tzinfo=UTC)
-                    if fill_val.tzinfo is None
-                    else fill_val
-                )
+                fill_date = fill_val.replace(tzinfo=UTC) if fill_val.tzinfo is None else fill_val
             elif isinstance(fill_val, str):
                 try:
-                    fill_date = datetime.strptime(fill_val.strip(), "%Y-%m-%d").replace(
-                        tzinfo=UTC
-                    )
+                    fill_date = datetime.strptime(fill_val.strip(), "%Y-%m-%d").replace(tzinfo=UTC)
                 except (ValueError, TypeError):
                     continue
 
@@ -121,15 +111,12 @@ class PatientHistoryService:
         latest_date = max(record["fill_date"] for record in parsed_records)
         lookback_start = latest_date - timedelta(days=request.lookback_days)
 
-        history = [
-            record for record in parsed_records if record["fill_date"] >= lookback_start
-        ]
+        history = [record for record in parsed_records if record["fill_date"] >= lookback_start]
 
         drug_history = [
             record
             for record in history
-            if str(record.get("drug_id") or "").strip().lower()
-            == request.drug_id.strip().lower()
+            if str(record.get("drug_id") or "").strip().lower() == request.drug_id.strip().lower()
         ]
 
         previous_pdc_180 = self._calculate_pdc(drug_history, latest_date)
@@ -188,8 +175,7 @@ class PatientHistoryService:
 
         return PatientRecordIngestResponse(
             success=True,
-            record_id=vector_id
-            or f"mem_{record_input.patient_id}_{record_input.drug_id}",
+            record_id=vector_id or f"mem_{record_input.patient_id}_{record_input.drug_id}",
             patient_id=record_input.patient_id,
             message="Patient record successfully saved to history repository and Pinecone vector store.",
             vector_id=vector_id,
@@ -240,8 +226,7 @@ class PatientHistoryService:
         hist_resp = self.get_patient_history(
             PatientHistoryRequest(
                 patient_id=request.patient_id,
-                drug_id=request.drug_id
-                or (matches[0].drug_id if matches else "UNKNOWN"),
+                drug_id=request.drug_id or (matches[0].drug_id if matches else "UNKNOWN"),
             )
         )
 
@@ -288,9 +273,7 @@ class PatientHistoryService:
             return 0
         total_gap = 0
         for previous, current in pairwise(records):
-            expected_date = previous["fill_date"] + timedelta(
-                days=previous["days_supply"]
-            )
+            expected_date = previous["fill_date"] + timedelta(days=previous["days_supply"])
             if current["fill_date"] > expected_date:
                 gap = (current["fill_date"] - expected_date).days
                 total_gap += gap
@@ -347,26 +330,18 @@ class PatientHistoryService:
                         TimeoutError,
                         OSError,
                     ) as model_exc:
-                        logger.debug(
-                            "Model %s generation retry: %s", try_model, model_exc
-                        )
+                        logger.debug("Model %s generation retry: %s", try_model, model_exc)
                         continue
             except (RuntimeError, ValueError, TimeoutError, OSError) as exc:
                 logger.warning("LLM RAG summary generation fallback: %s", exc)
 
         # High quality clinical fallback synthesis
         drugs = list({str(m.get("drug_id")) for m in matches if m.get("drug_id")})
-        conditions = list(
-            {str(m.get("condition")) for m in matches if m.get("condition")}
-        )
-        abandoned = sum(
-            1 for m in matches if str(m.get("status")).upper() == "ABANDONED"
-        )
+        conditions = list({str(m.get("condition")) for m in matches if m.get("condition")})
+        abandoned = sum(1 for m in matches if str(m.get("status")).upper() == "ABANDONED")
 
         adherence_str = (
-            "Optimal (>=80%)"
-            if adherence.previous_pdc_180 >= 0.80
-            else "Sub-optimal (<80%)"
+            "Optimal (>=80%)" if adherence.previous_pdc_180 >= 0.80 else "Sub-optimal (<80%)"
         )
         return (
             f"Patient {patient_id} has {len(matches)} retrieved history records spanning conditions ({', '.join(conditions)}) "

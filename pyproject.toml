@@ -79,3 +79,11 @@ extraPaths = ["server/src", "server/src/agents/formulary_agent"]
 testpaths = ["server"]
 norecursedirs = ["ml-model", "client", "infra", "dataset", "handsoff"]
 
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+ignore = ["E402"]
+
+

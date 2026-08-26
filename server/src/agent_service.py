@@ -194,9 +194,7 @@ async def search_formulary(query: str = "", limit: int = 20) -> list[dict[str, A
 async def get_formulary_drug(drug_id: str) -> dict[str, Any]:
     details = formulary_agent.get_drug_details(drug_id=drug_id)
     if details is None:
-        raise HTTPException(
-            status_code=404, detail=f"Drug '{drug_id}' not found in formulary"
-        )
+        raise HTTPException(status_code=404, detail=f"Drug '{drug_id}' not found in formulary")
     return details
 
 
@@ -237,18 +235,14 @@ async def evaluate_pa(data: PARequest) -> PAResponse:
     try:
         return pa_agent.process_request(data)
     except FileNotFoundError as exc:
-        raise HTTPException(
-            status_code=503, detail=f"PA dataset unavailable: {exc}"
-        ) from exc
+        raise HTTPException(status_code=503, detail=f"PA dataset unavailable: {exc}") from exc
 
 
 @get("/policy/{drug_id:str}")
 async def get_pa_policy(drug_id: str, plan_id: str | None = None) -> dict[str, Any]:
     policy = pa_agent.get_pa_policy(drug_id=drug_id, plan_id=plan_id)
     if policy is None:
-        raise HTTPException(
-            status_code=404, detail=f"PA policy for drug '{drug_id}' not found"
-        )
+        raise HTTPException(status_code=404, detail=f"PA policy for drug '{drug_id}' not found")
     return policy
 
 
@@ -621,16 +615,37 @@ def chat_message(data: ChatMessagePayload) -> dict[str, Any]:
                     "the exact Tier 1 copay ($10.00), zero PA requirements, and 100% safety match. Avoid cluttered markdown asterisks."
                 )
 
+                formulary_tier = 1
+                formulary_covered = True
+                if report.formulary_coverage and report.formulary_coverage.coverage:
+                    if report.formulary_coverage.coverage.tier is not None:
+                        formulary_tier = report.formulary_coverage.coverage.tier
+                    formulary_covered = report.formulary_coverage.coverage.covered
+
+                pa_req_str = "No"
+                if report.prior_authorization and report.prior_authorization.pa_required:
+                    pa_req_str = "Yes"
+
+                risk_level_str = "LOW"
+                if report.ml_risk_assessment:
+                    risk_level_str = str(report.ml_risk_assessment.overall_risk_status)
+
+                top_drug_name = top_drug.drug_name if top_drug else "None"
+                match_score = top_drug.total_score if top_drug else 0.0
+                safety_score = (
+                    top_drug.score_breakdown.safety_score
+                    if top_drug and top_drug.score_breakdown
+                    else 40.0
+                )
+
                 orchestrator_summary = (
                     f"User Query: '{msg}'\n"
                     f"Evaluated Drug: {primary_drug_name}\n"
                     f"Decision: {decision}\n"
-                    f"Formulary Status: Tier {report.formulary_verification.tier if report.formulary_verification else 1} "
-                    f"({'Covered' if report.formulary_verification and report.formulary_verification.covered else 'Non-Covered'})\n"
-                    f"Prior Auth Required: {'Yes' if report.prior_authorization and report.prior_authorization.pa_required else 'No'}\n"
-                    f"AWS ML Adherence Risk: {report.ml_risk_assessment.adherence_risk_level if report.ml_risk_assessment else 'LOW'}\n"
-                    f"Top Recommended Alternative: {top_drug.drug_name if top_drug else 'None'} "
-                    f"(Composite Match Score: {top_drug.total_score if top_drug else 0:.0f}%, Safety: {top_drug.score_breakdown.safety_score if top_drug and top_drug.score_breakdown else 40:.0f}/40)\n"
+                    f"Formulary Status: Tier {formulary_tier} ({'Covered' if formulary_covered else 'Non-Covered'})\n"
+                    f"Prior Auth Required: {pa_req_str}\n"
+                    f"AWS ML Adherence Risk: {risk_level_str}\n"
+                    f"Top Recommended Alternative: {top_drug_name} (Composite Match Score: {match_score:.0f}%, Safety: {safety_score:.0f}/40)\n"
                     f"Clinical Rationale: {rationale}"
                 )
 
@@ -646,7 +661,12 @@ def chat_message(data: ChatMessagePayload) -> dict[str, Any]:
                     max_tokens=400,
                     temperature=0.2,
                 )
-                llm_reply = completion.choices[0].message.content.strip()
+                if (
+                    completion.choices
+                    and completion.choices[0].message
+                    and completion.choices[0].message.content
+                ):
+                    llm_reply = completion.choices[0].message.content.strip()
             except Exception:  # noqa: BLE001
                 llm_reply = None
 
@@ -716,11 +736,10 @@ def chat_message(data: ChatMessagePayload) -> dict[str, Any]:
         sarvam_key = os.getenv("SARVAM_API_KEY")
         if sarvam_key:
             try:
-                spoken_text = (
-                    reply.split("Clinical Rationale:")[0].replace("\n", " ").strip()
-                )
-                if len(spoken_text) > 300:
-                    spoken_text = spoken_text[:300]
+                # Clean spoken text for clear voice audio
+                spoken_text = reply.split("Clinical Rationale:")[0].replace("\n", " ").strip()
+                if len(spoken_text) > 400:
+                    spoken_text = spoken_text[:400]
                 if spoken_text:
                     with httpx.Client(timeout=2.5) as http_client:
                         tts_res = http_client.post(
@@ -820,9 +839,7 @@ async def voice_offer(session_id: str, data: dict[str, Any]) -> dict[str, Any]:
             )
             return res.json()
     except Exception as exc:
-        raise HTTPException(
-            status_code=502, detail=f"Voice runner offer error: {exc}"
-        ) from exc
+        raise HTTPException(status_code=502, detail=f"Voice runner offer error: {exc}") from exc
 
 
 @patch("/sessions/{session_id:str}/api/offer")
@@ -921,6 +938,7 @@ app = Litestar(
         voice_start,
         voice_offer,
         voice_ice_patch,
+        voice_tts,
         prescription_router,
         formulary_router,
         pa_router,

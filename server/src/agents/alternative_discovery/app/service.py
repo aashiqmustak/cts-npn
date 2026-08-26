@@ -81,9 +81,7 @@ Return the exact JSON output required. Do not invent any drugs. Only use the dru
                 for i, c in enumerate(candidates_list, 1):
                     formatted_candidates += f"{i}. {c.get('drug_name')} (ID: {c.get('drug_id')}, Class: {c.get('therapeutic_class')}, Indication: {c.get('indication')})\n"
 
-                chain = self.prompt | self.llm.with_structured_output(
-                    AlternativeDiscoveryOutput
-                )
+                chain = self.prompt | self.llm.with_structured_output(AlternativeDiscoveryOutput)
 
                 result = chain.invoke(
                     {
@@ -92,9 +90,7 @@ Return the exact JSON output required. Do not invent any drugs. Only use the dru
                         "orig_class": orig.therapeutic_class,
                         "orig_indication": orig.indication,
                         "generic_only": request.constraints.generic_only,
-                        "same_class_preferred": (
-                            request.constraints.same_class_preferred
-                        ),
+                        "same_class_preferred": (request.constraints.same_class_preferred),
                         "candidates": formatted_candidates,
                     }
                 )
@@ -103,9 +99,7 @@ Return the exact JSON output required. Do not invent any drugs. Only use the dru
                 parsed_result.candidate_count = len(parsed_result.candidates)
                 return parsed_result
             except Exception as e:  # noqa: BLE001
-                logger.warning(
-                    f"LLM discovery failed: {e}. Using deterministic fallback."
-                )
+                logger.warning(f"LLM discovery failed: {e}. Using deterministic fallback.")
 
         # Deterministic fallback based on dataset matching
         candidates: list[Candidate] = []
@@ -116,13 +110,9 @@ Return the exact JSON output required. Do not invent any drugs. Only use the dru
             c_class = (c.get("therapeutic_class") or "").lower()
             c_ind = (c.get("indication") or "").lower()
 
-            if orig_class_lower and (
-                orig_class_lower in c_class or c_class in orig_class_lower
-            ):
+            if orig_class_lower and (orig_class_lower in c_class or c_class in orig_class_lower):
                 rel = "SAME_CLASS"
-            elif orig_ind_lower and (
-                orig_ind_lower in c_ind or c_ind in orig_ind_lower
-            ):
+            elif orig_ind_lower and (orig_ind_lower in c_ind or c_ind in orig_ind_lower):
                 rel = "SAME_INDICATION"
             else:
                 rel = "THERAPEUTIC_ALTERNATIVE"
